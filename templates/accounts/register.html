@@ -1,0 +1,189 @@
+{% extends 'accounts/auth_base.html' %}
+{% block title %}Create Account — RentRight GH{% endblock %}
+
+{% block auth_content %}
+<div>
+  <h1 class="font-display font-bold mb-1" style="font-size:2.25rem; color:#1C3829;">Create your account</h1>
+  <p class="text-sm mb-8" style="color:#9CA3AF;">Join Ghana's compliant rental platform — always free for tenants</p>
+
+  <form method="post" novalidate class="space-y-4">
+    {% csrf_token %}
+
+    <!-- Name row -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-1.5" style="color:#6B7280;">First name</label>
+        <input type="text" name="first_name" value="{{ form.first_name.value|default:'' }}"
+               placeholder="Ama"
+               style="width:100%; padding:14px 16px; border-radius:12px; border:1.5px solid {% if form.first_name.errors %}#FCA5A5{% else %}#E5E0D8{% endif %};
+                      background:white; font-size:14px; color:#1f2937; outline:none; box-sizing:border-box;"/>
+        {% for e in form.first_name.errors %}<p class="text-xs mt-1" style="color:#EF4444;">{{ e }}</p>{% endfor %}
+      </div>
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-1.5" style="color:#6B7280;">Last name</label>
+        <input type="text" name="last_name" value="{{ form.last_name.value|default:'' }}"
+               placeholder="Owusu"
+               style="width:100%; padding:14px 16px; border-radius:12px; border:1.5px solid {% if form.last_name.errors %}#FCA5A5{% else %}#E5E0D8{% endif %};
+                      background:white; font-size:14px; color:#1f2937; outline:none; box-sizing:border-box;"/>
+        {% for e in form.last_name.errors %}<p class="text-xs mt-1" style="color:#EF4444;">{{ e }}</p>{% endfor %}
+      </div>
+    </div>
+
+    <!-- Email -->
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-1.5" style="color:#6B7280;">Email address</label>
+      <input type="email" name="email" value="{{ form.email.value|default:'' }}"
+             autocomplete="email" placeholder="you@example.com"
+             style="width:100%; padding:14px 16px; border-radius:12px; border:1.5px solid {% if form.email.errors %}#FCA5A5{% else %}#E5E0D8{% endif %};
+                    background:white; font-size:14px; color:#1f2937; outline:none;"/>
+      {% for e in form.email.errors %}<p class="text-xs mt-1" style="color:#EF4444;">{{ e }}</p>{% endfor %}
+    </div>
+
+    <!-- Phone -->
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-1.5" style="color:#6B7280;">Phone number</label>
+      <input type="tel" name="phone_number" value="{{ form.phone_number.value|default:'' }}"
+             placeholder="0241234567"
+             style="width:100%; padding:14px 16px; border-radius:12px; border:1.5px solid {% if form.phone_number.errors %}#FCA5A5{% else %}#E5E0D8{% endif %};
+                    background:white; font-size:14px; color:#1f2937; outline:none;"/>
+      <p class="text-xs mt-1.5" style="color:#9CA3AF;">We'll send your verification code here</p>
+      {% for e in form.phone_number.errors %}<p class="text-xs mt-1" style="color:#EF4444;">{{ e }}</p>{% endfor %}
+    </div>
+
+    <!-- Role cards -->
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-3" style="color:#6B7280;">I am a…</label>
+      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px;">
+
+        <label style="cursor:pointer;">
+          <input type="radio" name="role" value="tenant"
+                 {% if form.role.value == 'tenant' or not form.role.value %}checked{% endif %}
+                 class="peer sr-only"/>
+          <div class="peer-checked:text-white flex flex-col items-center gap-1.5 p-3 rounded-xl text-center transition-all"
+               style="border:2px solid #E5E0D8; background:white;"
+               onclick="selectRole(this, '#1C3829')">
+            <svg class="w-6 h-6" style="color:#9CA3AF;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+            </svg>
+            <span class="text-xs font-semibold" style="color:#374151;">Tenant</span>
+            <span class="text-[10px]" style="color:#9CA3AF;">Looking for a home</span>
+          </div>
+        </label>
+
+        <label style="cursor:pointer;">
+          <input type="radio" name="role" value="landlord"
+                 {% if form.role.value == 'landlord' %}checked{% endif %}
+                 class="peer sr-only"/>
+          <div class="flex flex-col items-center gap-1.5 p-3 rounded-xl text-center transition-all"
+               style="border:2px solid #E5E0D8; background:white;"
+               onclick="selectRole(this, '#1C3829')">
+            <svg class="w-6 h-6" style="color:#9CA3AF;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+            </svg>
+            <span class="text-xs font-semibold" style="color:#374151;">Landlord</span>
+            <span class="text-[10px]" style="color:#9CA3AF;">I have a property</span>
+          </div>
+        </label>
+
+        <label style="cursor:pointer;">
+          <input type="radio" name="role" value="property_manager"
+                 {% if form.role.value == 'property_manager' %}checked{% endif %}
+                 class="peer sr-only"/>
+          <div class="flex flex-col items-center gap-1.5 p-3 rounded-xl text-center transition-all"
+               style="border:2px solid #E5E0D8; background:white;"
+               onclick="selectRole(this, '#1C3829')">
+            <svg class="w-6 h-6" style="color:#9CA3AF;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+            </svg>
+            <span class="text-xs font-semibold" style="color:#374151;">Manager</span>
+            <span class="text-[10px]" style="color:#9CA3AF;">I manage properties</span>
+          </div>
+        </label>
+
+      </div>
+      {% for e in form.role.errors %}<p class="text-xs mt-1.5" style="color:#EF4444;">{{ e }}</p>{% endfor %}
+    </div>
+
+    <!-- Passwords -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-1.5" style="color:#6B7280;">Password</label>
+        <input type="password" name="password1" autocomplete="new-password"
+               placeholder="Min. 8 chars"
+               style="width:100%; padding:14px 16px; border-radius:12px; border:1.5px solid {% if form.password1.errors %}#FCA5A5{% else %}#E5E0D8{% endif %};
+                      background:white; font-size:14px; color:#1f2937; outline:none; box-sizing:border-box;"/>
+        {% for e in form.password1.errors %}<p class="text-xs mt-1" style="color:#EF4444;">{{ e }}</p>{% endfor %}
+      </div>
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-1.5" style="color:#6B7280;">Confirm</label>
+        <input type="password" name="password2" autocomplete="new-password"
+               placeholder="Repeat"
+               style="width:100%; padding:14px 16px; border-radius:12px; border:1.5px solid {% if form.password2.errors %}#FCA5A5{% else %}#E5E0D8{% endif %};
+                      background:white; font-size:14px; color:#1f2937; outline:none; box-sizing:border-box;"/>
+        {% for e in form.password2.errors %}<p class="text-xs mt-1" style="color:#EF4444;">{{ e }}</p>{% endfor %}
+      </div>
+    </div>
+
+    {% if form.non_field_errors %}
+      <div class="px-4 py-3 rounded-xl" style="background:#FEF2F2; border:1px solid #FECACA;">
+        {% for e in form.non_field_errors %}<p class="text-sm" style="color:#DC2626;">{{ e }}</p>{% endfor %}
+      </div>
+    {% endif %}
+
+    <button type="submit"
+            style="width:100%; padding:14px; border-radius:12px; border:none; cursor:pointer;
+                   background:#C4622D; color:white; font-size:14px; font-weight:600;
+                   letter-spacing:0.025em; margin-top:8px;">
+      Create account
+    </button>
+
+    <p class="text-center text-xs pt-1" style="color:#9CA3AF; line-height:1.6;">
+      By registering you agree to tenancies being managed under Ghana's Rent Act 1963 (Act 220).
+    </p>
+  </form>
+
+  <div class="flex items-center gap-3 my-6">
+    <div class="flex-1" style="height:1px; background:#E5E0D8;"></div>
+    <span class="text-xs font-medium" style="color:#9CA3AF;">Already have an account?</span>
+    <div class="flex-1" style="height:1px; background:#E5E0D8;"></div>
+  </div>
+
+  <a href="{% url 'accounts:login' %}"
+     style="display:flex; align-items:center; justify-content:center; width:100%;
+            padding:14px; border-radius:12px; border:2px solid #1C3829;
+            color:#1C3829; font-size:14px; font-weight:600; text-decoration:none; background:transparent;">
+    Sign in instead
+  </a>
+</div>
+
+<script>
+  // Role card selection
+  function selectRole(clickedDiv, activeColor) {
+    // Reset all role cards
+    document.querySelectorAll('[onclick^="selectRole"]').forEach(function(card) {
+      card.style.background = 'white';
+      card.style.borderColor = '#E5E0D8';
+      card.querySelectorAll('span').forEach(function(s) {
+        if (s.classList.contains('font-semibold')) s.style.color = '#374151';
+        else s.style.color = '#9CA3AF';
+      });
+      card.querySelector('svg').style.color = '#9CA3AF';
+    });
+    // Activate clicked card
+    clickedDiv.style.background = activeColor;
+    clickedDiv.style.borderColor = activeColor;
+    clickedDiv.querySelectorAll('span').forEach(function(s) { s.style.color = 'white'; });
+    clickedDiv.querySelector('svg').style.color = 'rgba(255,255,255,0.8)';
+    clickedDiv.style.stroke = 'white';
+  }
+
+  // Set initial state based on checked radio
+  document.addEventListener('DOMContentLoaded', function() {
+    var checked = document.querySelector('input[name="role"]:checked');
+    if (checked) {
+      var card = checked.parentElement.querySelector('[onclick^="selectRole"]');
+      if (card) selectRole(card, '#1C3829');
+    }
+  });
+</script>
+{% endblock %}

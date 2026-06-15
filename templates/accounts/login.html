@@ -1,0 +1,69 @@
+{% extends 'accounts/auth_base.html' %}
+{% block title %}Sign In — RentRight GH{% endblock %}
+
+{% block auth_content %}
+<div>
+  <h1 class="font-display font-bold mb-1" style="font-size:2.25rem; color:#1C3829;">Welcome back</h1>
+  <p class="text-sm mb-8" style="color:#9CA3AF;">Sign in to your RentRight GH account</p>
+
+  <form method="post" novalidate class="space-y-4">
+    {% csrf_token %}
+
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-1.5" style="color:#6B7280;">Email address</label>
+      <input type="email" name="{{ form.username.html_name }}"
+             value="{{ form.username.value|default:'' }}"
+             autocomplete="email" autofocus
+             placeholder="you@example.com"
+             style="width:100%; padding:14px 16px; border-radius:12px; border:1.5px solid #E5E0D8;
+                    background:white; font-size:14px; color:#1f2937; outline:none;
+                    {% if form.username.errors %}border-color:#FCA5A5;{% endif %}"/>
+      {% for e in form.username.errors %}<p class="text-xs mt-1" style="color:#EF4444;">{{ e }}</p>{% endfor %}
+    </div>
+
+    <div>
+      <div class="flex justify-between items-center mb-1.5">
+        <label class="block text-xs font-semibold uppercase tracking-wider" style="color:#6B7280;">Password</label>
+        <a href="{% url 'accounts:password_reset_request' %}"
+           class="text-xs font-medium" style="color:#C4622D;">Forgot password?</a>
+      </div>
+      <input type="password" name="{{ form.password.html_name }}"
+             autocomplete="current-password"
+             placeholder="••••••••"
+             style="width:100%; padding:14px 16px; border-radius:12px; border:1.5px solid #E5E0D8;
+                    background:white; font-size:14px; color:#1f2937; outline:none;
+                    {% if form.password.errors %}border-color:#FCA5A5;{% endif %}"/>
+      {% for e in form.password.errors %}<p class="text-xs mt-1" style="color:#EF4444;">{{ e }}</p>{% endfor %}
+    </div>
+
+    {% if form.non_field_errors %}
+      <div class="px-4 py-3 rounded-xl" style="background:#FEF2F2; border:1px solid #FECACA;">
+        {% for e in form.non_field_errors %}
+          <p class="text-sm" style="color:#DC2626;">{{ e }}</p>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <button type="submit"
+            style="width:100%; padding:14px; border-radius:12px; border:none; cursor:pointer;
+                   background:#1C3829; color:white; font-size:14px; font-weight:600;
+                   letter-spacing:0.025em; margin-top:8px;">
+      Sign in
+    </button>
+  </form>
+
+  <div class="flex items-center gap-3 my-7">
+    <div class="flex-1" style="height:1px; background:#E5E0D8;"></div>
+    <span class="text-xs font-medium" style="color:#9CA3AF;">New to RentRight GH?</span>
+    <div class="flex-1" style="height:1px; background:#E5E0D8;"></div>
+  </div>
+
+  <a href="{% url 'accounts:register' %}"
+     style="display:flex; align-items:center; justify-content:center; width:100%;
+            padding:14px; border-radius:12px; border:2px solid #1C3829;
+            color:#1C3829; font-size:14px; font-weight:600; text-decoration:none;
+            letter-spacing:0.025em; background:transparent;">
+    Create a free account
+  </a>
+</div>
+{% endblock %}

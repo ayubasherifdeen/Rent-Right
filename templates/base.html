@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}RentRight GH{% endblock %}</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            forest:     { DEFAULT: '#1C3829', light: '#2A5240', dark: '#122518' },
+            sand:       { DEFAULT: '#F7F3EC', dark: '#EDE7D9' },
+            terracotta: { DEFAULT: '#C4622D', light: '#D4784A', dark: '#A04E22' },
+            sage:       { DEFAULT: '#7A9E7E', light: '#B8D4BB', dark: '#5A7E5E' },
+          },
+          fontFamily: {
+            display: ['"Playfair Display"', 'Georgia', 'serif'],
+            sans:    ['Inter', 'system-ui', 'sans-serif'],
+          },
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body { font-family: 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+    .font-display { font-family: 'Playfair Display', Georgia, serif; }
+
+    /* Focus rings */
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(28,56,41,0.15);
+      border-color: #1C3829 !important;
+    }
+
+    /* Transitions */
+    * { transition-property: color, background-color, border-color, opacity;
+        transition-duration: 150ms; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: #F7F3EC; }
+    ::-webkit-scrollbar-thumb { background: #7A9E7E; border-radius: 10px; }
+  </style>
+
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-sand text-gray-800 font-sans antialiased">
+  {% block body %}{% endblock %}
+</body>
+</html>

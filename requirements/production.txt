@@ -1,0 +1,6 @@
+-r base.txt
+
+gunicorn==22.*
+dj-database-url==2.*
+cloudinary==1.*
+django-cloudinary-storage==0.3.*

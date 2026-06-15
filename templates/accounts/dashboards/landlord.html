@@ -1,0 +1,68 @@
+{% extends 'accounts/dashboard_base.html' %}
+{% block page_title %}My Portfolio{% endblock %}
+{% block page_subtitle %}Welcome back, {{ request.user.first_name }}{% endblock %}
+
+{% block sidebar_nav %}
+  <a href="{% url 'accounts:landlord_dashboard' %}" class="nav-link {% if request.path == '/accounts/dashboard/landlord/' %}active{% endif %}">
+    <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+    Dashboard
+  </a>
+  <a href="#" class="nav-link"><svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>Add Property</a>
+  <a href="#" class="nav-link"><svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5"/></svg>Properties</a>
+  <a href="#" class="nav-link"><svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>Applications</a>
+  <a href="#" class="nav-link"><svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>Payments</a>
+  <a href="#" class="nav-link"><svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>Maintenance</a>
+  <a href="#" class="nav-link"><svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>Analytics</a>
+{% endblock %}
+
+{% block dashboard_content %}
+  <!-- Stats grid -->
+  <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:14px; margin-bottom:20px;" class="lg:grid-cols-4">
+    <div class="stat-card">
+      <p class="stat-label">Properties</p>
+      <p class="stat-value">0</p>
+      <p class="stat-sub">No listings yet</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">Tenancies</p>
+      <p class="stat-value">0</p>
+      <p class="stat-sub">Occupancy: —</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">Applications</p>
+      <p class="stat-value" style="color:#C4622D;">0</p>
+      <p class="stat-sub">Awaiting review</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-label">This month</p>
+      <p class="stat-value">GHC 0</p>
+      <p class="stat-sub">Rent collected</p>
+    </div>
+  </div>
+
+  <!-- Empty state -->
+  <div class="page-card" style="padding:60px 24px; text-align:center;">
+    <div style="width:60px; height:60px; background:#F7F3EC; border-radius:16px;
+                display:flex; align-items:center; justify-content:center; margin:0 auto 20px;">
+      <svg width="28" height="28" fill="none" stroke="#7A9E7E" stroke-width="1.5" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+      </svg>
+    </div>
+    <h3 style="font-family:'Playfair Display',Georgia,serif; font-size:22px; font-weight:700; color:#1C3829; margin-bottom:10px;">
+      List your first property
+    </h3>
+    <p style="font-size:14px; color:#9CA3AF; max-width:340px; margin:0 auto 28px; line-height:1.7;">
+      Add your property to RentRight GH. Every listing is Act 220 compliant by default —
+      tenants see exactly what they're committing to.
+    </p>
+    <a href="#"
+       style="display:inline-flex; align-items:center; gap:8px; padding:14px 28px;
+              border-radius:12px; background:#1C3829; color:white; font-size:14px;
+              font-weight:600; text-decoration:none; letter-spacing:0.02em;">
+      <svg width="16" height="16" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+      </svg>
+      Add a property
+    </a>
+  </div>
+{% endblock %}
