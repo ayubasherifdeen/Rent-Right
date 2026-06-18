@@ -87,7 +87,7 @@ def user_logout(request):
     return redirect('accounts:login')
 
 
-# ─── Phone Verification ───────────────────────────────────────────────────────
+# Phone Verification 
 
 @login_required
 @require_http_methods(['GET', 'POST'])
@@ -116,7 +116,7 @@ def resend_verification_otp(request):
     return redirect('accounts:verify_phone')
 
 
-# ─── Dashboard ────────────────────────────────────────────────────────────────
+# Dashboard
 
 @login_required
 def dashboard(request):
@@ -183,7 +183,7 @@ def profile(request):
     return render(request, 'accounts/profile.html', {'form': form})
 
 
-# ─── Password Reset ───────────────────────────────────────────────────────────
+#  Password Reset
 
 @require_http_methods(['GET', 'POST'])
 def password_reset_request(request):

@@ -8,6 +8,11 @@ always use development.py or production.py.
 from pathlib import Path
 from decouple import config, Csv
 
+import cloudinary
+import cloudinary.uploader
+from cloudinary.utils import cloudinary_url
+
+
 # ─── Paths ────────────────────────────────────────────────────────────────────
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -37,7 +42,8 @@ THIRD_PARTY_APPS = [
 
 LOCAL_APPS = [
     'apps.accounts.apps.AccountsConfig',
-    # apps.listings, apps.applications, etc. added as we build them
+    'apps.listings',
+    #  apps.applications, etc. added as we build them
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -138,4 +144,11 @@ PAYSTACK_PUBLIC_KEY  = config('PAYSTACK_PUBLIC_KEY',  default='')
 ARKESEL_API_KEY      = config('ARKESEL_API_KEY',       default='')
 ARKESEL_SENDER_NAME  = config('ARKESEL_SENDER_NAME',   default='RentRightGH')
 CLOUDINARY_URL       = config('CLOUDINARY_URL',        default='')
+
+cloudinary.config(
+    cloud_name = config('CLOUDINARY_CLOUD_NAME'),
+    api_key =    config('CLOUDINARY_API_KEY'),
+    api_secret = config('CLOUDINARY_API_SECRET'),
+    secure = True,
+)
 

@@ -5,8 +5,7 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 
-# Role constants
-
+# Roles
 class Role(models.TextChoices):
     TENANT          = 'tenant',           _('Tenant')
     LANDLORD        = 'landlord',         _('Landlord')
@@ -14,9 +13,9 @@ class Role(models.TextChoices):
     ADMIN           = 'admin',            _('System Admin')
 
 
-# ─── Organisation ─────────────────────────────────────────────────────────────
+# ─── Organisation 
 # Optional FK from UserProfile — not used in MVP, but avoids a painful
-# migration if/when we add multi-tenant support for property management firms.
+# migration if/when multi-tenant support for property management firms is added
 
 class Organisation(models.Model):
     id                  = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

@@ -1,0 +1,32 @@
+{#
+  Reusable form field with label, input, hint, and error.
+  Usage: {% include "listings/_form_field.html" with field=form.title label="Title" hint="optional hint" %}
+#}
+<div style="margin-bottom:16px;">
+  <label for="{{ field.id_for_label }}"
+         style="display:block; font-size:0.8125rem; font-weight:600; color:#374151; margin-bottom:6px;">
+    {{ label|default:field.label }}
+    {% if field.field.required %}
+      <span style="color:#C4622D;">*</span>
+    {% endif %}
+  </label>
+
+  {{ field }}
+
+  {% if hint %}
+    <p style="font-size:0.75rem; color:#9CA3AF; margin:4px 0 0;">{{ hint }}</p>
+  {% elif field.help_text %}
+    <p style="font-size:0.75rem; color:#9CA3AF; margin:4px 0 0;">{{ field.help_text }}</p>
+  {% endif %}
+
+  {% if field.errors %}
+    {% for error in field.errors %}
+      <p style="color:#DC2626; font-size:0.8rem; margin:4px 0 0; display:flex; align-items:center; gap:4px;">
+        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        {{ error }}
+      </p>
+    {% endfor %}
+  {% endif %}
+</div>

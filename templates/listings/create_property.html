@@ -1,0 +1,266 @@
+{% extends "accounts/dashboard_base.html" %}
+{% load humanize %}
+
+{% block title %}Add Property — RentRight GH{% endblock %}
+
+{% block content %}
+
+<div style="max-width:760px; margin:0 auto;">
+
+  {# ── Header ──────────────────────────────────────────────────── #}
+  <div style="margin-bottom:28px;">
+    <a href="{% url 'listings:my_listings' %}"
+       style="display:inline-flex; align-items:center; gap:6px; color:#6B7280; font-size:0.875rem; text-decoration:none; margin-bottom:12px;">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      Back to my listings
+    </a>
+    <h1 style="font-family:'Playfair Display',Georgia,serif; font-size:1.75rem; font-weight:700; color:#1C3829; margin:0 0 8px;">
+      Add a Property
+    </h1>
+    <p style="color:#6B7280; margin:0; font-size:0.9375rem;">
+      All listings are automatically Act 220 compliant. Move-in advance is capped at 6 months.
+    </p>
+  </div>
+
+  <form method="post" enctype="multipart/form-data" id="listing-form" novalidate>
+    {% csrf_token %}
+    {{ photo_formset.management_form }}
+
+    {# ─── Section 1: Basic Info ────────────────────────────────── #}
+    <div style="background:white; border:1px solid #E5E0D8; border-radius:14px; padding:24px; margin-bottom:20px;">
+      <h2 style="font-size:0.875rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#374151; margin:0 0 20px; padding-bottom:12px; border-bottom:1px solid #F0EBE3;">
+        Basic Information
+      </h2>
+
+      {% include "listings/_form_field.html" with field=form.title label="Property Title" hint="e.g. Spacious 2-Bedroom Apartment in East Legon" %}
+      {% include "listings/_form_field.html" with field=form.property_type label="Property Type" %}
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+        {% include "listings/_form_field.html" with field=form.bedrooms label="Bedrooms" %}
+        {% include "listings/_form_field.html" with field=form.bathrooms label="Bathrooms" %}
+      </div>
+
+      {% include "listings/_form_field.html" with field=form.furnishing_status label="Furnishing" %}
+      {% include "listings/_form_field.html" with field=form.available_from label="Available From" %}
+      {% include "listings/_form_field.html" with field=form.description label="Description" hint="Describe the property, neighbourhood, and any important details." %}
+    </div>
+
+    {# ─── Section 2: Location ──────────────────────────────────── #}
+    <div style="background:white; border:1px solid #E5E0D8; border-radius:14px; padding:24px; margin-bottom:20px;">
+      <h2 style="font-size:0.875rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#374151; margin:0 0 20px; padding-bottom:12px; border-bottom:1px solid #F0EBE3;">
+        Location
+      </h2>
+
+      {% include "listings/_form_field.html" with field=form.address label="Street Address" hint="Full address including house number and street name." %}
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+        {% include "listings/_form_field.html" with field=form.neighbourhood label="Neighbourhood" hint="e.g. East Legon, Labone, Osu" %}
+        {% include "listings/_form_field.html" with field=form.city label="City" %}
+      </div>
+
+      {% include "listings/_form_field.html" with field=form.region label="Region" %}
+
+      {# GPS coordinates — optional #}
+      <div style="background:#F7F3EC; border-radius:10px; padding:16px; margin-top:4px;">
+        <p style="font-size:0.8125rem; font-weight:600; color:#374151; margin:0 0 12px;">
+          GPS Coordinates
+          <span style="font-weight:400; color:#6B7280; font-size:0.8rem;"> — optional but recommended for map pin</span>
+        </p>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+          {% include "listings/_form_field.html" with field=form.latitude label="Latitude" hint="e.g. 5.603717" %}
+          {% include "listings/_form_field.html" with field=form.longitude label="Longitude" hint="e.g. -0.186964" %}
+        </div>
+        <p style="font-size:0.75rem; color:#9CA3AF; margin:8px 0 0;">
+          Open Google Maps, right-click your location, and copy the coordinates.
+        </p>
+      </div>
+    </div>
+
+    {# ─── Section 3: Financials — Act 220 ─────────────────────── #}
+    <div style="background:white; border:1px solid #E5E0D8; border-radius:14px; padding:24px; margin-bottom:20px;">
+      <h2 style="font-size:0.875rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#374151; margin:0 0 4px; padding-bottom:12px; border-bottom:1px solid #F0EBE3;">
+        Financials
+      </h2>
+
+      {# Act 220 callout #}
+      <div style="background:#ECFDF5; border:1px solid #A7F3D0; border-radius:8px; padding:12px 14px; margin-bottom:20px; font-size:0.8125rem; color:#065F46; line-height:1.5;">
+        <strong>✅ Act 220 — Section 25(5):</strong> Advance rent is automatically capped at 6 months.
+        If your arrangement requires more, you can set up an <strong>Instalment Plan</strong> after creating the listing.
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+        {% include "listings/_form_field.html" with field=form.monthly_rent label="Monthly Rent (GHC)" %}
+        {% include "listings/_form_field.html" with field=form.payment_cycle label="Payment Cycle" %}
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+        {# Advance months with live calculator #}
+        <div style="margin-bottom:16px;">
+          <label style="display:block; font-size:0.8125rem; font-weight:600; color:#374151; margin-bottom:6px;">
+            Advance Months
+          </label>
+          {{ form.advance_months }}
+          {% if form.advance_months.errors %}
+            <p style="color:#DC2626; font-size:0.8rem; margin:4px 0 0;">{{ form.advance_months.errors.0 }}</p>
+          {% endif %}
+          <p style="font-size:0.75rem; color:#6B7280; margin:4px 0 0;">
+            Maximum 6 months (Act 220 hard cap)
+          </p>
+        </div>
+
+        {# Live advance total calculator #}
+        <div style="margin-bottom:16px;">
+          <label style="display:block; font-size:0.8125rem; font-weight:600; color:#374151; margin-bottom:6px;">
+            Total Advance Due
+          </label>
+          <div style="background:#F7F3EC; border:1px solid #E5E0D8; border-radius:8px; padding:10px 14px; font-family:'Playfair Display',serif; font-size:1.25rem; font-weight:700; color:#1C3829;">
+            GHC <span id="advance-total">0</span>
+          </div>
+          <p style="font-size:0.75rem; color:#9CA3AF; margin:4px 0 0;">Updates as you type</p>
+        </div>
+      </div>
+
+      {% include "listings/_form_field.html" with field=form.security_deposit label="Security Deposit (GHC)" hint="Refundable deposit. Enter 0 if none." %}
+    </div>
+
+    {# ─── Section 4: Amenities ─────────────────────────────────── #}
+    <div style="background:white; border:1px solid #E5E0D8; border-radius:14px; padding:24px; margin-bottom:20px;">
+      <h2 style="font-size:0.875rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#374151; margin:0 0 16px; padding-bottom:12px; border-bottom:1px solid #F0EBE3;">
+        Amenities
+      </h2>
+      <div style="display:flex; flex-wrap:wrap; gap:10px;">
+        {% for checkbox in form.amenities %}
+        <label style="display:inline-flex; align-items:center; gap:8px; background:#F7F3EC; border:1px solid #E5E0D8;
+                      border-radius:20px; padding:8px 14px; cursor:pointer; font-size:0.875rem; color:#374151;
+                      transition:background 0.1s;"
+               onmouseover="this.style.background='#ECFDF5'; this.style.borderColor='#1C3829';"
+               onmouseout="if(!this.querySelector('input').checked){this.style.background='#F7F3EC'; this.style.borderColor='#E5E0D8';}">
+          {{ checkbox.tag }}
+          {{ checkbox.choice_label }}
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+
+    {# ─── Section 5: Photos ────────────────────────────────────── #}
+    <div style="background:white; border:1px solid #E5E0D8; border-radius:14px; padding:24px; margin-bottom:24px;">
+      <h2 style="font-size:0.875rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#374151; margin:0 0 4px; padding-bottom:12px; border-bottom:1px solid #F0EBE3;">
+        Photos
+      </h2>
+      <p style="font-size:0.8125rem; color:#6B7280; margin:0 0 16px;">Upload up to 10 photos. The first one becomes the primary listing image.</p>
+
+      {% for photo_form in photo_formset %}
+      <div style="background:#F7F3EC; border-radius:10px; padding:16px; margin-bottom:12px;">
+        <div style="display:grid; grid-template-columns:1fr auto; gap:12px; align-items:start;">
+          <div>
+            {{ photo_form.image }}
+            {% if photo_form.caption %}
+            <div style="margin-top:8px;">
+              {{ photo_form.caption }}
+            </div>
+            {% endif %}
+          </div>
+          <label style="display:flex; align-items:center; gap:6px; font-size:0.8125rem; color:#374151; white-space:nowrap; padding-top:4px;">
+            {{ photo_form.is_primary }} Primary
+          </label>
+        </div>
+        {% if photo_form.errors %}
+          <p style="color:#DC2626; font-size:0.8rem; margin:8px 0 0;">{{ photo_form.errors }}</p>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+
+    {# ─── Section 6: Video ────────────────────────────────────── #}
+    <div style="background:white; border:1px solid #E5E0D8; border-radius:14px; padding:24px; margin-bottom:20px;">
+      <h2
+        style="font-size:0.875rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#374151; margin:0 0 4px; padding-bottom:12px; border-bottom:1px solid #F0EBE3;">
+        Walkthrough Video
+      </h2>
+      <p style="font-size:0.8125rem; color:#6B7280; margin:0 0 16px;">
+        Optional. A 30–60 second walkthrough significantly increases applications. Max 150MB.
+      </p>
+      {% include "listings/_form_field.html" with field=form.video_file label="Upload Video" hint="MP4, MOV, or WebM. Max
+      150MB." %}
+    </div>
+
+    {# ─── Submit ───────────────────────────────────────────────── #}
+    <div style="display:flex; gap:12px; justify-content:flex-end;">
+      <a href="{% url 'listings:my_listings' %}"
+         style="padding:12px 24px; border:1px solid #E5E0D8; border-radius:10px; color:#374151; text-decoration:none; font-weight:600; font-size:0.9375rem;">
+        Cancel
+      </a>
+      <button type="submit"
+              style="background:#1C3829; color:white; border:none; border-radius:10px;
+                     padding:12px 28px; font-weight:700; font-size:0.9375rem; cursor:pointer;">
+        Save as Draft
+      </button>
+    </div>
+
+  </form>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Live advance total calculator
+(function() {
+  const rentInput    = document.getElementById('id_monthly_rent');
+  const monthsInput  = document.getElementById('id_advance_months');
+  const totalDisplay = document.getElementById('advance-total');
+
+  function updateTotal() {
+    const rent   = parseFloat(rentInput?.value)   || 0;
+    const months = parseInt(monthsInput?.value)   || 0;
+    const total  = rent * months;
+    if (totalDisplay) {
+      totalDisplay.textContent = total.toLocaleString('en-GH', {
+        minimumFractionDigits: 2, maximumFractionDigits: 2
+      });
+    }
+  }
+
+  rentInput?.addEventListener('input', updateTotal);
+  monthsInput?.addEventListener('input', updateTotal);
+  updateTotal(); // Run on load for pre-filled values
+})();
+</script>
+
+<style>
+  /* Form field styling */
+  #listing-form input[type="text"],
+  #listing-form input[type="number"],
+  #listing-form input[type="date"],
+  #listing-form select,
+  #listing-form textarea {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1px solid #E5E0D8;
+    border-radius: 8px;
+    font-size: 0.9375rem;
+    font-family: Inter, sans-serif;
+    color: #374151;
+    background: #FAFAF9;
+    box-sizing: border-box;
+    transition: border-color 0.15s;
+  }
+  #listing-form input:focus,
+  #listing-form select:focus,
+  #listing-form textarea:focus {
+    outline: none;
+    border-color: #1C3829;
+    background: white;
+  }
+  #listing-form input[type="checkbox"] {
+    accent-color: #1C3829;
+    width: 15px;
+    height: 15px;
+    cursor: pointer;
+  }
+  #listing-form input[type="file"] {
+    font-size: 0.8125rem;
+    color: #6B7280;
+  }
+</style>
+{% endblock %}

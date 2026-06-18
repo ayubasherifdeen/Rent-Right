@@ -1,5 +1,5 @@
 """
-Auto-create UserProfile whenever a User is saved for the first time.
+Auto-create UserProfile whenever a User is saved/created for the first time.
 This means views never need to call UserProfile.objects.create() manually —
 it just exists.
 """

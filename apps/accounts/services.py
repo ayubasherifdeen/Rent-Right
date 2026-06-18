@@ -1,5 +1,5 @@
 """
-accounts/services.py — all business logic for the accounts domain.
+All business logic for the accounts domain.
 
 Views call these functions. This keeps views thin and makes every
 critical operation independently testable.
@@ -67,8 +67,16 @@ def verify_otp(user: User, code: str, purpose: str) -> bool:
 
     return True
 
+def _unique_username(base: str) -> str:
+    """Append a number suffix until the username is unique."""
+    username = base
+    counter = 1
+    while User.objects.filter(username=username).exists():
+        username = f"{base}{counter}"
+        counter += 1
+    return username
 
-# ─── Registration ─────────────────────────────────────────────────────────────
+# Registration
 
 @transaction.atomic
 def register_user(
@@ -81,7 +89,7 @@ def register_user(
 ) -> User:
     """
     Create a User + UserProfile in one atomic block.
-    Raises ValueError on invalid role.
+    Raises ValueError if role is invalid
     Raises IntegrityError if email already exists (let the view handle it).
     """
     if role not in Role.values:
@@ -98,8 +106,8 @@ def register_user(
         first_name=first_name,
         last_name=last_name,
         phone_number=phone_number,
-        is_active=True,   # active immediately; phone verification is separate
-        is_verified=False,
+        is_active=True,
+        is_verified=False, # because phone verification otp not verified yet
     )
 
     # Signal auto-creates UserProfile; we just update the role
@@ -108,18 +116,7 @@ def register_user(
 
     return user
 
-
-def _unique_username(base: str) -> str:
-    """Append a number suffix until the username is unique."""
-    username = base
-    counter = 1
-    while User.objects.filter(username=username).exists():
-        username = f"{base}{counter}"
-        counter += 1
-    return username
-
-
-# ─── Phone Verification ───────────────────────────────────────────────────────
+# Phone Verification
 
 def send_phone_verification_otp(user: User) -> OTP:
     """
@@ -144,22 +141,21 @@ def confirm_phone_verification(user: User, code: str) -> bool:
     return success
 
 
-# ─── Password Reset ───────────────────────────────────────────────────────────
+# Password Reset 
 
 def send_password_reset_otp(phone_number):
     """
     Look up the user by email or phone. Return an OTP if found, None otherwise.
-    Deliberately does NOT reveal whether the user exists (security).
+    Deliberately does NOT reveal whether the user exists for security reasons.
     """
     user = None
     try:
         user = User.objects.get(phone_number=phone_number)
     except User.DoesNotExist:
-        return  # silent — never reveald if account exists
+        return  # silent, never reveald if account exists
 
     otp = create_otp(user, purpose='password_reset')
     # TODO: send via Arkesel — notifications app 
-    otp = create_otp(user, purpose='password_reset')
     logger.debug(f"[DEV] Password reset OTP for {phone_number}: {otp.code}") 
     return otp
 

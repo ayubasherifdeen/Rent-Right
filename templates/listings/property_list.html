@@ -1,0 +1,230 @@
+{% extends "accounts/dashboard_base.html" %}
+
+{% block title %}Browse Properties — RentRight GH{% endblock %}
+
+{% block content %}
+
+{# ── Page header ─────────────────────────────────────────────── #}
+<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:12px;">
+  <div>
+    <h1 style="font-family:'Playfair Display',Georgia,serif; font-size:1.75rem; font-weight:700; color:#1C3829; margin:0;">
+      Browse Properties
+    </h1>
+    <p style="color:#6B7280; font-size:0.875rem; margin:4px 0 0;">
+      {{ total_count }} propert{{ total_count|pluralize:"y,ies" }} available
+    </p>
+  </div>
+  {% if request.user.userprofile.role in "landlord,property_manager" %}
+  <a href="{% url 'listings:create_property' %}"
+     style="display:inline-flex; align-items:center; gap:8px; background:#1C3829; color:white;
+            padding:10px 20px; border-radius:8px; text-decoration:none; font-weight:600; font-size:0.875rem;">
+    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+    Add Property
+  </a>
+  {% endif %}
+</div>
+
+{# ── Main layout: filter sidebar + results ───────────────────── #}
+<div style="display:grid; grid-template-columns:260px 1fr; gap:24px; align-items:start;">
+
+  {# ── Filter sidebar ─────────────────────────────────────────── #}
+  <div style="background:white; border-radius:12px; border:1px solid #E5E0D8; padding:20px; position:sticky; top:24px;">
+    <h2 style="font-size:0.875rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1C3829; margin:0 0 16px;">
+      Filter
+    </h2>
+    <form method="get" id="filter-form">
+      {% for field in filter.form %}
+        {% if field.name != 'amenities' %}
+        <div style="margin-bottom:14px;">
+          <label for="{{ field.id_for_label }}"
+                 style="display:block; font-size:0.75rem; font-weight:600; color:#374151; margin-bottom:4px; text-transform:uppercase; letter-spacing:0.05em;">
+            {{ field.label }}
+          </label>
+          {{ field }}
+        </div>
+        {% endif %}
+      {% endfor %}
+
+      {# Amenities as checkboxes #}
+      {% if filter.form.amenities %}
+      <div style="margin-bottom:14px;">
+        <label style="display:block; font-size:0.75rem; font-weight:600; color:#374151; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.05em;">
+          Amenities
+        </label>
+        <div style="display:flex; flex-direction:column; gap:6px; max-height:160px; overflow-y:auto;">
+          {% for checkbox in filter.form.amenities %}
+          <label style="display:flex; align-items:center; gap:8px; font-size:0.8125rem; color:#374151; cursor:pointer;">
+            {{ checkbox.tag }}
+            {{ checkbox.choice_label }}
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <button type="submit"
+              style="width:100%; background:#1C3829; color:white; border:none; border-radius:8px;
+                     padding:10px; font-weight:600; font-size:0.875rem; cursor:pointer; margin-top:4px;">
+        Apply Filters
+      </button>
+      <a href="{% url 'listings:property_list' %}"
+         style="display:block; text-align:center; margin-top:8px; font-size:0.8125rem; color:#6B7280; text-decoration:none;">
+        Clear all
+      </a>
+    </form>
+  </div>
+
+  {# ── Right column: map + cards ──────────────────────────────── #}
+  <div>
+
+    {# ── Leaflet map ──────────────────────────────────────────── #}
+    <div style="background:white; border-radius:12px; border:1px solid #E5E0D8; overflow:hidden; margin-bottom:24px;">
+      <div id="map" style="height:320px; width:100%;"></div>
+    </div>
+
+    {# ── Property cards grid ──────────────────────────────────── #}
+    {% if properties %}
+    <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:16px;">
+      {% for property in properties %}
+      {% include "listings/_property_card.html" with property=property %}
+      {% endfor %}
+    </div>
+
+    {# ── Pagination ───────────────────────────────────────────── #}
+    {% if is_paginated %}
+    <div style="display:flex; justify-content:center; gap:8px; margin-top:32px;">
+      {% if page_obj.has_previous %}
+      <a href="?{% querystring page=page_obj.previous_page_number %}"
+         style="padding:8px 16px; border:1px solid #E5E0D8; border-radius:8px; text-decoration:none; color:#1C3829; font-weight:600; font-size:0.875rem;">
+        ← Prev
+      </a>
+      {% endif %}
+      <span style="padding:8px 16px; background:#1C3829; color:white; border-radius:8px; font-weight:600; font-size:0.875rem;">
+        {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+      </span>
+      {% if page_obj.has_next %}
+      <a href="?{% querystring page=page_obj.next_page_number %}"
+         style="padding:8px 16px; border:1px solid #E5E0D8; border-radius:8px; text-decoration:none; color:#1C3829; font-weight:600; font-size:0.875rem;">
+        Next →
+      </a>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div style="text-align:center; padding:64px 24px; background:white; border-radius:12px; border:1px solid #E5E0D8;">
+      <svg width="48" height="48" fill="none" stroke="#9CA3AF" stroke-width="1.5" viewBox="0 0 24 24" style="margin:0 auto 16px; display:block;">
+        <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+        <polyline points="9,22 9,12 15,12 15,22"/>
+      </svg>
+      <p style="font-size:1rem; font-weight:600; color:#374151; margin:0 0 8px;">No properties found</p>
+      <p style="font-size:0.875rem; color:#6B7280; margin:0 0 16px;">Try adjusting your filters.</p>
+      <a href="{% url 'listings:property_list' %}"
+         style="display:inline-block; background:#1C3829; color:white; padding:10px 24px; border-radius:8px; text-decoration:none; font-weight:600; font-size:0.875rem;">
+        Clear Filters
+      </a>
+    </div>
+    {% endif %}
+
+  </div>{# end right column #}
+</div>{# end grid #}
+
+{% endblock %}
+
+
+{% block extra_js %}
+{# Leaflet CSS + JS #}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+(function() {
+  // ── Initialise map centred on Accra ─────────────────────────
+  const map = L.map('map').setView([5.6037, -0.1870], 12);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a>',
+    maxZoom: 18,
+  }).addTo(map);
+
+  // ── Custom pin icons ─────────────────────────────────────────
+  function makeIcon(color) {
+    return L.divIcon({
+      html: `<svg width="24" height="32" viewBox="0 0 24 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+               <path d="M12 0C5.373 0 0 5.373 0 12c0 9 12 20 12 20S24 21 24 12C24 5.373 18.627 0 12 0z" fill="${color}"/>
+               <circle cx="12" cy="12" r="5" fill="white"/>
+             </svg>`,
+      className: '',
+      iconSize: [24, 32],
+      iconAnchor: [12, 32],
+      popupAnchor: [0, -32],
+    });
+  }
+
+  const iconAvailable = makeIcon('#1C3829');  // forest green
+  const iconRented    = makeIcon('#9CA3AF');  // grey
+
+  // ── Fetch all property coordinates from JSON endpoint ────────
+  fetch("{% url 'listings:map_data' %}")
+    .then(r => r.json())
+    .then(data => {
+      data.properties.forEach(p => {
+        const icon   = p.status === 'active' ? iconAvailable : iconRented;
+        const badge  = p.status === 'active'
+          ? '<span style="color:#1C3829;font-weight:600;">✅ Act 220 Compliant</span>'
+          : '<span style="color:#9CA3AF;">Currently Rented</span>';
+
+        const popup = `
+          <div style="font-family:Inter,sans-serif; min-width:200px;">
+            <p style="font-weight:700; margin:0 0 4px; color:#1C3829;">${p.title}</p>
+            <p style="font-size:0.8125rem; color:#6B7280; margin:0 0 8px;">${p.address}</p>
+            <p style="font-size:0.875rem; margin:0 0 4px;">
+              <strong>GHC ${p.monthly_rent.toLocaleString()}/mo</strong>
+              · ${p.bedrooms} bed · ${p.property_type.replace('_',' ')}
+            </p>
+            <p style="font-size:0.8125rem; margin:0 0 10px;">${badge}</p>
+            ${p.status === 'active' ? `<a href="${p.url}" style="display:block; background:#1C3829; color:white; text-align:center; padding:6px 12px; border-radius:6px; text-decoration:none; font-size:0.8125rem; font-weight:600;">View Listing →</a>` : ''}
+          </div>`;
+
+        L.marker([p.lat, p.lng], { icon }).addTo(map).bindPopup(popup);
+      });
+    })
+    .catch(err => console.error('Map data fetch failed:', err));
+
+  // ── Auto-submit filters on change ───────────────────────────
+  document.querySelectorAll('#filter-form select, #filter-form input[type="checkbox"]')
+    .forEach(el => el.addEventListener('change', () => document.getElementById('filter-form').submit()));
+})();
+</script>
+
+<style>
+  /* Style the filter form fields consistently */
+  #filter-form select,
+  #filter-form input[type="text"],
+  #filter-form input[type="number"] {
+    width: 100%;
+    padding: 7px 10px;
+    border: 1px solid #E5E0D8;
+    border-radius: 6px;
+    font-size: 0.8125rem;
+    font-family: Inter, sans-serif;
+    background: #FAFAF9;
+    color: #374151;
+    box-sizing: border-box;
+  }
+  #filter-form input[type="checkbox"] {
+    accent-color: #1C3829;
+    width: 15px;
+    height: 15px;
+  }
+  /* Responsive: stack on mobile */
+  @media (max-width: 768px) {
+    div[style*="grid-template-columns:260px"] {
+      grid-template-columns: 1fr !important;
+    }
+    div[style*="position:sticky"] {
+      position: static !important;
+    }
+  }
+</style>
+{% endblock %}

@@ -18,9 +18,9 @@ urlpatterns = [
     # Redirect bare root to login
     path('', RedirectView.as_view(url='/accounts/login/', permanent=False)),
 
-    # Apps — uncomment each as it's built
+    # Apps
     path('accounts/', include('apps.accounts.urls', namespace='accounts')),
-    # path('listings/',     include('apps.listings.urls',     namespace='listings')),
+    path('listings/',     include('apps.listings.urls',     namespace='listings')),
     # path('applications/', include('apps.applications.urls', namespace='applications')),
     # path('tenancies/',    include('apps.tenancies.urls',    namespace='tenancies')),
     # path('negotiations/', include('apps.negotiations.urls', namespace='negotiations')),
