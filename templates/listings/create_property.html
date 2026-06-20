@@ -3,7 +3,7 @@
 
 {% block title %}Add Property — RentRight GH{% endblock %}
 
-{% block content %}
+{% block dashboard_content %}
 
 <div style="max-width:760px; margin:0 auto;">
 
@@ -42,6 +42,33 @@
 
       {% include "listings/_form_field.html" with field=form.furnishing_status label="Furnishing" %}
       {% include "listings/_form_field.html" with field=form.available_from label="Available From" %}
+
+      {# ── Lease term: dropdown + custom reveal ──────────────────── #}
+      <div style="margin-bottom:16px;">
+        <label style="display:block; font-size:0.8125rem; font-weight:600; color:#374151; margin-bottom:6px;">
+          Lease Term <span style="color:#C4622D;">*</span>
+        </label>
+
+        {{ form.lease_term_preset }}
+
+        {# Hidden custom input — revealed by JS when "Other" is selected #}
+        <div id="custom-lease-wrap" style="display:none; margin-top:10px;">
+          <label style="display:block; font-size:0.8125rem; font-weight:600; color:#374151; margin-bottom:6px;">
+            Custom duration (months)
+          </label>
+          {{ form.lease_term_months_custom }}
+          {% if form.lease_term_months_custom.errors %}
+            <p style="color:#DC2626; font-size:0.8rem; margin:4px 0 0;">{{ form.lease_term_months_custom.errors.0 }}</p>
+          {% endif %}
+        </div>
+
+        {% if form.lease_term_preset.errors %}
+          <p style="color:#DC2626; font-size:0.8rem; margin:4px 0 0;">{{ form.lease_term_preset.errors.0 }}</p>
+        {% endif %}
+        <p style="font-size:0.75rem; color:#9CA3AF; margin:4px 0 0;">
+          Total duration of the tenancy. Drives the rent card and payment schedule.
+        </p>
+      </div>
       {% include "listings/_form_field.html" with field=form.description label="Description" hint="Describe the property, neighbourhood, and any important details." %}
     </div>
 
@@ -171,19 +198,6 @@
       {% endfor %}
     </div>
 
-    {# ─── Section 6: Video ────────────────────────────────────── #}
-    <div style="background:white; border:1px solid #E5E0D8; border-radius:14px; padding:24px; margin-bottom:20px;">
-      <h2
-        style="font-size:0.875rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#374151; margin:0 0 4px; padding-bottom:12px; border-bottom:1px solid #F0EBE3;">
-        Walkthrough Video
-      </h2>
-      <p style="font-size:0.8125rem; color:#6B7280; margin:0 0 16px;">
-        Optional. A 30–60 second walkthrough significantly increases applications. Max 150MB.
-      </p>
-      {% include "listings/_form_field.html" with field=form.video_file label="Upload Video" hint="MP4, MOV, or WebM. Max
-      150MB." %}
-    </div>
-
     {# ─── Submit ───────────────────────────────────────────────── #}
     <div style="display:flex; gap:12px; justify-content:flex-end;">
       <a href="{% url 'listings:my_listings' %}"
@@ -204,6 +218,28 @@
 
 {% block extra_js %}
 <script>
+// Lease term: show/hide custom input
+(function() {
+  const preset = document.getElementById('id_lease_term_preset');
+  const wrap   = document.getElementById('custom-lease-wrap');
+  const custom = document.getElementById('id_lease_term_months_custom');
+
+  function toggle() {
+    // The sentinel value '0' means "Other — enter below"
+    if (preset && preset.value === '0') {
+      wrap.style.display  = 'block';
+      custom.required     = true;
+    } else {
+      wrap.style.display  = 'none';
+      custom.required     = false;
+      if (custom) custom.value = '';
+    }
+  }
+
+  preset?.addEventListener('change', toggle);
+  toggle(); // run on load to handle back-button / validation re-render
+})();
+
 // Live advance total calculator
 (function() {
   const rentInput    = document.getElementById('id_monthly_rent');

@@ -2,6 +2,7 @@ import json
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+import logging
 from django.http import JsonResponse
 from django.views.generic import ListView, DetailView
 from django.db.models import F
@@ -98,10 +99,6 @@ class PropertyDetailView(DetailView):
         return context
 
 
-# ─────────────────────────────────────────────
-# CREATE VIEW — FBV
-# ─────────────────────────────────────────────
-
 @login_required
 def create_property(request):
     """
@@ -121,8 +118,10 @@ def create_property(request):
     # Redirect non-landlords / non-managers
     if not (request.user.is_authenticated and hasattr(request.user, 'userprofile')):
         return redirect('accounts:login')
-    role = request.user.userprofile.role
+    role = request.user.role
     if role not in ('landlord', 'property_manager'):
+        logger = logging.getLogger(__name__)
+        logger.warning("create_property access denied for user=%s role=%s", getattr(request.user, 'email', None), role)
         messages.error(request, "Only landlords and property managers can create listings.")
         return redirect('accounts:dashboard')
 
@@ -243,3 +242,5 @@ def map_data(request):
     ]
 
     return JsonResponse({'properties': features})
+
+  

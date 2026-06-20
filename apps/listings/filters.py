@@ -5,18 +5,8 @@ from .models import Property, Amenity, PropertyType, FurnishingStatus
 
 class PropertyFilter(django_filters.FilterSet):
     """
-    django-filter is the cleanest way to handle multi-field search in Django.
-
-    Instead of writing: ?type=apartment&min_rent=500&max_rent=2000&bedrooms=2
-    and manually parsing each query param in the view, we declare a FilterSet.
-    The library builds the queryset automatically.
-
-    CONVENTION:
-    - `field_name` = the model field to filter on
-    - `lookup_expr` = how to compare ('gte' = ≥, 'lte' = ≤, 'icontains' = case-insensitive contains)
-    - `label` = what the user sees in the form / API docs
+    django-filter lib to for multifiled search.
     """
-
     property_type = django_filters.ChoiceFilter(
         choices=PropertyType.choices,
         empty_label='Any type',

@@ -7,7 +7,12 @@ from django.conf import settings
 
 
 ACT_220_MAX_ADVANCE_MONTHS = 6  # Section 25(5) — hard ceiling, never bypass
-
+LEASE_TERM_CHOICES = [
+    (6, '6 months'),
+    (12,'1 year(12 months)'),
+    (24, '2 years(24 months)'),
+    (0, 'other -  enter below'),
+]
 
 
 # CHOICES
@@ -176,6 +181,12 @@ class Property(models.Model):
         validators=[MinValueValidator(0)],
         help_text="Refundable security deposit in GHC. 0 if none."
     )
+    lease_term_months =models.PositiveSmallIntegerField(
+        default = 12,
+        validators=[MinValueValidator(0)],
+        help_text="Total duration of tenancy in months. "
+    
+    )
     video_url = models.URLField(
         blank=True,
         help_text="Cloudinary video URL — set automatically on upload, don't edit manually."
@@ -235,13 +246,20 @@ class Property(models.Model):
                 f"You entered {self.advance_months} months."
             )
 
-        if self.latitude and self.longitude:
+        if self.latitude and self.longtitude:
             # Ghana bounding box — rough sanity check on coordinates
             if not (-3.5 <= float(self.latitude) <= 11.5):
                 errors['latitude'] = "Latitude must be within Ghana (roughly -3.5° to 11.5°)."
             if not (-3.5 <= float(self.longitude) <= 1.5):
                 errors['longitude'] = "Longitude must be within Ghana (roughly -3.5° to 1.5°)."
 
+        if self.advance_months and self.lease_term_months:
+            if self.advance_months > self.lease_term_months:
+                errors['advance_months'] = (
+                    f"Advance months ({self.advance_months}) cannot exceed "
+                    f"the total lease term of ({self.lease_term_months}). "
+                    f"A tenant cannot paymore upfront than the full tenancy is worth"
+                )
         if errors:
             raise ValidationError(errors)
 
@@ -267,7 +285,34 @@ class Property(models.Model):
     def act_220_compliant(self):
         """Always True for listings in the system — clean() guarantees it."""
         return self.advance_months <= ACT_220_MAX_ADVANCE_MONTHS
+    
+    @property
+    def total_rent(self):
+        """Total rent obligation over the full lease term in GHC"""
+        return self.monthly_rent * self.lease_term_months
+    
+    @property
+    def lease_term_years(self):
+        "Convert lease month terms to years"
+        if self.lease_term_months % 12 == 0:
+            years =self.lease_term_months // 12
+            return f"{years} year{'s' if years > 1 else ''}"
+        return f"{self.lease_term_months} months"
 
+    @property
+    def payment_count(self):
+        """
+        How many payment rows the rent card will have.
+        Used by the rent card generator to know how many rows to create.
+        """
+        cycle_map = {
+            'monthly':   1,
+            'quarterly': 3,
+            'biannual':  6,
+            'annual':    12,
+        }
+        divisor = cycle_map.get(self.payment_cycle, 12)
+        return self.lease_term_months // divisor
 
 
 # PROPERTY PHOTO

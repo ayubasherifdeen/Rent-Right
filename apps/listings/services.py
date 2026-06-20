@@ -10,30 +10,21 @@ logger = logging.getLogger(__name__)
 def create_listing(landlord, form_data, photo_formset=None):
     """
     Create a property listing with photos in a single atomic transaction.
-
-    PATTERN: Everything in services.py, nothing in views.py.
-    The view's job is: validate forms → call this → redirect.
     This function's job is: persist the data correctly.
-
-    Why atomic?
-    If the property saves but the photos fail, we'd have a listing with no photos.
-    atomic() wraps both operations — either both succeed or neither do.
-
     Args:
         landlord:      User instance (role: landlord or property_manager)
         form_data:     cleaned_data dict from PropertyForm
         photo_formset: validated PropertyPhotoFormSet or None
-
-    Returns:
-        Property instance
-
-    Raises:
-        ValidationError if business rules are violated
-        IntegrityError if DB constraints are violated (bubbles up)
     """
     with transaction.atomic():
         # Pull amenities out before saving (ManyToMany can't be set until PK exists)
         amenities = form_data.pop('amenities', [])
+
+        # Extract and remove non-model/UI-only keys that appear in form.cleaned_data
+        # (these would cause unexpected keyword arg errors on Property())
+        video_file = form_data.pop('video_file', None)
+        form_data.pop('lease_term_preset', None)
+        form_data.pop('lease_term_months_custom', None)
 
         property_obj = Property(landlord=landlord, **form_data)
         property_obj.full_clean()   # triggers model-level clean() — belt and suspenders
@@ -41,12 +32,15 @@ def create_listing(landlord, form_data, photo_formset=None):
 
         # Set amenities now that the object has a PK
         property_obj.amenities.set(amenities)
+
         # Handle video upload if provided
-        video_file = form_data.pop('video_file', None)
         if video_file:
-            url = upload_property_video(video_file, property_obj.pk)
-            property_obj.video_url = url
-            property_obj.save(update_fields=['video_url'])
+            try:
+                url = upload_property_video(video_file, property_obj.pk)
+                property_obj.video_url = url
+                property_obj.save(update_fields=['video_url'])
+            except Exception:
+                logger.exception("Failed to upload property video")
 
         # Handle photos
         if photo_formset:
@@ -93,7 +87,7 @@ def update_listing(property_obj, form_data, photo_formset=None):
 
 
 def publish_listing(property_obj):
-    """Move a listing from DRAFT → ACTIVE. Simple state transition."""
+    """Move a listing from DRAFT to ACTIVE"""
     if property_obj.status != ListingStatus.DRAFT:
         raise ValueError(f"Cannot publish a listing with status '{property_obj.status}'.")
     property_obj.status = ListingStatus.ACTIVE

@@ -113,21 +113,6 @@
     </div>
     {% endif %}
 
-    {% if property.video_url %}
-    <div style="background:white; border:1px solid #E5E0D8; border-radius:12px; overflow:hidden; margin-bottom:20px;">
-      <div style="padding:16px 20px 0;">
-        <h2
-          style="font-size:0.875rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#374151; margin:0 0 12px;">
-          Property Walkthrough
-        </h2>
-      </div>
-      <video controls style="width:100%; display:block; max-height:400px; background:#000;">
-        <source src="{{ property.video_url }}" type="video/mp4">
-        Your browser doesn't support video playback.
-      </video>
-    </div>
-    {% endif %}
-
     {# ── Amenities ─────────────────────────────────────────────── #}
     {% if amenities %}
     <div style="background:white; border:1px solid #E5E0D8; border-radius:12px; padding:20px; margin-bottom:20px;">
@@ -168,6 +153,18 @@
         GHC {{ property.monthly_rent|intcomma }}
       </p>
       <p style="font-size:0.875rem; color:#6B7280; margin:0 0 20px;">per month</p>
+
+      <div style="height:1px; background:#F0EBE3; margin-bottom:20px;"></div>
+
+      {# Lease term #}
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <span style="font-size:0.875rem; color:#6B7280;">Lease term</span>
+        <span style="font-size:0.9375rem; font-weight:700; color:#1C3829;">{{ property.lease_term_years }}</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <span style="font-size:0.875rem; color:#6B7280;">Total rent obligation</span>
+        <span style="font-size:0.875rem; font-weight:700; color:#374151;">GHC {{ property.total_rent|intcomma }}</span>
+      </div>
 
       <div style="height:1px; background:#F0EBE3; margin-bottom:20px;"></div>
 

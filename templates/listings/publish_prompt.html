@@ -34,6 +34,10 @@
         <span style="font-size:0.875rem; font-weight:600; color:#374151;">{{ property.city }}</span>
       </div>
       <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid #E5E0D8;">
+        <span style="font-size:0.875rem; color:#6B7280;">Lease term</span>
+        <span style="font-size:0.875rem; font-weight:700; color:#374151;">{{ property.lease_term_years }}</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid #E5E0D8;">
         <span style="font-size:0.875rem; color:#6B7280;">Monthly rent</span>
         <span style="font-size:0.875rem; font-weight:700; color:#1C3829;">GHC {{ property.monthly_rent|intcomma }}</span>
       </div>

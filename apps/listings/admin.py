@@ -49,6 +49,10 @@ class PropertyAdmin(admin.ModelAdmin):
         ('Location', {
             'fields': ('address', 'neighbourhood', 'city', 'region', 'latitude', 'longitude')
         }),
+        ('Lease Term', {
+            'fields': ('lease_term_months',),
+            'description': 'Total tenancy duration. Drives rent card, addendum, and tenancy end date.'
+        }),
         ('Financials — Act 220', {
             'fields': (
                 'monthly_rent', 'payment_cycle', 'advance_months',
@@ -63,7 +67,7 @@ class PropertyAdmin(admin.ModelAdmin):
             'fields': ('amenities',)
         }),
         ('Metadata', {
-            'fields': ('available_from', 'created_at', 'updated_at', 'views_count'),
+            'fields': ('available_from', 'created_at', 'updated_at', 'views_count', 'video_url'),
             'classes': ('collapse',)
         }),
     )

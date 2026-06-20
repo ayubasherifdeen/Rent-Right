@@ -1,6 +1,6 @@
 from django import forms
 from django.core.exceptions import ValidationError
-from .models import Property, PropertyPhoto, Amenity, ACT_220_MAX_ADVANCE_MONTHS
+from .models import Property, PropertyPhoto, Amenity, ACT_220_MAX_ADVANCE_MONTHS, LEASE_TERM_CHOICES
 
 
 class PropertyForm(forms.ModelForm):
@@ -40,6 +40,24 @@ class PropertyForm(forms.ModelForm):
             'placeholder': '6',
         })
     )
+    lease_term_preset = forms.ChoiceField(
+        choices = [('','Select release term...')] + LEASE_TERM_CHOICES,
+        required=True,
+        label='Lease Term',
+        widget=forms.Select(attrs={'id':'id_lease_term_preset'}),
+    )
+    lease_term_months_custom = forms.IntegerField(
+        required=False,
+        min_value=1,
+        max_value=240,   # 20 years — generous upper bound
+        label='Custom lease term (months)',
+        widget=forms.NumberInput(attrs={
+            'placeholder': 'e.g. 18',
+            'id': 'id_lease_term_months_custom',
+            'style': 'display:none;',   # hidden by default; JS reveals it
+        }),
+        help_text='Enter the number of months if not in the list above.',
+    )
     video_file = forms.FileField(
         required=False,
         help_text="Optional walkthrough video. Max 150MB. MP4, MOV, or WebM.",
@@ -54,7 +72,7 @@ class PropertyForm(forms.ModelForm):
             'title', 'description', 'property_type', 'furnishing_status',
             'bedrooms', 'bathrooms',
             'address', 'neighbourhood', 'city', 'region', 'latitude', 'longitude',
-            'monthly_rent', 'payment_cycle', 'advance_months', 'security_deposit',
+            'monthly_rent', 'payment_cycle', 'advance_months', 'security_deposit','lease_term_months',
             'amenities', 'available_from',
         ]
         widgets = {
@@ -69,6 +87,54 @@ class PropertyForm(forms.ModelForm):
             'security_deposit': 'Security Deposit (GHC)',
             'available_from': 'Available From',
         }
+
+    def clean(self):
+        """
+        Cross-field validation + lease term resolution.
+ 
+        Two jobs happen here:
+ 
+        JOB 1 — Resolve lease_term_months from the two UI fields:
+          - If landlord picked a preset (6/12/24/36/48): use that value directly.
+          - If landlord picked "Other" (sentinel 0): read lease_term_months_custom.
+          - Write the resolved integer into cleaned_data['lease_term_months']
+            so the ModelForm saves it to the DB.
+ 
+        JOB 2 — Cross-field GPS check (carried over from before):
+          - Both lat and lng must be provided together, or neither.
+ 
+        Note: advance vs lease_term cross-check lives in the model's clean().
+        Keeping it there means it's enforced everywhere (admin, API, tests)
+        not just in this form.
+        """
+        cleaned_data = super().clean()
+ 
+        preset = cleaned_data.get('lease_term_preset')
+        custom = cleaned_data.get('lease_term_months_custom')
+ 
+        if preset is not None:
+            preset = int(preset)
+            if preset == 0:
+                # "Other" selected — require the custom input
+                if not custom:
+                    self.add_error(
+                        'lease_term_months_custom',
+                        'Please enter the lease term in months.'
+                    )
+                else:
+                    cleaned_data['lease_term_months'] = custom
+            else:
+                cleaned_data['lease_term_months'] = preset
+ 
+        # GPS must be both or neither
+        latitude  = cleaned_data.get('latitude')
+        longitude = cleaned_data.get('longitude')
+        if (latitude is None) != (longitude is None):
+            raise forms.ValidationError(
+                "Please provide both latitude and longitude, or neither."
+            )
+ 
+        return cleaned_data
 
     def clean_advance_months(self):
         """
@@ -91,23 +157,6 @@ class PropertyForm(forms.ModelForm):
             )
 
         return advance_months
-
-    def clean(self):
-        """
-        Cross-field validation — runs after all individual field clean() methods.
-        Used when one field's validity depends on another.
-        """
-        cleaned_data = super().clean()
-        latitude  = cleaned_data.get('latitude')
-        longitude = cleaned_data.get('longitude')
-
-        # If one GPS coordinate is given, both must be given
-        if (latitude is None) != (longitude is None):
-            raise ValidationError(
-                "Please provide both latitude and longitude, or neither."
-            )
-
-        return cleaned_data
 
 
 class PropertyPhotoForm(forms.ModelForm):
