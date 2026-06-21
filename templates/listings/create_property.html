@@ -141,7 +141,7 @@
             Total Advance Due
           </label>
           <div style="background:#F7F3EC; border:1px solid #E5E0D8; border-radius:8px; padding:10px 14px; font-family:'Playfair Display',serif; font-size:1.25rem; font-weight:700; color:#1C3829;">
-            GHC <span id="advance-total">0</span>
+            GHC <span id="advance_total">0</span>
           </div>
           <p style="font-size:0.75rem; color:#9CA3AF; margin:4px 0 0;">Updates as you type</p>
         </div>
@@ -175,6 +175,7 @@
         Photos
       </h2>
       <p style="font-size:0.8125rem; color:#6B7280; margin:0 0 16px;">Upload up to 10 photos. The first one becomes the primary listing image.</p>
+      <p style="font-size:0.8125rem; color:#6B7280; margin:0 0 16px;">The first photo will be used as the primary listing image if not selected manually</p>
 
       {% for photo_form in photo_formset %}
       <div style="background:#F7F3EC; border-radius:10px; padding:16px; margin-bottom:12px;">
@@ -190,13 +191,20 @@
           <label style="display:flex; align-items:center; gap:6px; font-size:0.8125rem; color:#374151; white-space:nowrap; padding-top:4px;">
             {{ photo_form.is_primary }} Primary
           </label>
+           
         </div>
         {% if photo_form.errors %}
           <p style="color:#DC2626; font-size:0.8rem; margin:8px 0 0;">{{ photo_form.errors }}</p>
         {% endif %}
       </div>
       {% endfor %}
+       {{ form.video_file.label_tag }}
+    {{ form.video_file }}
+    {% if form.video_file.errors %}
+      <p style="color:#DC2626; font-size:0.8rem; margin:4px 0 0;">{{ form.video_file.errors.0 }}</p>
+    {% endif %}
     </div>
+   
 
     {# ─── Submit ───────────────────────────────────────────────── #}
     <div style="display:flex; gap:12px; justify-content:flex-end;">
@@ -244,7 +252,7 @@
 (function() {
   const rentInput    = document.getElementById('id_monthly_rent');
   const monthsInput  = document.getElementById('id_advance_months');
-  const totalDisplay = document.getElementById('advance-total');
+  const totalDisplay = document.getElementById('advance_total');
 
   function updateTotal() {
     const rent   = parseFloat(rentInput?.value)   || 0;
@@ -260,6 +268,24 @@
   rentInput?.addEventListener('input', updateTotal);
   monthsInput?.addEventListener('input', updateTotal);
   updateTotal(); // Run on load for pre-filled values
+})();
+
+<!--Video File size Validation-->
+(function() {
+  const videoInput = document.querySelector('input[name="video_file"]');
+  if (videoInput) {
+    videoInput.addEventListener('change', function() {
+      const file = this.files[0];
+      if (!file) return;
+      
+      const MAX_SIZE = 150 * 1024 * 1024;  // 150MB
+      if (file.size > MAX_SIZE) {
+        const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+        alert(`Video file is ${sizeMB}MB. Maximum size is 150MB.`);
+        this.value = '';  // Clear input
+      }
+    });
+  }
 })();
 </script>
 

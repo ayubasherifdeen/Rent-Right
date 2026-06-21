@@ -9,8 +9,9 @@ from django.conf import settings
 ACT_220_MAX_ADVANCE_MONTHS = 6  # Section 25(5) — hard ceiling, never bypass
 LEASE_TERM_CHOICES = [
     (6, '6 months'),
-    (12,'1 year(12 months)'),
-    (24, '2 years(24 months)'),
+    (12,'1 year (12 months)'),
+    (24, '2 years (24 months)'),
+    (36, '3 years (36 months)'),
     (0, 'other -  enter below'),
 ]
 
@@ -48,15 +49,31 @@ class PaymentCycle(models.TextChoices):
     ANNUAL    = 'annual',    'Annual'
 
 
+class Regions(models.TextChoices):
+    GREATER_ACCRA = 'Greater Accra', 'Greater Accra'
+    ASHANTI       = 'Ashanti',       'Ashanti'
+    WESTERN       = 'Western',       'Western'
+    EASTERN       = 'Eastern',       'Eastern'
+    CENTRAL       = 'Central',       'Central'
+    NORTHERN      = 'Northern',      'Northern'
+    UPPER_EAST    = 'Upper East',    'Upper East'
+    UPPER_WEST    = 'Upper West',    'Upper West'
+    VOLTA         = 'Volta',         'Volta'
+    SAVANNAH      = 'Savannah',      'Savannah'
+    BRONG_AHAFO   = 'Brong-Ahafo',   'Brong-Ahafo'
+    BONO_EAST     = 'Bono East',     'Bono East'
+    OTI           = 'Oti',           'Oti'
+    AHAFO = 'Ahafo',         'Ahafo'
+    WESTERN_NORTH  = 'Western North',  'Western North'
+    NORTH_EAST     = 'North East',     'North East'
+
+
 
 # AMENITY
 
 class Amenity(models.Model):
     """
     A controlled vocabulary of property features.
-
-    The `icon` field stores an SVG string or a hero-icon name. Keeps the
-    template clean: {{ amenity.icon }} instead of a giant if/elif chain.
     """
     name = models.CharField(max_length=100, unique=True)
     icon = models.CharField(
@@ -97,7 +114,7 @@ class Property(models.Model):
        DecimalField works everywhere — Leaflet only needs lat/lng floats.
        We can migrate to PostGIS if radius-search performance demands it.
 
-    3. INSTALMENT FLAG
+    3. INSTALLMENT FLAG
        `has_instalment_plan` is set to True by the create_listing service
        when the landlord configures a schedule. It drives the badge shown
        to tenants ("📋 Instalment Agreement Available") and gates the
@@ -131,7 +148,7 @@ class Property(models.Model):
 
     # Size
     bedrooms  = models.PositiveSmallIntegerField(
-        default=1,
+        default=0,
         validators=[MinValueValidator(0), MaxValueValidator(20)],
         help_text="0 for studio / single room"
     )
@@ -144,7 +161,11 @@ class Property(models.Model):
     address        = models.CharField(max_length=300)
     neighbourhood  = models.CharField(max_length=100, blank=True)
     city           = models.CharField(max_length=100, default='Accra')
-    region         = models.CharField(max_length=100, default='Greater Accra')
+    region         = models.CharField(
+        max_length=100,
+        choices=Regions.choices,
+        default=Regions.GREATER_ACCRA,
+    )
     latitude  = models.DecimalField(
         max_digits=9, decimal_places=6,
         null=True, blank=True,
@@ -183,7 +204,9 @@ class Property(models.Model):
     )
     lease_term_months =models.PositiveSmallIntegerField(
         default = 12,
-        validators=[MinValueValidator(0)],
+        validators=[MinValueValidator(0),
+                    MaxValueValidator(240),
+                    ],
         help_text="Total duration of tenancy in months. "
     
     )
@@ -219,9 +242,7 @@ class Property(models.Model):
 
     def get_absolute_url(self):
         """
-        The Django convention: every model with a detail page defines this.
-        Templates use {{ property.get_absolute_url }} instead of hardcoding URLs.
-        The reverse() call means URL changes don't break templates.
+        for detailed view links. Used in templates and redirects after form submission.
         """
         return reverse('listings:property_detail', kwargs={'pk': self.pk})
 
@@ -232,10 +253,6 @@ class Property(models.Model):
         Django calls clean() automatically in:
         - Admin panel saves
         - Form validation (when using ModelForm with full_clean())
-
-        It does NOT run automatically on queryset updates like:
-          Property.objects.filter(...).update(advance_months=12)
-        That's why the form-level check is still essential.
         """
         errors = {}
 
@@ -250,7 +267,7 @@ class Property(models.Model):
             # Ghana bounding box — rough sanity check on coordinates
             if not (-3.5 <= float(self.latitude) <= 11.5):
                 errors['latitude'] = "Latitude must be within Ghana (roughly -3.5° to 11.5°)."
-            if not (-3.5 <= float(self.longitude) <= 1.5):
+            if not (-3.5 <= float(self.longtitude) <= 1.5):
                 errors['longitude'] = "Longitude must be within Ghana (roughly -3.5° to 1.5°)."
 
         if self.advance_months and self.lease_term_months:
@@ -334,10 +351,6 @@ class PropertyPhoto(models.Model):
     - The ability to delete/replace individual photos
 
     All of that is painful with an array. A join table is the clean solution.
-
-    In dev: photos go to MEDIA_ROOT/listings/<uuid>/.
-    In prod: the upload_to function routes to Cloudinary automatically
-    when DEFAULT_FILE_STORAGE is set to CloudinaryStorage.
     """
 
     property    = models.ForeignKey(Property, on_delete=models.CASCADE, related_name='photos')

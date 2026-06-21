@@ -9,12 +9,7 @@ logger = logging.getLogger(__name__)
 
 def create_listing(landlord, form_data, photo_formset=None):
     """
-    Create a property listing with photos in a single atomic transaction.
-    This function's job is: persist the data correctly.
-    Args:
-        landlord:      User instance (role: landlord or property_manager)
-        form_data:     cleaned_data dict from PropertyForm
-        photo_formset: validated PropertyPhotoFormSet or None
+    Create a property listing with photos and video in a single atomic transaction.
     """
     with transaction.atomic():
         # Pull amenities out before saving (ManyToMany can't be set until PK exists)
@@ -41,10 +36,12 @@ def create_listing(landlord, form_data, photo_formset=None):
                 property_obj.save(update_fields=['video_url'])
             except Exception:
                 logger.exception("Failed to upload property video")
+                raise ValueError("Failed to upload property video. Please try again later.")
 
         # Handle photos
         if photo_formset:
             photos = photo_formset.save(commit=False)
+            photos = [p for p in photos if p.image]
 
             # Ensure at least the first photo is marked primary
             has_primary = any(p.is_primary for p in photos)
@@ -98,20 +95,11 @@ def publish_listing(property_obj):
 
 def increment_view_count(property_obj):
     """
-    Use update() not save() — avoids race condition where two simultaneous
-    page views both read `views_count = 5`, both add 1, both write 6.
-    update() sends a single SQL: UPDATE ... SET views_count = views_count + 1
-    which the database handles atomically.
+    Use update() not save() — avoids race condition where two
+    simultaneous requests read the same views_count and overwrite each other.
     """
-    Property.objects.filter(pk=property_obj.pk).update(
-        views_count=property_obj.views_count.__class__.F('views_count') + 1
-        if False else None
-    )
-    # Simpler version using F expressions:
     from django.db.models import F
     Property.objects.filter(pk=property_obj.pk).update(views_count=F('views_count') + 1)
-
-
 
 
 def upload_property_video(video_file, property_id):

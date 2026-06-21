@@ -1,7 +1,9 @@
 from django import forms
 from django.core.exceptions import ValidationError
-from .models import Property, PropertyPhoto, Amenity, ACT_220_MAX_ADVANCE_MONTHS, LEASE_TERM_CHOICES
+from django.core.validators import FileExtensionValidator as DjangoFileExtensionValidator
+from .models import Property, PropertyPhoto, Amenity, ACT_220_MAX_ADVANCE_MONTHS, LEASE_TERM_CHOICES, Regions
 
+MAX_VIDEO_FILE_SIZE_MB = 150
 
 class PropertyForm(forms.ModelForm):
     """
@@ -13,12 +15,7 @@ class PropertyForm(forms.ModelForm):
     before anything touches the database. The model's clean() is the
     second line of defence (catches admin/API submissions).
 
-    Why is the cap enforced here AND in the model?
-    Defence in depth. Forms can be bypassed (API, admin, shell). Models
-    can be bypassed (.update() calls). Having both means there's no way
-    into the database with an illegal value short of raw SQL.
-
-    INSTALMENT PROMPT:
+    INSTALLMENT PROMPT:
     If `advance_months` > 6, instead of just erroring, the form sets
     `suggest_instalment = True` so the view can render the instalment
     schedule builder. The landlord chose > 6 months — we don't refuse,
@@ -60,11 +57,18 @@ class PropertyForm(forms.ModelForm):
     )
     video_file = forms.FileField(
         required=False,
-        help_text="Optional walkthrough video. Max 150MB. MP4, MOV, or WebM.",
+        validators=[
+            DjangoFileExtensionValidator(
+                allowed_extensions=['mp4', 'mov', 'webm', 'avi'],
+                message="Video format must be MP4, MOV, WebM, or AVI."
+            )
+        ],
+        help_text=f"Optional walkthrough video. Max {MAX_VIDEO_FILE_SIZE_MB}MB. MP4, MOV, or WebM.",
         widget=forms.FileInput(attrs={
             'accept': 'video/mp4,video/quicktime,video/webm,video/avi',
         })
     )
+   
 
     class Meta:
         model  = Property
@@ -73,7 +77,7 @@ class PropertyForm(forms.ModelForm):
             'bedrooms', 'bathrooms',
             'address', 'neighbourhood', 'city', 'region', 'latitude', 'longitude',
             'monthly_rent', 'payment_cycle', 'advance_months', 'security_deposit','lease_term_months',
-            'amenities', 'available_from',
+            'amenities', 'available_from','video_file',
         ]
         widgets = {
             'description': forms.Textarea(attrs={'rows': 4, 'placeholder': 'Describe the property...'}),
@@ -91,18 +95,6 @@ class PropertyForm(forms.ModelForm):
     def clean(self):
         """
         Cross-field validation + lease term resolution.
- 
-        Two jobs happen here:
- 
-        JOB 1 — Resolve lease_term_months from the two UI fields:
-          - If landlord picked a preset (6/12/24/36/48): use that value directly.
-          - If landlord picked "Other" (sentinel 0): read lease_term_months_custom.
-          - Write the resolved integer into cleaned_data['lease_term_months']
-            so the ModelForm saves it to the DB.
- 
-        JOB 2 — Cross-field GPS check (carried over from before):
-          - Both lat and lng must be provided together, or neither.
- 
         Note: advance vs lease_term cross-check lives in the model's clean().
         Keeping it there means it's enforced everywhere (admin, API, tests)
         not just in this form.
@@ -126,21 +118,27 @@ class PropertyForm(forms.ModelForm):
             else:
                 cleaned_data['lease_term_months'] = preset
  
-        # GPS must be both or neither
-        latitude  = cleaned_data.get('latitude')
-        longitude = cleaned_data.get('longitude')
-        if (latitude is None) != (longitude is None):
-            raise forms.ValidationError(
-                "Please provide both latitude and longitude, or neither."
-            )
- 
+            # GPS must be both or neither
+            latitude  = cleaned_data.get('latitude')
+            longitude = cleaned_data.get('longitude')
+            if (latitude is None) != (longitude is None):
+                if latitude is None and longitude is not None:
+                    self.add_error('latitude', 
+                        'Latitude is required when longitude is provided.')
+                    self.add_error('longitude', 
+                        'Both coordinates must be provided together.')
+                else:
+                    self.add_error('longitude', 
+                        'Longitude is required when latitude is provided.')
+                    self.add_error('latitude', 
+                        'Both coordinates must be provided together.')
+    
         return cleaned_data
 
     def clean_advance_months(self):
         """
         Act 220 Section 25(5) enforcement.
         This is called automatically by Django during form.is_valid().
-        The name pattern clean_<fieldname> is Django's hook for per-field validation.
         """
         advance_months = self.cleaned_data.get('advance_months')
 
@@ -163,7 +161,7 @@ class PropertyPhotoForm(forms.ModelForm):
     """Simple photo upload form. Used in formset for multi-photo upload."""
     class Meta:
         model  = PropertyPhoto
-        fields = ['image', 'caption', 'is_primary', 'display_order']
+        fields = ['image', 'caption', 'is_primary']
         widgets = {
             'caption': forms.TextInput(attrs={'placeholder': 'e.g. Living room, Master bedroom...'}),
         }
@@ -174,7 +172,7 @@ PropertyPhotoFormSet = forms.inlineformset_factory(
     parent_model=Property,
     model=PropertyPhoto,
     form=PropertyPhotoForm,
-    fields=['image', 'caption', 'is_primary', 'display_order'],
+    fields=['image', 'caption', 'is_primary'],
     extra=3,           # 3 empty upload slots shown by default
     max_num=10,        # hard cap
     can_delete=True,   # X button on each existing photo
