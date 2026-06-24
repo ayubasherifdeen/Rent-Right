@@ -3,9 +3,9 @@
 
 {% block title %}{{ property.title }} — RentRight GH{% endblock %}
 
-{% block content %}
+{% block dashboard_content %}
 
-{# ── Breadcrumb ──────────────────────────────────────────────── #}
+{#  Breadcrumb  #}
 <nav style="margin-bottom:20px; font-size:0.8125rem; color:#6B7280;">
   <a href="{% url 'listings:property_list' %}" style="color:#1C3829; text-decoration:none; font-weight:500;">Properties</a>
   <span style="margin:0 8px;">›</span>
@@ -15,9 +15,7 @@
 {# ── Two-column layout: content left, sidebar right ─────────── #}
 <div style="display:grid; grid-template-columns:1fr 340px; gap:28px; align-items:start;">
 
-  {# ════════════════════════════════════════════════
-     LEFT COLUMN
-  ════════════════════════════════════════════════ #}
+  {# LEFT COLUMN #}
   <div>
 
     {# ── Photo gallery ────────────────────────────────────────── #}
@@ -141,9 +139,7 @@
 
   </div>{# end left column #}
 
-  {# ════════════════════════════════════════════════
-     RIGHT COLUMN — Pricing sidebar
-  ════════════════════════════════════════════════ #}
+  {# RIGHT COLUMN — Pricing sidebar #}
   <div style="position:sticky; top:24px;">
 
     {# Pricing card #}

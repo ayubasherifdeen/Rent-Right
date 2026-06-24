@@ -1,5 +1,12 @@
 {% extends "accounts/dashboard_base.html" %}
 {% load humanize %}
+{% load static %}
+{% block extra_head %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+<script src="{% static 'listings/script.js' %}"></script>
+{% endblock %}
 
 {% block title %}Add Property — RentRight GH{% endblock %}
 
@@ -7,14 +14,17 @@
 
 <div style="max-width:760px; margin:0 auto;">
 
-  {# ── Header ──────────────────────────────────────────────────── #}
+  {# Header #}
   <div style="margin-bottom:28px;">
     <a href="{% url 'listings:my_listings' %}"
-       style="display:inline-flex; align-items:center; gap:6px; color:#6B7280; font-size:0.875rem; text-decoration:none; margin-bottom:12px;">
-      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      style="display:inline-flex; align-items:center; gap:6px; color:#6B7280; font-size:0.875rem; text-decoration:none; margin-bottom:12px;">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M19 12H5M12 19l-7-7 7-7" />
+      </svg>
       Back to my listings
     </a>
-    <h1 style="font-family:'Playfair Display',Georgia,serif; font-size:1.75rem; font-weight:700; color:#1C3829; margin:0 0 8px;">
+    <h1
+      style="font-family:'Playfair Display',Georgia,serif; font-size:1.75rem; font-weight:700; color:#1C3829; margin:0 0 8px;">
       Add a Property
     </h1>
     <p style="color:#6B7280; margin:0; font-size:0.9375rem;">
@@ -22,13 +32,30 @@
     </p>
   </div>
 
-  <form method="post" enctype="multipart/form-data" id="listing-form" novalidate>
+  <form method="post" enctype="multipart/form-data" id="listing-form" novalidate
+    action="{% url 'listings:create_property' %}">
     {% csrf_token %}
+    {{ form.lease_term_months }}
     {{ photo_formset.management_form }}
+    {% if form.non_field_errors %}
+      <div style="border:1px solid #FECACA; background:#FEF2F2; border-radius:10px; padding:12px; margin-bottom:16px;">
+        {% for error in form.non_field_errors %}
+          <p style="color:#B91C1C; font-size:0.875rem; margin:0 0 8px;">{{ error }}</p>
+        {% endfor %}
+      </div>
+    {% endif %}
+    {% if photo_formset.non_form_errors %}
+      <div style="border:1px solid #FECACA; background:#FEF2F2; border-radius:10px; padding:12px; margin-bottom:16px;">
+        {% for error in photo_formset.non_form_errors %}
+          <p style="color:#B91C1C; font-size:0.875rem; margin:0 0 8px;">{{ error }}</p>
+        {% endfor %}
+      </div>
+    {% endif %}
 
     {# ─── Section 1: Basic Info ────────────────────────────────── #}
     <div style="background:white; border:1px solid #E5E0D8; border-radius:14px; padding:24px; margin-bottom:20px;">
-      <h2 style="font-size:0.875rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#374151; margin:0 0 20px; padding-bottom:12px; border-bottom:1px solid #F0EBE3;">
+      <h2
+        style="font-size:0.875rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#374151; margin:0 0 20px; padding-bottom:12px; border-bottom:1px solid #F0EBE3;">
         Basic Information
       </h2>
 
@@ -58,23 +85,25 @@
           </label>
           {{ form.lease_term_months_custom }}
           {% if form.lease_term_months_custom.errors %}
-            <p style="color:#DC2626; font-size:0.8rem; margin:4px 0 0;">{{ form.lease_term_months_custom.errors.0 }}</p>
+          <p style="color:#DC2626; font-size:0.8rem; margin:4px 0 0;">{{ form.lease_term_months_custom.errors.0 }}</p>
           {% endif %}
         </div>
 
         {% if form.lease_term_preset.errors %}
-          <p style="color:#DC2626; font-size:0.8rem; margin:4px 0 0;">{{ form.lease_term_preset.errors.0 }}</p>
+        <p style="color:#DC2626; font-size:0.8rem; margin:4px 0 0;">{{ form.lease_term_preset.errors.0 }}</p>
         {% endif %}
         <p style="font-size:0.75rem; color:#9CA3AF; margin:4px 0 0;">
           Total duration of the tenancy. Drives the rent card and payment schedule.
         </p>
       </div>
-      {% include "listings/_form_field.html" with field=form.description label="Description" hint="Describe the property, neighbourhood, and any important details." %}
+      {% include "listings/_form_field.html" with field=form.description label="Description" hint="Describe the
+      property, neighbourhood, and any important details." %}
     </div>
 
     {# ─── Section 2: Location ──────────────────────────────────── #}
     <div style="background:white; border:1px solid #E5E0D8; border-radius:14px; padding:24px; margin-bottom:20px;">
-      <h2 style="font-size:0.875rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#374151; margin:0 0 20px; padding-bottom:12px; border-bottom:1px solid #F0EBE3;">
+      <h2
+        style="font-size:0.875rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#374151; margin:0 0 20px; padding-bottom:12px; border-bottom:1px solid #F0EBE3;">
         Location
       </h2>
 
@@ -105,14 +134,17 @@
 
     {# ─── Section 3: Financials — Act 220 ─────────────────────── #}
     <div style="background:white; border:1px solid #E5E0D8; border-radius:14px; padding:24px; margin-bottom:20px;">
-      <h2 style="font-size:0.875rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#374151; margin:0 0 4px; padding-bottom:12px; border-bottom:1px solid #F0EBE3;">
+      <h2
+        style="font-size:0.875rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#374151; margin:0 0 4px; padding-bottom:12px; border-bottom:1px solid #F0EBE3;">
         Financials
       </h2>
 
       {# Act 220 callout #}
-      <div style="background:#ECFDF5; border:1px solid #A7F3D0; border-radius:8px; padding:12px 14px; margin-bottom:20px; font-size:0.8125rem; color:#065F46; line-height:1.5;">
+      <div
+        style="background:#ECFDF5; border:1px solid #A7F3D0; border-radius:8px; padding:12px 14px; margin-bottom:20px; font-size:0.8125rem; color:#065F46; line-height:1.5;">
         <strong>✅ Act 220 — Section 25(5):</strong> Advance rent is automatically capped at 6 months.
-        If your arrangement requires more, you can set up an <strong>Instalment Plan</strong> after creating the listing.
+        If your arrangement requires more, you can set up an <strong>Instalment Plan</strong> after creating the
+        listing.
       </div>
 
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
@@ -128,7 +160,7 @@
           </label>
           {{ form.advance_months }}
           {% if form.advance_months.errors %}
-            <p style="color:#DC2626; font-size:0.8rem; margin:4px 0 0;">{{ form.advance_months.errors.0 }}</p>
+          <p style="color:#DC2626; font-size:0.8rem; margin:4px 0 0;">{{ form.advance_months.errors.0 }}</p>
           {% endif %}
           <p style="font-size:0.75rem; color:#6B7280; margin:4px 0 0;">
             Maximum 6 months (Act 220 hard cap)
@@ -140,7 +172,8 @@
           <label style="display:block; font-size:0.8125rem; font-weight:600; color:#374151; margin-bottom:6px;">
             Total Advance Due
           </label>
-          <div style="background:#F7F3EC; border:1px solid #E5E0D8; border-radius:8px; padding:10px 14px; font-family:'Playfair Display',serif; font-size:1.25rem; font-weight:700; color:#1C3829;">
+          <div
+            style="background:#F7F3EC; border:1px solid #E5E0D8; border-radius:8px; padding:10px 14px; font-family:'Playfair Display',serif; font-size:1.25rem; font-weight:700; color:#1C3829;">
             GHC <span id="advance_total">0</span>
           </div>
           <p style="font-size:0.75rem; color:#9CA3AF; margin:4px 0 0;">Updates as you type</p>
@@ -152,7 +185,8 @@
 
     {# ─── Section 4: Amenities ─────────────────────────────────── #}
     <div style="background:white; border:1px solid #E5E0D8; border-radius:14px; padding:24px; margin-bottom:20px;">
-      <h2 style="font-size:0.875rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#374151; margin:0 0 16px; padding-bottom:12px; border-bottom:1px solid #F0EBE3;">
+      <h2
+        style="font-size:0.875rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#374151; margin:0 0 16px; padding-bottom:12px; border-bottom:1px solid #F0EBE3;">
         Amenities
       </h2>
       <div style="display:flex; flex-wrap:wrap; gap:10px;">
@@ -160,8 +194,8 @@
         <label style="display:inline-flex; align-items:center; gap:8px; background:#F7F3EC; border:1px solid #E5E0D8;
                       border-radius:20px; padding:8px 14px; cursor:pointer; font-size:0.875rem; color:#374151;
                       transition:background 0.1s;"
-               onmouseover="this.style.background='#ECFDF5'; this.style.borderColor='#1C3829';"
-               onmouseout="if(!this.querySelector('input').checked){this.style.background='#F7F3EC'; this.style.borderColor='#E5E0D8';}">
+          onmouseover="this.style.background='#ECFDF5'; this.style.borderColor='#1C3829';"
+          onmouseout="if(!this.querySelector('input').checked){this.style.background='#F7F3EC'; this.style.borderColor='#E5E0D8';}">
           {{ checkbox.tag }}
           {{ checkbox.choice_label }}
         </label>
@@ -171,11 +205,14 @@
 
     {# ─── Section 5: Photos ────────────────────────────────────── #}
     <div style="background:white; border:1px solid #E5E0D8; border-radius:14px; padding:24px; margin-bottom:24px;">
-      <h2 style="font-size:0.875rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#374151; margin:0 0 4px; padding-bottom:12px; border-bottom:1px solid #F0EBE3;">
+      <h2
+        style="font-size:0.875rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#374151; margin:0 0 4px; padding-bottom:12px; border-bottom:1px solid #F0EBE3;">
         Photos
       </h2>
-      <p style="font-size:0.8125rem; color:#6B7280; margin:0 0 16px;">Upload up to 10 photos. The first one becomes the primary listing image.</p>
-      <p style="font-size:0.8125rem; color:#6B7280; margin:0 0 16px;">The first photo will be used as the primary listing image if not selected manually</p>
+      <p style="font-size:0.8125rem; color:#6B7280; margin:0 0 16px;">Upload up to 10 photos. The first one becomes the
+        primary listing image.</p>
+      <p style="font-size:0.8125rem; color:#6B7280; margin:0 0 16px;">The first photo will be used as the primary
+        listing image if not selected manually</p>
 
       {% for photo_form in photo_formset %}
       <div style="background:#F7F3EC; border-radius:10px; padding:16px; margin-bottom:12px;">
@@ -187,33 +224,51 @@
               {{ photo_form.caption }}
             </div>
             {% endif %}
+            <div class="photo-meta-fields">
+              {{ photo_form.is_primary.label_tag }}
+              {{ photo_form.is_primary }}
+
+              <div class="field-divider"></div>
+
+              {{ photo_form.display_order.label_tag }}
+              {{ photo_form.display_order }}
+            </div>
           </div>
-          <label style="display:flex; align-items:center; gap:6px; font-size:0.8125rem; color:#374151; white-space:nowrap; padding-top:4px;">
-            {{ photo_form.is_primary }} Primary
-          </label>
-           
+
         </div>
         {% if photo_form.errors %}
-          <p style="color:#DC2626; font-size:0.8rem; margin:8px 0 0;">{{ photo_form.errors }}</p>
+        <p style="color:#DC2626; font-size:0.8rem; margin:8px 0 0;">{{ photo_form.errors }}</p>
         {% endif %}
       </div>
       {% endfor %}
-       {{ form.video_file.label_tag }}
-    {{ form.video_file }}
-    {% if form.video_file.errors %}
-      <p style="color:#DC2626; font-size:0.8rem; margin:4px 0 0;">{{ form.video_file.errors.0 }}</p>
-    {% endif %}
+      <div style="background:#F7F3EC; border-radius:10px; padding:16px; margin-bottom:12px;">
+        <div style="display:grid; grid-template-columns:1fr auto; gap:12px; align-items:start;">
+          <div>
+            {{ form.video_file }}
+            {% if form.video_file.help_text %}
+            <p style="font-size:0.8125rem; color:#6B7280; margin:4px 0 0;">{{ form.video_file.help_text }}</p>
+            {% endif %}
+            {% if form.video_file.errors %}
+            <p style="color:#DC2626; font-size:0.8rem; margin:4px 0 0;">{{ form.video_file.errors.0 }}</p>
+            {% endif %}
+          </div>
+
+
+        </div>
+        {% if form.video_file.errors %}
+        <p style="color:#DC2626; font-size:0.8rem; margin:8px 0 0;">{{ form.video_file.errors }}</p>
+        {% endif %}
+      </div>
     </div>
-   
+
 
     {# ─── Submit ───────────────────────────────────────────────── #}
     <div style="display:flex; gap:12px; justify-content:flex-end;">
       <a href="{% url 'listings:my_listings' %}"
-         style="padding:12px 24px; border:1px solid #E5E0D8; border-radius:10px; color:#374151; text-decoration:none; font-weight:600; font-size:0.9375rem;">
+        style="padding:12px 24px; border:1px solid #E5E0D8; border-radius:10px; color:#374151; text-decoration:none; font-weight:600; font-size:0.9375rem;">
         Cancel
       </a>
-      <button type="submit"
-              style="background:#1C3829; color:white; border:none; border-radius:10px;
+      <button type="submit" style="background:#1C3829; color:white; border:none; border-radius:10px;
                      padding:12px 28px; font-weight:700; font-size:0.9375rem; cursor:pointer;">
         Save as Draft
       </button>
@@ -222,71 +277,8 @@
   </form>
 </div>
 
-{% endblock %}
+<script src="{% static 'listings/script.js' %}">
 
-{% block extra_js %}
-<script>
-// Lease term: show/hide custom input
-(function() {
-  const preset = document.getElementById('id_lease_term_preset');
-  const wrap   = document.getElementById('custom-lease-wrap');
-  const custom = document.getElementById('id_lease_term_months_custom');
-
-  function toggle() {
-    // The sentinel value '0' means "Other — enter below"
-    if (preset && preset.value === '0') {
-      wrap.style.display  = 'block';
-      custom.required     = true;
-    } else {
-      wrap.style.display  = 'none';
-      custom.required     = false;
-      if (custom) custom.value = '';
-    }
-  }
-
-  preset?.addEventListener('change', toggle);
-  toggle(); // run on load to handle back-button / validation re-render
-})();
-
-// Live advance total calculator
-(function() {
-  const rentInput    = document.getElementById('id_monthly_rent');
-  const monthsInput  = document.getElementById('id_advance_months');
-  const totalDisplay = document.getElementById('advance_total');
-
-  function updateTotal() {
-    const rent   = parseFloat(rentInput?.value)   || 0;
-    const months = parseInt(monthsInput?.value)   || 0;
-    const total  = rent * months;
-    if (totalDisplay) {
-      totalDisplay.textContent = total.toLocaleString('en-GH', {
-        minimumFractionDigits: 2, maximumFractionDigits: 2
-      });
-    }
-  }
-
-  rentInput?.addEventListener('input', updateTotal);
-  monthsInput?.addEventListener('input', updateTotal);
-  updateTotal(); // Run on load for pre-filled values
-})();
-
-<!--Video File size Validation-->
-(function() {
-  const videoInput = document.querySelector('input[name="video_file"]');
-  if (videoInput) {
-    videoInput.addEventListener('change', function() {
-      const file = this.files[0];
-      if (!file) return;
-      
-      const MAX_SIZE = 150 * 1024 * 1024;  // 150MB
-      if (file.size > MAX_SIZE) {
-        const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
-        alert(`Video file is ${sizeMB}MB. Maximum size is 150MB.`);
-        this.value = '';  // Clear input
-      }
-    });
-  }
-})();
 </script>
 
 <style>
@@ -307,6 +299,7 @@
     box-sizing: border-box;
     transition: border-color 0.15s;
   }
+
   #listing-form input:focus,
   #listing-form select:focus,
   #listing-form textarea:focus {
@@ -314,15 +307,74 @@
     border-color: #1C3829;
     background: white;
   }
+
   #listing-form input[type="checkbox"] {
     accent-color: #1C3829;
     width: 15px;
     height: 15px;
     cursor: pointer;
   }
+
   #listing-form input[type="file"] {
     font-size: 0.8125rem;
     color: #6B7280;
   }
+
+  .photo-meta-fields {
+    display: flex;
+    align-items: flex-end;
+    gap: 20px;
+    margin-top: 12px;
+    /* Removed white bg/shadow — inherits the #F7F3EC card naturally */
+  }
+
+  /* Labels — match site label style */
+  .photo-meta-fields label {
+    display: block;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 6px;
+    text-transform: none;
+    letter-spacing: normal;
+  }
+
+  /* Number input — higher specificity to beat the global rule */
+  #listing-form .photo-meta-fields input[type="number"] {
+    width: 110px !important;
+    height: 38px;
+    padding: 0 10px;
+    border: 1px solid #E5E0D8;
+    border-radius: 8px;
+    font-size: 0.9375rem;
+    color: #374151;
+    background: #FAFAF9;
+  }
+
+  #listing-form .photo-meta-fields input[type="number"]:focus {
+    border-color: #1C3829;
+    box-shadow: 0 0 0 3px rgba(28, 56, 41, 0.12);
+    background: white;
+  }
+
+  /* Checkbox — override the global accent-color to match site green */
+  #listing-form .photo-meta-fields input[type="checkbox"] {
+    width: 17px;
+    height: 17px;
+    accent-color: #1C3829;
+    margin-top: 10px;
+    /* visually aligns with the number input */
+  }
+
+  .field-divider {
+    width: 1px;
+    height: 38px;
+    background: #E5E0D8;
+    /* matches site border color */
+    flex-shrink: 0;
+    margin-bottom: 4px;
+    /* aligns to input baseline */
+  }
 </style>
+
 {% endblock %}

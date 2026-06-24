@@ -11,8 +11,10 @@ from decouple import config, Csv
 import cloudinary
 import cloudinary.uploader
 from cloudinary.utils import cloudinary_url
+import tailwind
 
 
+  
 # ─── Paths ────────────────────────────────────────────────────────────────────
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -25,7 +27,7 @@ AUTH_USER_MODEL = 'accounts.User'
 
 
 # ─── Application definition ───────────────────────────────────────────────────
-
+TAILWIND_APP_NAME = "theme" 
 DJANGO_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -37,7 +39,8 @@ DJANGO_APPS = [
 ]
 
 THIRD_PARTY_APPS = [
-    # Populated in environment-specific settings as needed
+   'tailwind',
+    'theme', # Populated in environment-specific settings as needed
 ]
 
 LOCAL_APPS = [
@@ -46,7 +49,9 @@ LOCAL_APPS = [
     #  apps.applications, etc. added as we build them
 ]
 
+
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
+
 
 
 # ─── Middleware ───────────────────────────────────────────────────────────────
@@ -75,7 +80,7 @@ ASGI_APPLICATION = 'config.asgi.application'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],
+        'DIRS': [BASE_DIR / 'theme' / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -112,7 +117,7 @@ USE_TZ        = True
 
 STATIC_URL  = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'          # collectstatic output
-STATICFILES_DIRS = [BASE_DIR / 'static']
+STATICFILES_DIRS = [BASE_DIR / 'apps' / 'listings' / 'static']  # dev static files
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 MEDIA_URL  = '/media/'

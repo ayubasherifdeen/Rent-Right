@@ -263,11 +263,11 @@ class Property(models.Model):
                 f"You entered {self.advance_months} months."
             )
 
-        if self.latitude and self.longtitude:
+        if self.latitude and self.longitude:
             # Ghana bounding box — rough sanity check on coordinates
             if not (-3.5 <= float(self.latitude) <= 11.5):
                 errors['latitude'] = "Latitude must be within Ghana (roughly -3.5° to 11.5°)."
-            if not (-3.5 <= float(self.longtitude) <= 1.5):
+            if not (-3.5 <= float(self.longitude) <= 1.5):
                 errors['longitude'] = "Longitude must be within Ghana (roughly -3.5° to 1.5°)."
 
         if self.advance_months and self.lease_term_months:

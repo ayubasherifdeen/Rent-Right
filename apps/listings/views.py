@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 import logging
 from django.http import JsonResponse
+from django.core.exceptions import ValidationError
 from django.views.generic import ListView, DetailView
 from django.db.models import F
 
@@ -118,7 +119,7 @@ def create_property(request):
     # Redirect non-landlords / non-managers
     if not (request.user.is_authenticated and hasattr(request.user, 'userprofile')):
         return redirect('accounts:login')
-    role = request.user.role
+    role = request.user.userprofile.role
     if role not in ('landlord', 'property_manager'):
         logger = logging.getLogger(__name__)
         logger.warning("create_property access denied for user=%s role=%s", getattr(request.user, 'email', None), role)
@@ -126,8 +127,14 @@ def create_property(request):
         return redirect('accounts:dashboard')
 
     if request.method == 'POST':
-        form         = PropertyForm(request.POST)
-        photo_formset = PropertyPhotoFormSet(request.POST, request.FILES)
+        photo_parent = Property(landlord=request.user)
+        form         = PropertyForm(request.POST, request.FILES)
+        photo_formset = PropertyPhotoFormSet(
+            request.POST,
+            request.FILES,
+            instance=photo_parent,
+            prefix='photos',
+        )
 
         if form.is_valid() and photo_formset.is_valid():
             try:
@@ -138,11 +145,24 @@ def create_property(request):
                 )
                 messages.success(request, f"'{property_obj.title}' created as a draft.")
                 return redirect('listings:publish_prompt', pk=property_obj.pk)
+            except ValidationError as e:
+                if hasattr(e, 'message_dict'):
+                    for field, errors in e.message_dict.items():
+                        for error in errors:
+                            if field in form.fields:
+                                form.add_error(field, error)
+                            else:
+                                form.add_error(None, error)
+                else:
+                    form.add_error(None, e)
             except Exception as e:
                 messages.error(request, f"Error creating listing: {e}")
     else:
         form          = PropertyForm()
-        photo_formset = PropertyPhotoFormSet()
+        photo_formset = PropertyPhotoFormSet(
+            instance=Property(landlord=request.user),
+            prefix='photos',
+        )
 
     return render(request, 'listings/create_property.html', {
         'form':           form,

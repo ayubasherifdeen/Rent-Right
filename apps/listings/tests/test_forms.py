@@ -24,6 +24,9 @@ class PropertyFormAct220Test(TestCase):
             'payment_cycle':    'annual',
             'advance_months':   6,
             'security_deposit': '0',
+            'lease_term_preset': '12',
+            'lease_term_months': '12',
+            'lease_term_months_custom': '',
         }
         data.update(overrides)
         return data
@@ -66,3 +69,23 @@ class PropertyFormAct220Test(TestCase):
         """GPS is optional — no coordinates should still be valid."""
         form = PropertyForm(data=self._base_data(latitude='', longitude=''))
         self.assertTrue(form.is_valid(), form.errors)
+
+    def test_custom_lease_term_only_one_coordinate_invalid(self):
+        form = PropertyForm(data=self._base_data(
+            lease_term_preset='0',
+            lease_term_months_custom='12',
+            latitude='5.6037',
+            longitude='',
+        ))
+        self.assertFalse(form.is_valid())
+        self.assertIn('latitude', form.errors)
+        self.assertIn('longitude', form.errors)
+
+    def test_advance_months_cannot_exceed_custom_lease_term(self):
+        form = PropertyForm(data=self._base_data(
+            lease_term_preset='0',
+            lease_term_months_custom='3',
+            advance_months=4,
+        ))
+        self.assertFalse(form.is_valid())
+        self.assertIn('advance_months', form.errors)
