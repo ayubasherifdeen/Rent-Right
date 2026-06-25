@@ -89,3 +89,8 @@ class PropertyFormAct220Test(TestCase):
         ))
         self.assertFalse(form.is_valid())
         self.assertIn('advance_months', form.errors)
+
+    def test_custom_lease_term_field_is_visible_to_js(self):
+        field = PropertyForm().fields['lease_term_months_custom']
+        self.assertNotIn('style', field.widget.attrs)
+        self.assertEqual(field.widget.attrs.get('id'), 'id_lease_term_months_custom')

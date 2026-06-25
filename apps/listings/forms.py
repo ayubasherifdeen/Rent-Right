@@ -65,7 +65,6 @@ class PropertyForm(forms.ModelForm):
         widget=forms.NumberInput(attrs={
             'placeholder': 'e.g. 18',
             'id': 'id_lease_term_months_custom',
-            'style': 'display:none;',   # hidden by default; JS reveals it
         }),
         help_text='Enter the number of months if not in the list above.',
     )
@@ -101,7 +100,7 @@ class PropertyForm(forms.ModelForm):
             'amenities': forms.CheckboxSelectMultiple(),
             'latitude': forms.NumberInput(attrs={'step': '0.000001', 'placeholder': '5.603717'}),
             'longitude': forms.NumberInput(attrs={'step': '0.000001', 'placeholder': '-0.186964'}),
-            'lease_term_months': forms.HiddenInput(),
+            
         }
         labels = {
             'monthly_rent': 'Monthly Rent (GHC)',

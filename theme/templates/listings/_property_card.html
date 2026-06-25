@@ -1,10 +1,5 @@
-{#
-  Reusable property card. Include with:
-  {% include "listings/_property_card.html" with property=property %}
-
-  The underscore prefix is Django convention for partial templates
-  (not standalone pages, just reusable fragments).
-#}
+{# Reusable property card. Include with: #}
+{% load humanize %}
 
 <a href="{{ property.get_absolute_url }}"
    style="display:block; background:white; border-radius:12px; border:1px solid #E5E0D8;

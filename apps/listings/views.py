@@ -171,16 +171,12 @@ def create_property(request):
     })
 
 
-# ─────────────────────────────────────────────
-# PUBLISH PROMPT
-# ─────────────────────────────────────────────
 
 @login_required
 def publish_prompt(request, pk):
     """
     After creation, landlord lands here.
     Shows a preview and a 'Publish Now' button.
-    Keeps the creation flow clean — draft first, publish deliberately.
     """
     prop = get_object_or_404(Property, pk=pk, landlord=request.user)
 
@@ -195,9 +191,6 @@ def publish_prompt(request, pk):
     return render(request, 'listings/publish_prompt.html', {'property': prop})
 
 
-# ─────────────────────────────────────────────
-# MY LISTINGS (landlord dashboard)
-# ─────────────────────────────────────────────
 
 @login_required
 def my_listings(request):
@@ -211,9 +204,6 @@ def my_listings(request):
     return render(request, 'listings/my_listings.html', {'properties': properties})
 
 
-# ─────────────────────────────────────────────
-# MAP JSON ENDPOINT — for Leaflet.js
-# ─────────────────────────────────────────────
 
 def map_data(request):
     """
