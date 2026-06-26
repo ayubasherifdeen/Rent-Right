@@ -58,6 +58,12 @@ class PropertyListView(ListView):
         context['filter']    = self.filterset
         context['amenities'] = Amenity.objects.all()
         context['total_count'] = self.filterset.qs.count()
+        context['can_apply'] = (
+            self.request.user.is_authenticated
+            and hasattr(self.request.user, 'userprofile')
+            and self.request.user.userprofile.role == 'tenant'
+            and self.request.user.is_verified
+        )
         return context
 
 
@@ -88,7 +94,7 @@ class PropertyDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        prop = self.get_object()
+        prop = self.object
         context['photos']      = prop.photos.order_by('-is_primary', 'display_order')
         context['amenities']   = prop.amenities.all()
         context['can_apply']   = (
@@ -128,7 +134,7 @@ def create_property(request):
 
     if request.method == 'POST':
         photo_parent = Property(landlord=request.user)
-        form         = PropertyForm(request.POST, request.FILES)
+        form         = PropertyForm(request.POST, request.FILES, prefix='property')
         photo_formset = PropertyPhotoFormSet(
             request.POST,
             request.FILES,

@@ -2,7 +2,7 @@ import logging
 from django.db import transaction
 from .models import Property, PropertyPhoto, ListingStatus
 
-import cloudinary.uploader
+
 
 logger = logging.getLogger(__name__)
 
@@ -106,9 +106,10 @@ def upload_property_video(video_file, property_id):
     """
     Upload a video file to Cloudinary and return the secure URL.
     """
+    import cloudinary.uploader
     result = cloudinary.uploader.upload(
         video_file,
-        resource_type='video',          # tells Cloudinary this is video, not image
+        resource_type='video',          # video
         folder=f'listings/{property_id}/videos',
         allowed_formats=['mp4', 'mov', 'avi', 'webm'],
         max_bytes=150 * 1024 * 1024,    # 150MB hard cap

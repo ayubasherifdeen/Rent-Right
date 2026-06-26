@@ -162,7 +162,7 @@
 
     if (hasDbRecord) {
       // Existing DB record — soft delete
-      if (deleteInput) deleteInput.value = 'on';
+      if (deleteInput) deleteInput.checked = true;
       row.style.display = 'none';
       row.setAttribute('data-deleted', 'true');
     } else {

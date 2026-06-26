@@ -29,6 +29,7 @@ class RegistrationForm(forms.Form):
         choices=[
             (Role.TENANT,   'Tenant — I am looking for a place to rent'),
             (Role.LANDLORD, 'Landlord — I have a property to rent out'),
+            (Role.PROPERTY_MANAGER, 'Property Manager — I manage properties for landlords'),
         ],
         widget=forms.RadioSelect,
         label='I am a…',

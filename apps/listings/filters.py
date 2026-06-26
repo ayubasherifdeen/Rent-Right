@@ -17,14 +17,14 @@ class PropertyFilter(django_filters.FilterSet):
         field_name='monthly_rent',
         lookup_expr='gte',
         label='Min monthly rent (GHC)',
-        widget=forms.NumberInput(attrs={'placeholder': '0'}),
+        widget=forms.NumberInput(attrs={'placeholder': '0', 'min': '0'}),
     )
 
     max_rent = django_filters.NumberFilter(
         field_name='monthly_rent',
         lookup_expr='lte',
         label='Max monthly rent (GHC)',
-        widget=forms.NumberInput(attrs={'placeholder': '5000'}),
+        widget=forms.NumberInput(attrs={'placeholder': '5000', 'min': '0'}),
     )
 
     bedrooms = django_filters.NumberFilter(
