@@ -1,0 +1,157 @@
+{% extends "accounts/dashboard_base.html" %}
+
+{% block title %}My Applications — RentRight GH{% endblock %}
+
+{% block content %}
+<div style="max-width:760px; margin:0 auto; padding:32px 16px;">
+
+  {# ── Header ────────────────────────────────────────────────────────────── #}
+  <div style="margin-bottom:28px;">
+    <h1 style="font-family:'Playfair Display',Georgia,serif; font-size:1.75rem;
+               font-weight:700; color:#1C3829; margin:0 0 4px;">
+      My Applications
+    </h1>
+    <p style="font-size:14px; color:#9CA3AF; margin:0;">
+      {% if applications %}
+        {{ applications|length }} application{{ applications|length|pluralize }}
+      {% else %}
+        No applications yet
+      {% endif %}
+    </p>
+  </div>
+
+  {# ── Flash messages ────────────────────────────────────────────────────── #}
+  {% if messages %}
+    {% for message in messages %}
+      <div style="padding:12px 16px; border-radius:8px; margin-bottom:16px; font-size:14px;
+                  {% if message.tags == 'error' %}background:#FEF2F2; color:#B91C1C; border:1px solid #FECACA;
+                  {% else %}background:#F0FDF4; color:#166534; border:1px solid #BBF7D0;{% endif %}">
+        {{ message }}
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  {# ── Empty state ───────────────────────────────────────────────────────── #}
+  {% if not applications %}
+    <div style="text-align:center; padding:64px 24px; background:#fff;
+                border:0.5px solid #E5E0D8; border-radius:14px;">
+      <p style="font-size:2rem; margin:0 0 12px;">🏠</p>
+      <p style="font-family:'Playfair Display',Georgia,serif; font-size:1.2rem;
+                font-weight:700; color:#1C3829; margin:0 0 8px;">
+        No applications yet
+      </p>
+      <p style="font-size:13px; color:#9CA3AF; margin:0 0 24px;">
+        Browse available properties and apply for the ones that suit you.
+      </p>
+      <a href="{% url 'listings:property_list' %}"
+         style="display:inline-block; padding:12px 28px; background:#C4622D;
+                color:#fff; border-radius:10px; text-decoration:none;
+                font-size:14px; font-weight:600;">
+        Browse Properties
+      </a>
+    </div>
+
+  {% else %}
+
+    {# ── Application cards ─────────────────────────────────────────────── #}
+    <div style="display:flex; flex-direction:column; gap:16px;">
+      {% for app in applications %}
+        <div style="background:#fff; border:0.5px solid #E5E0D8; border-radius:14px;
+                    padding:20px 24px;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start;
+                      flex-wrap:wrap; gap:12px;">
+
+            {# Property info #}
+            <div style="flex:1; min-width:200px;">
+              <a href="{% url 'listings:property_detail' app.property.pk %}"
+                 style="font-family:'Playfair Display',Georgia,serif; font-size:1.1rem;
+                        font-weight:700; color:#1C3829; text-decoration:none;">
+                {{ app.property.title }}
+              </a>
+              <p style="font-size:13px; color:#9CA3AF; margin:4px 0 0;">
+                {{ app.property.address }}, {{ app.property.city }}
+              </p>
+              <p style="font-size:12px; color:#9CA3AF; margin:8px 0 0;">
+                Applied {{ app.created_at|date:"j M Y" }}
+                · Move-in {{ app.move_in_date|date:"j M Y" }}
+              </p>
+            </div>
+
+            {# Status badge #}
+            <div>
+              {% if app.is_pending %}
+                <span style="display:inline-block; padding:4px 12px; border-radius:20px;
+                             background:#FEF9C3; color:#854D0E; font-size:12px; font-weight:600;">
+                  Pending review
+                </span>
+              {% elif app.is_approved %}
+                <span style="display:inline-block; padding:4px 12px; border-radius:20px;
+                             background:#DCFCE7; color:#166534; font-size:12px; font-weight:600;">
+                  Approved ✓
+                </span>
+              {% elif app.is_declined %}
+                <span style="display:inline-block; padding:4px 12px; border-radius:20px;
+                             background:#FEE2E2; color:#991B1B; font-size:12px; font-weight:600;">
+                  Not successful
+                </span>
+              {% elif app.is_withdrawn %}
+                <span style="display:inline-block; padding:4px 12px; border-radius:20px;
+                             background:#F3F4F6; color:#6B7280; font-size:12px; font-weight:600;">
+                  Withdrawn
+                </span>
+              {% endif %}
+            </div>
+          </div>
+
+          {# ── Status-specific messaging ─────────────────────────────────── #}
+          {% if app.is_approved %}
+            <div style="margin-top:14px; padding:12px 16px; background:#F0FDF4;
+                        border-radius:8px; border-left:3px solid #22C55E;">
+              <p style="font-size:13px; color:#166534; margin:0; font-weight:500;">
+                🎉 Congratulations! The landlord has approved your application.
+                Your tenancy details are being prepared.
+              </p>
+              <p style="font-size:12px; color:#4ADE80; margin:6px 0 0;">
+                Awaiting tenancy setup — you'll be notified when it's ready.
+              </p>
+            </div>
+          {% elif app.is_declined %}
+            <div style="margin-top:14px; padding:12px 16px; background:#FFF7ED;
+                        border-radius:8px; border-left:3px solid #F59E0B;">
+              <p style="font-size:13px; color:#92400E; margin:0;">
+                This application was not successful. You're welcome to apply for
+                other available properties.
+              </p>
+              <a href="{% url 'listings:property_list' %}"
+                 style="display:inline-block; margin-top:8px; font-size:13px;
+                        color:#C4622D; font-weight:600; text-decoration:none;">
+                Browse more properties →
+              </a>
+            </div>
+          {% endif %}
+
+          {# ── Actions (PENDING only) ────────────────────────────────────── #}
+          {% if app.is_pending %}
+            <div style="margin-top:16px; padding-top:16px; border-top:1px solid #F0EBE3;
+                        display:flex; justify-content:flex-end;">
+              <form method="post"
+                    action="{% url 'applications:withdraw_application' app.pk %}"
+                    onsubmit="return confirm('Withdraw this application?');">
+                {% csrf_token %}
+                <button type="submit"
+                        style="padding:8px 18px; background:transparent; border:1px solid #E5E0D8;
+                               border-radius:8px; font-size:13px; color:#6B7280; cursor:pointer;
+                               font-family:Inter,sans-serif;">
+                  Withdraw
+                </button>
+              </form>
+            </div>
+          {% endif %}
+
+        </div>
+      {% endfor %}
+    </div>
+
+  {% endif %}
+</div>
+{% endblock %}

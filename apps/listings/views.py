@@ -1,4 +1,5 @@
 import json
+from urllib import request
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -7,6 +8,8 @@ from django.http import JsonResponse
 from django.core.exceptions import ValidationError
 from django.views.generic import ListView, DetailView
 from django.db.models import F
+
+from apps.applications.models import Application
 
 from .models import Property, Amenity, ListingStatus
 from .forms import PropertyForm, PropertyPhotoFormSet
@@ -103,6 +106,14 @@ class PropertyDetailView(DetailView):
             and self.request.user.userprofile.role == 'tenant'
             and self.request.user.is_verified
         )
+        context['has_live_application'] = (                                       
+            self.request.user.is_authenticated                                         
+            and Application.objects.filter(                                      
+            tenant=self.request.user,                                             
+            rental_property=prop,                                                    
+            status__in=['pending', 'approved'],                              
+            ).exists()
+        )              
         return context
 
 

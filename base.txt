@@ -6,7 +6,7 @@ python-decouple==3.8
 psycopg2-binary==2.9.*
 
 # ─── Auth ─────────────────────────────────────────────────────────────────────
-django-allauth>=65
+django-allauth==65.*
 
 # ─── Static files ─────────────────────────────────────────────────────────────
 whitenoise==6.*
@@ -15,13 +15,13 @@ whitenoise==6.*
 Pillow==11.*
 
 # ─── Filtering ────────────────────────────────────────────────────────────────
-django-filter>=24
+django-filter==24.*
 
 # ─── HTTP (Paystack, Arkesel clients) ─────────────────────────────────────────
 requests==2.32.*
 
 # ─── PDF generation ───────────────────────────────────────────────────────────
-weasyprint>=64*
+weasyprint==63.*
 
 # ─── Task queue — uncomment when notifications app is added (Month 3) ─────────
 # celery==5.*

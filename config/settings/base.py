@@ -46,6 +46,7 @@ THIRD_PARTY_APPS = [
 LOCAL_APPS = [
     'apps.accounts.apps.AccountsConfig',
     'apps.listings',
+    'apps.applications',
     #  apps.applications, etc. added as we build them
 ]
 

@@ -21,7 +21,7 @@ urlpatterns = [
     # Apps
     path('accounts/', include('apps.accounts.urls', namespace='accounts')),
     path('listings/',     include('apps.listings.urls',     namespace='listings')),
-    # path('applications/', include('apps.applications.urls', namespace='applications')),
+    path('applications/', include('apps.applications.urls', namespace='applications')),
     # path('tenancies/',    include('apps.tenancies.urls',    namespace='tenancies')),
     # path('negotiations/', include('apps.negotiations.urls', namespace='negotiations')),
     # path('payments/',     include('apps.payments.urls',     namespace='payments')),
