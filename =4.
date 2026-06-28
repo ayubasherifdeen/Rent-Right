@@ -1,0 +1,17 @@
+Collecting django-debug-toolbar
+  Downloading django_debug_toolbar-7.0.0-py3-none-any.whl.metadata (4.4 kB)
+Collecting django>=5.2 (from django-debug-toolbar)
+  Downloading django-6.0.6-py3-none-any.whl.metadata (3.9 kB)
+Requirement already satisfied: sqlparse>=0.2 in .\venv\Lib\site-packages (from django-debug-toolbar) (0.5.5)
+Requirement already satisfied: asgiref>=3.9.1 in .\venv\Lib\site-packages (from django>=5.2->django-debug-toolbar) (3.11.1)
+Requirement already satisfied: tzdata in .\venv\Lib\site-packages (from django>=5.2->django-debug-toolbar) (2026.2)
+Downloading django_debug_toolbar-7.0.0-py3-none-any.whl (302 kB)
+Downloading django-6.0.6-py3-none-any.whl (8.4 MB)
+   ---------------------------------------- 8.4/8.4 MB 356.1 kB/s  0:00:24
+Installing collected packages: django, django-debug-toolbar
+  Attempting uninstall: django
+    Found existing installation: Django 5.1.15
+    Uninstalling Django-5.1.15:
+      Successfully uninstalled Django-5.1.15
+
+Successfully installed django-6.0.6 django-debug-toolbar-7.0.0

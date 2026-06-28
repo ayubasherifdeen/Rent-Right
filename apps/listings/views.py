@@ -145,7 +145,7 @@ def create_property(request):
 
     if request.method == 'POST':
         photo_parent = Property(landlord=request.user)
-        form         = PropertyForm(request.POST, request.FILES, prefix='property')
+        form         = PropertyForm(request.POST, request.FILES)
         photo_formset = PropertyPhotoFormSet(
             request.POST,
             request.FILES,
