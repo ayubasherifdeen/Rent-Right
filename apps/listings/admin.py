@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 from .models import Amenity, Property, PropertyPhoto
 
 
@@ -74,7 +75,7 @@ class PropertyAdmin(admin.ModelAdmin):
 
     def act_220_badge(self, obj):
         if obj.act_220_compliant:
-            return format_html(
+            return mark_safe(
                 '<span style="color:#1C3829;font-weight:600;">✅ Compliant</span>'
             )
         return format_html('<span style="color:#C4622D;font-weight:600;">❌ Violation</span>')

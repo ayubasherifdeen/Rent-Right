@@ -95,7 +95,10 @@ class ProfileUpdateForm(forms.ModelForm):
     last_name  = forms.CharField(max_length=150)
     phone_number = forms.CharField(
         max_length=20,
-        validators=[phone_validator],
+        validators=[RegexValidator(
+        regex=r'^\+?233\d{9}$|^0\d{9}$',
+        message='Enter a valid Ghanaian phone number (e.g. 0241234567 or +233241234567).',
+)],
         required=False,
     )
 
