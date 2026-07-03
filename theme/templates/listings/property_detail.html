@@ -127,7 +127,7 @@
     </div>
     {% endif %}
 
-    {# ── Map ──────────────────────────────────────────────────── #}
+    {# Map #}
     {% if property.latitude and property.longitude %}
     <div style="background:white; border:1px solid #E5E0D8; border-radius:12px; overflow:hidden; margin-bottom:20px;">
       <div style="padding:16px 20px 0;">
@@ -291,6 +291,7 @@
 (function() {
   const lat = {{ property.latitude }};
   const lng = {{ property.longitude }};
+  console.log(lat, lng);
 
   const map = L.map('detail-map', { zoomControl: true, scrollWheelZoom: false })
                .setView([lat, lng], 15);

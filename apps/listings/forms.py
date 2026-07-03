@@ -196,6 +196,16 @@ class PropertyPhotoForm(forms.ModelForm):
             'is_primary': forms.RadioSelect(),
         }
 
+    def clean_photos(self):
+        """
+        Ensure that at least one photo is marked as primary.
+        This is called automatically by Django during formset.is_valid().
+        """
+        images = self.cleaned_data.get('image', [])
+        primary_count = sum(1 for image in images if image.get('is_primary'))
+        if primary_count == 0:
+            raise ValidationError("Please mark one photo as the primary image.")
+        return images
 
 # Formset: up to 10 photos per property, at least 0 required
 PropertyPhotoFormSet = forms.inlineformset_factory(

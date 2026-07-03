@@ -357,7 +357,7 @@ class PropertyPhoto(models.Model):
     image       = models.ImageField(upload_to=_property_photo_path)
     caption     = models.CharField(max_length=200, blank=True)
     is_primary  = models.BooleanField(default=False)
-    display_order = models.PositiveSmallIntegerField(default=0)
+    display_order = models.PositiveSmallIntegerField(default=0, blank=True)
     uploaded_at   = models.DateTimeField(auto_now_add=True)
 
     class Meta:
