@@ -29,7 +29,7 @@ class PropertyModelTest(TestCase):
     def setUp(self):
         self.landlord = User.objects.create_user(
             email='landlord@test.com',
-            username='Kwame',
+            username='landlord@test.com',
             password='testpass123',
             first_name='Kwame',
             last_name='Mensah',
@@ -65,7 +65,7 @@ class PropertyModelTest(TestCase):
         with self.assertRaises(ValidationError) as ctx:
             prop.full_clean()
         self.assertIn('advance_months', ctx.exception.message_dict)
-        self.assertIn('Act 220', ctx.exception.message_dict['advance_months'][0])
+        self.assertIn('(Act 220)', ctx.exception.message_dict['advance_months'][0])
 
     def test_advance_months_12_raises(self):
         """12 months — common illegal practice in Ghana — must be blocked."""

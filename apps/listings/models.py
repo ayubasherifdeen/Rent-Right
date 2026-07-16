@@ -40,6 +40,7 @@ class ListingStatus(models.TextChoices):
     RENTED    = 'rented',    'Rented'       # currently occupied
     PAUSED    = 'paused',    'Paused'       # landlord hid it temporarily
     ARCHIVED  = 'archived',  'Archived'     # permanently off market
+    PENDING_PAYMENT = 'pending_payment', 'Pending Payment'  # tenancy created, rent card not issued yet
 
 
 class PaymentCycle(models.TextChoices):

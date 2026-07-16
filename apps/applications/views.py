@@ -12,6 +12,8 @@ Views never contain business logic. If you find yourself writing an if-statement
 about application status inside a view, that logic belongs in services.py.
 """
 
+from multiprocessing import context
+
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.shortcuts import render, redirect, get_object_or_404
@@ -114,9 +116,18 @@ def received_applications(request):
         .select_related('rental_property', 'tenant', 'tenant__userprofile')
         .order_by('-created_at')
     )
-    return render(request, 'applications/received_applications.html', {
+    from apps.tenancies.models import Tenancy
+    tenancy_app_pks = set(
+       Tenancy.objects.filter(
+           application__in=applications
+       ).values_list("application_id", flat=True)
+    )
+    context = {
         'applications': applications,
-    })
+        'tenancy_app_pks': tenancy_app_pks
+    }
+    
+    return render(request, 'applications/received_applications.html', context)
 
 
 @login_required

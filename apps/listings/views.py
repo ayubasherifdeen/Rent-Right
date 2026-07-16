@@ -17,9 +17,6 @@ from .filters import PropertyFilter
 from .services import create_listing, publish_listing, increment_view_count
 
 
-# ─────────────────────────────────────────────
-# LIST VIEW — CBV
-# ─────────────────────────────────────────────
 
 class PropertyListView(ListView):
     """
@@ -70,9 +67,6 @@ class PropertyListView(ListView):
         return context
 
 
-# ─────────────────────────────────────────────
-# DETAIL VIEW — CBV
-# ─────────────────────────────────────────────
 
 class PropertyDetailView(DetailView):
     """

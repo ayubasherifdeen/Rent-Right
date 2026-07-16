@@ -22,10 +22,10 @@ urlpatterns = [
     path('accounts/', include('apps.accounts.urls', namespace='accounts')),
     path('listings/',     include('apps.listings.urls',     namespace='listings')),
     path('applications/', include('apps.applications.urls', namespace='applications')),
-    # path('tenancies/',    include('apps.tenancies.urls',    namespace='tenancies')),
+    path('tenancies/',    include('apps.tenancies.urls',    namespace='tenancies')),
     # path('negotiations/', include('apps.negotiations.urls', namespace='negotiations')),
     # path('payments/',     include('apps.payments.urls',     namespace='payments')),
-    # path('documents/',    include('apps.documents.urls',    namespace='documents')),
+    path('documents/',    include('apps.documents.urls',    namespace='documents')),
     # path('maintenance/',  include('apps.maintenance.urls',  namespace='maintenance')),
     # path('analytics/',    include('apps.analytics.urls',    namespace='analytics')),
 ]

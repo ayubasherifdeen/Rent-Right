@@ -55,44 +55,57 @@
 {% endblock %}
 
 {% block body %}
-<div class="min-h-screen" style="background:#F4F1EC;">
+<div class="min-h-screen bg-[#F4F1EC]">
 
-  <!-- Sidebar (desktop) -->
-  <aside class="hidden lg:flex flex-col fixed inset-y-0 left-0 z-40" style="width:240px; background:#1C3829;">
+  <!-- Mobile sidebar backdrop -->
+  <div id="sidebar-backdrop"
+       onclick="toggleSidebar(false)"
+       class="hidden lg:hidden fixed inset-0 bg-black/40 z-40 transition-opacity duration-250">
+  </div>
 
-    <div style="padding:20px; border-bottom:1px solid rgba(122,158,126,0.2);">
-      <a href="{% url 'accounts:dashboard' %}" style="display:flex; align-items:center; gap:10px; text-decoration:none;">
-        <div style="width:32px; height:32px; background:#C4622D; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-          <svg width="16" height="16" fill="none" stroke="white" stroke-width="2.5" viewBox="0 0 24 24">
+  <!-- Sidebar: static on desktop (left), slide-in drawer on mobile (also left) -->
+  <aside id="sidebar"
+         class="flex flex-col fixed inset-y-0 left-0 z-50 w-60 -translate-x-full lg:translate-x-0 transition-transform duration-250 ease-in-out bg-[#1C3829] shadow-2xl lg:shadow-none">
+
+    <div class="flex items-center justify-between px-5 py-5 border-b border-[#7A9E7E]/20">
+      <a href="{% url 'accounts:dashboard' %}" class="flex items-center gap-2.5 no-underline">
+        <div class="w-8 h-8 bg-[#C4622D] rounded-lg flex items-center justify-center shrink-0">
+          <svg class="w-4 h-4" fill="none" stroke="white" stroke-width="2.5" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
           </svg>
         </div>
-        <span style="font-family:'Playfair Display',Georgia,serif; font-size:17px; font-weight:700; color:white;">RentRight GH</span>
+        <span class="font-['Playfair_Display',Georgia,serif] text-[17px] font-bold text-white">RentRight GH</span>
       </a>
+      <!-- Close button, mobile only -->
+      <button type="button" onclick="toggleSidebar(false)" class="lg:hidden bg-transparent border-none cursor-pointer p-1 text-[#B8D4BB]">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
     </div>
 
-    <div style="padding:16px 16px 12px;">
-      <div style="background:rgba(42,82,64,0.7); border-radius:12px; padding:12px 14px;">
-        <p style="font-size:9px; font-weight:600; text-transform:uppercase; letter-spacing:0.12em; color:#7A9E7E; margin-bottom:4px;">Signed in as</p>
-        <p style="font-size:13px; font-weight:600; color:white; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ request.user.full_name }}</p>
-        <span style="display:inline-block; margin-top:6px; padding:2px 10px; background:rgba(28,56,41,0.6); color:#B8D4BB; font-size:10px; font-weight:500; border-radius:20px; text-transform:capitalize;">
+    <div class="px-4 pt-4 pb-3">
+      <div class="bg-[#2A5240]/70 rounded-xl px-3.5 py-3">
+        <p class="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#7A9E7E] mb-1">Signed in as</p>
+        <p class="text-[13px] font-semibold text-white whitespace-nowrap overflow-hidden text-ellipsis">{{ request.user.full_name }}</p>
+        <span class="inline-block mt-1.5 px-2.5 py-0.5 bg-[#1C3829]/60 text-[#B8D4BB] text-[10px] font-medium rounded-full capitalize">
           {{ request.user.role|default:"user" }}
         </span>
       </div>
     </div>
 
-    <nav style="flex:1; padding:8px 12px; overflow-y:auto; display:flex; flex-direction:column; gap:2px;">
+    <nav class="flex-1 px-3 py-2 overflow-y-auto flex flex-col gap-0.5">
       {% block sidebar_nav %}{% endblock %}
     </nav>
 
-    <div style="padding:12px; border-top:1px solid rgba(122,158,126,0.15); display:flex; flex-direction:column; gap:2px;">
+    <div class="p-3 border-t border-[#7A9E7E]/15 flex flex-col gap-0.5">
       <a href="{% url 'accounts:profile' %}" class="nav-link {% if request.path == '/accounts/profile/' %}active{% endif %}">
         <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
         Profile
       </a>
       <form method="post" action="{% url 'accounts:logout' %}">
         {% csrf_token %}
-        <button type="submit" class="nav-link" style="width:100%; background:none; border:none; cursor:pointer; text-align:left;">
+        <button type="submit" class="nav-link w-full bg-transparent border-none cursor-pointer text-left">
           <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
           Sign out
         </button>
@@ -101,28 +114,28 @@
   </aside>
 
   <!-- Main -->
-  <div style="min-height:100vh; display:flex; flex-direction:column;" class="lg:ml-60">
+  <div class="min-h-screen flex flex-col lg:ml-60">
 
-    <header style="position:sticky; top:0; z-index:30; background:white; border-bottom:1px solid #F0EBE3; padding:16px 24px; display:flex; align-items:center; justify-content:space-between;">
-      <div class="flex lg:hidden items-center gap-2" style="margin-right:12px;">
-        <div style="width:28px; height:28px; background:#C4622D; border-radius:7px; display:flex; align-items:center; justify-content:center;">
-          <svg width="14" height="14" fill="none" stroke="white" stroke-width="2.5" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
-          </svg>
-        </div>
-      </div>
-      <div style="flex:1;">
-        <h1 style="font-family:'Playfair Display',Georgia,serif; font-size:22px; font-weight:700; color:#1C3829; line-height:1.2;">
+    <header class="sticky top-0 z-30 bg-white border-b border-[#F0EBE3] px-6 py-4 flex items-center justify-between">
+      <!-- Mobile menu toggle, left-aligned to match sidebar side -->
+      <button type="button" onclick="toggleSidebar(true)" class="flex lg:hidden items-center justify-center w-9 h-9 rounded-lg bg-[#F4F1EC] border-none cursor-pointer text-[#1C3829] shrink-0 mr-3"
+              aria-label="Open menu">
+        <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
+
+      <div class="flex-1">
+        <h1 class="font-['Playfair_Display',Georgia,serif] text-[22px] font-bold text-[#1C3829] leading-tight">
           {% block page_title %}Dashboard{% endblock %}
         </h1>
-        <p style="font-size:12px; color:#9CA3AF; margin-top:2px;">{% block page_subtitle %}{% endblock %}</p>
+        <p class="text-xs text-gray-400 mt-0.5">{% block page_subtitle %}{% endblock %}</p>
       </div>
+
       {% if not request.user.is_verified %}
         <a href="{% url 'accounts:verify_phone' %}"
-           style="display:flex; align-items:center; gap:6px; padding:8px 12px; border-radius:8px;
-                  background:#FFFBEB; border:1px solid #FCD34D; color:#92400E;
-                  font-size:11px; font-weight:600; text-decoration:none; flex-shrink:0;">
-          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+           class="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#FFFBEB] border border-[#FCD34D] text-[#92400E] text-[11px] font-semibold no-underline shrink-0">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
           </svg>
           <span class="hidden sm:inline">Verify phone</span>
@@ -131,81 +144,49 @@
     </header>
 
     {% if messages %}
-      <div style="padding:16px 24px 0; display:flex; flex-direction:column; gap:8px;">
+      <div class="px-6 pt-4 flex flex-col gap-2">
         {% for message in messages %}
-          <div style="padding:12px 16px; border-radius:12px; font-size:13px; font-weight:500;
-            {% if message.tags == 'success' %}background:#F0FDF4; color:#166534; border:1px solid #BBF7D0;
-            {% elif message.tags == 'error' %}background:#FEF2F2; color:#991B1B; border:1px solid #FECACA;
-            {% else %}background:#EFF6FF; color:#1E40AF; border:1px solid #BFDBFE;{% endif %}">
+          <div class="px-4 py-3 rounded-xl text-[13px] font-medium
+            {% if message.tags == 'success' %}bg-[#F0FDF4] text-[#166534] border border-[#BBF7D0]
+            {% elif message.tags == 'error' %}bg-[#FEF2F2] text-[#991B1B] border border-[#FECACA]
+            {% else %}bg-[#EFF6FF] text-[#1E40AF] border border-[#BFDBFE]{% endif %}">
             {{ message }}
           </div>
         {% endfor %}
       </div>
     {% endif %}
 
-    <main style="flex:1; padding:24px; padding-bottom:96px;" class="lg:pb-6">
+    <main class="flex-1 p-6 pb-24 lg:pb-6">
       {% block dashboard_content %}{% endblock %}
     </main>
 
   </div>
 
-  <!-- Bottom tab bar (mobile only) -->
-  <!-- Mobile / Tablet Bottom Navigation -->
-<nav class="fixed bottom-0 left-0 right-0 lg:hidden bg-white border-t border-[#F0EBE3] z-50">
-    <div class="grid grid-cols-5 h-16">
+  <script>
+    function toggleSidebar(open) {
+      const sidebar = document.getElementById('sidebar');
+      const backdrop = document.getElementById('sidebar-backdrop');
+      if (open) {
+        sidebar.classList.remove('-translate-x-full');
+        sidebar.classList.add('translate-x-0');
+        backdrop.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+      } else {
+        sidebar.classList.add('-translate-x-full');
+        sidebar.classList.remove('translate-x-0');
+        backdrop.classList.add('hidden');
+        document.body.style.overflow = '';
+      }
+    }
 
-        <a href="{% url 'accounts:dashboard' %}"
-           class="flex flex-col items-center justify-center gap-1 text-xs text-gray-500">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
-            </svg>
-            <span>Home</span>
-        </a>
-
-        <a href="{% url 'listings:property_list' %}"
-           class="flex flex-col items-center justify-center gap-1 text-xs text-gray-500">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-            </svg>
-            <span>Search</span>
-        </a>
-
-        <a href="{% url 'accounts:profile' %}"
-           class="flex flex-col items-center justify-center gap-1 text-xs text-gray-500">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-            </svg>
-            <span>Profile</span>
-        </a>
-
-        <a href="#"
-           class="flex flex-col items-center justify-center gap-1 text-xs text-gray-500">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
-            </svg>
-            <span>Payments</span>
-        </a>
-
-        <form method="post"
-              action="{% url 'accounts:logout' %}"
-              class="flex">
-            {% csrf_token %}
-            <button type="submit"
-                    class="w-full flex flex-col items-center justify-center gap-1 text-xs text-gray-500">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-                </svg>
-                <span>Logout</span>
-            </button>
-        </form>
-
-    </div>
-</nav>
-
+    window.addEventListener('resize', function () {
+      if (window.innerWidth >= 1024) {
+        document.getElementById('sidebar-backdrop').classList.add('hidden');
+        document.body.style.overflow = '';
+      }
+    });
+  </script>
 </div>
+
+
 {% endblock %}
