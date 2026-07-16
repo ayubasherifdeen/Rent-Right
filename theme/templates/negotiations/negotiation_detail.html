@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Negotiation — Tenancy {{ tenancy.id }}</h1>
+
+{% if current_proposal %}
+  <section>
+    <h2>Current Proposal</h2>
+    <p>Status: {{ current_proposal.get_status_display }}</p>
+    <p>Proposed by: {{ current_proposal.proposed_by }}</p>
+    <p>Advance months: {{ current_proposal.advance_months }}</p>
+    <p>Instalment count: {{ current_proposal.instalment_count }}</p>
+
+    {% if current_proposal.status == "pending" and request.user.pk != current_proposal.proposed_by_id %}
+      <form method="post" action="{% url 'negotiations:accept_proposal' current_proposal.id %}">
+        {% csrf_token %}
+        <button type="submit">Accept</button>
+      </form>
+      <form method="post" action="{% url 'negotiations:reject_proposal' current_proposal.id %}">
+        {% csrf_token %}
+        <button type="submit">Reject</button>
+      </form>
+      <!-- Counter form intentionally minimal — instalment_schedule input
+           shape (structured fields vs. raw JSON textarea) not decided
+           this pass; placeholder only. -->
+    {% endif %}
+  </section>
+{% endif %}
+
+<section>
+  <h2>History</h2>
+  <ul>
+    {% for proposal in proposals %}
+      <li>{{ proposal.created_at }} — {{ proposal.proposed_by }} — {{ proposal.get_status_display }}</li>
+    {% endfor %}
+  </ul>
+</section>
+{% endblock %}

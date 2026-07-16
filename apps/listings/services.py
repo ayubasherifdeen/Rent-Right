@@ -7,6 +7,9 @@ from .models import Property, PropertyPhoto, ListingStatus
 logger = logging.getLogger(__name__)
 
 
+
+
+
 def create_listing(landlord, form_data, photo_formset=None):
     """
     Create a property listing with photos and video in a single atomic transaction.

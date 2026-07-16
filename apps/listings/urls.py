@@ -14,5 +14,6 @@ urlpatterns = [
     # Landlord / Manager
     path('create/',                   views.create_property,              name='create_property'),
     path('<uuid:pk>/publish/',        views.publish_prompt,               name='publish_prompt'),
-    path('my-listings/',              views.my_listings,                  name='my_listings'),
+    path('my-listings/',              views.my_listings,                 name='my_listings'),
+   
 ]

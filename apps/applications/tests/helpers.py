@@ -15,7 +15,7 @@ from apps.applications.models import Application, ApplicationStatus
 def make_landlord(email='landlord@test.com', phone='0244100001'):
     user = User.objects.create_user(
         email=email, password='testpass123',
-        first_name='Kwame', last_name='Mensah', phone_number=phone,
+        first_name='Kwame', last_name='Mensah', phone_number=phone, username=email
     )
     profile = user.userprofile
     profile.role = 'landlord'
@@ -26,7 +26,7 @@ def make_landlord(email='landlord@test.com', phone='0244100001'):
 def make_verified_tenant(email='tenant@test.com', phone='0244200002'):
     user = User.objects.create_user(
         email=email, password='testpass123',
-        first_name='Ama', last_name='Asante', phone_number=phone,
+        first_name='Ama', last_name='Asante', phone_number=phone, username=email
     )
     profile = user.userprofile
     profile.role = 'tenant'
@@ -39,7 +39,7 @@ def make_verified_tenant(email='tenant@test.com', phone='0244200002'):
 def make_unverified_tenant(email='unverified@test.com', phone='0244300003'):
     user = User.objects.create_user(
         email=email, password='testpass123',
-        first_name='Kofi', last_name='Boateng', phone_number=phone,
+        first_name='Kofi', last_name='Boateng', phone_number=phone, username=email
     )
     profile = user.userprofile
     profile.role = 'tenant'

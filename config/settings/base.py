@@ -47,6 +47,8 @@ LOCAL_APPS = [
     'apps.accounts.apps.AccountsConfig',
     'apps.listings',
     'apps.applications',
+    'apps.tenancies',
+    'apps.documents',
     #  apps.applications, etc. added as we build them
 ]
 
@@ -150,6 +152,7 @@ PAYSTACK_PUBLIC_KEY  = config('PAYSTACK_PUBLIC_KEY',  default='')
 ARKESEL_API_KEY      = config('ARKESEL_API_KEY',       default='')
 ARKESEL_SENDER_NAME  = config('ARKESEL_SENDER_NAME',   default='RentRightGH')
 CLOUDINARY_URL       = config('CLOUDINARY_URL',        default='')
+ANTHROPIC_API_KEY = config("ANTHROPIC_API_KEY", default=None)
 
 cloudinary.config(
     cloud_name = config('CLOUDINARY_CLOUD_NAME'),

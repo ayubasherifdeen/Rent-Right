@@ -87,7 +87,7 @@ class OTPServiceTests(TestCase):
         self.assertTrue(self.user.is_verified)
 
     def test_password_reset_otp_by_email(self):
-        otp = send_password_reset_otp(self.user.email)
+        otp = send_password_reset_otp(self.user.phone_number)
         self.assertIsNotNone(otp)
         self.assertEqual(otp.purpose, 'password_reset')
 

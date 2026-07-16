@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Rent Card — {{ tenancy.id }}</title>
+  <style>
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', Arial, Helvetica, sans-serif;
+      font-size: 11pt;
+      color: #1a1a1a;
+      background: #ffffff;
+      padding: 40px 50px;
+    }
+
+    .header {
+      border-bottom: 2px solid #1C3829;
+      padding-bottom: 20px;
+      margin-bottom: 28px;
+    }
+
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .brand {
+      font-size: 20pt;
+      font-weight: 700;
+      color: #1C3829;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-sub {
+      font-size: 8pt;
+      color: #7A9E7E;
+      margin-top: 2px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .doc-label {
+      text-align: right;
+    }
+
+    .doc-label h1 {
+      font-size: 15pt;
+      font-weight: 700;
+      color: #1C3829;
+    }
+
+    .doc-label p {
+      font-size: 8pt;
+      color: #9CA3AF;
+      margin-top: 3px;
+    }
+
+    .act-badge {
+      display: inline-block;
+      background: #F0FDF4;
+      border: 1px solid #BBF7D0;
+      color: #166534;
+      font-size: 8pt;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 12px;
+      margin-top: 8px;
+    }
+
+    .section {
+      margin-bottom: 24px;
+    }
+
+    .section-title {
+      font-size: 8pt;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #7A9E7E;
+      margin-bottom: 10px;
+      padding-bottom: 4px;
+      border-bottom: 0.5px solid #E5E0D8;
+    }
+
+    .field-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px 24px;
+    }
+
+    .field-grid-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 14px 24px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 8pt;
+      font-weight: 600;
+      color: #9CA3AF;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 3px;
+    }
+
+    .field p {
+      font-size: 10.5pt;
+      color: #1C3829;
+      font-weight: 500;
+    }
+
+    .field p.large {
+      font-size: 14pt;
+      font-weight: 700;
+    }
+
+    .financial-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 0.5px solid #F0EBE3;
+    }
+
+    .financial-row:last-child {
+      border-bottom: none;
+    }
+
+    .financial-row .label {
+      font-size: 9.5pt;
+      color: #4B5563;
+    }
+
+    .financial-row .value {
+      font-size: 10.5pt;
+      font-weight: 700;
+      color: #1C3829;
+    }
+
+    .financial-row.total .label {
+      font-size: 10pt;
+      font-weight: 700;
+      color: #1C3829;
+    }
+
+    .financial-row.total .value {
+      font-size: 13pt;
+      color: #C4622D;
+    }
+
+    .compliance-box {
+      background: #F0FDF4;
+      border: 1px solid #BBF7D0;
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+    }
+
+    .compliance-box h3 {
+      font-size: 9pt;
+      font-weight: 700;
+      color: #166534;
+      margin-bottom: 6px;
+    }
+
+    .compliance-box p {
+      font-size: 8.5pt;
+      color: #166534;
+      line-height: 1.5;
+    }
+
+    .signature-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      margin-top: 8px;
+    }
+
+    .sig-block {
+      border-top: 1px solid #1C3829;
+      padding-top: 6px;
+    }
+
+    .sig-block .name {
+      font-size: 9pt;
+      font-weight: 600;
+      color: #1C3829;
+    }
+
+    .sig-block .role {
+      font-size: 8pt;
+      color: #9CA3AF;
+      margin-top: 2px;
+    }
+
+    .footer {
+      margin-top: 36px;
+      padding-top: 14px;
+      border-top: 0.5px solid #E5E0D8;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .footer p {
+      font-size: 7.5pt;
+      color: #9CA3AF;
+    }
+
+    .footer .doc-id {
+      font-family: 'Courier New', monospace;
+      font-size: 7pt;
+      color: #D1D5DB;
+    }
+  </style>
+</head>
+<body>
+
+  {# ── Header ── #}
+  <div class="header">
+    <div class="header-top">
+      <div>
+        <div class="brand">RentRight GH</div>
+        <div class="brand-sub">Rental Lifecycle Management</div>
+      </div>
+      <div class="doc-label">
+        <h1>Rent Card</h1>
+        <p>Issued: {% now "d F Y" %}</p>
+        <p>Ref: {{ tenancy.id }}</p>
+        <span class="act-badge">Act 220 · Section 20 Compliant</span>
+      </div>
+    </div>
+  </div>
+
+  {# ── Property ── #}
+  <div class="section">
+    <div class="section-title">Property</div>
+    <div class="field-grid">
+      <div class="field">
+        <label>Property Title</label>
+        <p>{{ tenancy.rental_property.title }}</p>
+      </div>
+      <div class="field">
+        <label>Type</label>
+        <p>{{ tenancy.rental_property.get_property_type_display }}</p>
+      </div>
+      <div class="field">
+        <label>Address</label>
+        <p>{{ tenancy.rental_property.address }}</p>
+      </div>
+      <div class="field">
+        <label>City / Region</label>
+        <p>{{ tenancy.rental_property.city }}</p>
+      </div>
+    </div>
+  </div>
+
+  {# ── Parties ── #}
+  <div class="section">
+    <div class="section-title">Parties</div>
+    <div class="field-grid">
+      <div class="field">
+        <label>Landlord</label>
+        <p>{{ tenancy.landlord.get_full_name }}</p>
+        <p style="font-size:8.5pt; color:#9CA3AF; margin-top:2px;">{{ tenancy.landlord.phone_number }}</p>
+      </div>
+      <div class="field">
+        <label>Tenant</label>
+        <p>{{ tenancy.tenant.get_full_name }}</p>
+        <p style="font-size:8.5pt; color:#9CA3AF; margin-top:2px;">{{ tenancy.tenant.phone_number }}</p>
+      </div>
+    </div>
+  </div>
+
+  {# ── Tenancy Period ── #}
+  <div class="section">
+    <div class="section-title">Tenancy Period</div>
+    <div class="field-grid-3">
+      <div class="field">
+        <label>Start Date</label>
+        <p>{{ tenancy.start_date|date:"d F Y" }}</p>
+      </div>
+      <div class="field">
+        <label>End Date</label>
+        <p>{{ tenancy.end_date|date:"d F Y" }}</p>
+      </div>
+      <div class="field">
+        <label>Status at Issue</label>
+        <p>{{ tenancy.get_status_display }}</p>
+      </div>
+    </div>
+  </div>
+
+  {# ── Financial Terms ── #}
+  <div class="section">
+    <div class="section-title">Financial Terms</div>
+    <div class="financial-row">
+      <span class="label">Monthly Rent</span>
+      <span class="value">GH₵ {{ tenancy.monthly_rent|floatformat:2 }}</span>
+    </div>
+    <div class="financial-row">
+      <span class="label">Advance Payment ({{ tenancy.advance_months }} month{{ tenancy.advance_months|pluralize }})</span>
+      <span class="value">GH₵ {{ tenancy.advance_amount|floatformat:2 }}</span>
+    </div>
+    <div class="financial-row total">
+      <span class="label">Total Rent (Full Lease)</span>
+      <span class="value">GH₵ {{ tenancy.total_rent|floatformat:2 }}</span>
+    </div>
+  </div>
+
+  {# ── Act 220 Compliance Declaration ── #}
+  <div class="compliance-box">
+    <h3>Ghana Rent Act (Act 220) — Compliance Declaration</h3>
+    <p>
+      This Rent Card is issued pursuant to <strong>Section 20 of the Rent Act, 1963 (Act 220)</strong>,
+      which requires a landlord to furnish the tenant with a Rent Card within seven (7) days of
+      commencement of tenancy. The advance payment of
+      <strong>{{ tenancy.advance_months }} month{{ tenancy.advance_months|pluralize }}</strong>
+      (GH₵ {{ tenancy.advance_amount|floatformat:2 }}) is within the maximum of six (6) months
+      prescribed by <strong>Section 25(5)</strong>. Both parties are bound by the terms stated herein
+      and by all applicable provisions of Act 220.
+    </p>
+  </div>
+
+  {# ── Signatures ── #}
+  <div class="section">
+    <div class="section-title">Acknowledgement</div>
+    <div class="signature-grid">
+      <div class="sig-block">
+        <div class="name">{{ tenancy.landlord.get_full_name }}</div>
+        <div class="role">Landlord</div>
+      </div>
+      <div class="sig-block">
+        <div class="name">{{ tenancy.tenant.get_full_name }}</div>
+        <div class="role">Tenant</div>
+      </div>
+    </div>
+  </div>
+
+  {# ── Footer ── #}
+  <div class="footer">
+    <p>Generated by RentRight GH · rentright.gh</p>
+    <p class="doc-id">{{ tenancy.id }}</p>
+  </div>
+
+</body>
+</html>
