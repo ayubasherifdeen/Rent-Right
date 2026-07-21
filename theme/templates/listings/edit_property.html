@@ -1,0 +1,354 @@
+{% extends "accounts/dashboard.html" %}
+{% load humanize %}
+{% load static %}
+
+{% block title %}Edit {{ property.title }} — RentRight GH{% endblock %}
+
+{% block dashboard_content %}
+
+<div style="max-width:760px; margin:0 auto;">
+
+  {# Header #}
+  <div style="margin-bottom:28px;">
+    <a href="{{ property.get_absolute_url }}"
+      style="display:inline-flex; align-items:center; gap:6px; color:#6B7280; font-size:0.875rem; text-decoration:none; margin-bottom:12px;">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+      </svg>
+      Back to listing
+    </a>
+    <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+      <div>
+        <h1 style="font-family:'Playfair Display',Georgia,serif; font-size:1.75rem; font-weight:700; color:#1C3829; margin:0 0 4px;">
+          Edit Property
+        </h1>
+        <p style="color:#6B7280; margin:0; font-size:0.875rem;">
+          {{ property.title }}
+          <span style="display:inline-block; margin-left:8px;
+            {% if property.status == 'active' %}color:#065F46; background:#ECFDF5;
+            {% elif property.status == 'draft' %}color:#92400E; background:#FEF3C7;
+            {% elif property.status == 'rented' %}color:#1D4ED8; background:#EFF6FF;
+            {% elif property.status == 'paused' %}color:#6B7280; background:#F3F4F6;
+            {% elif property.status == 'archived' %}color:#9F1239; background:#FFF1F2;
+            {% endif %}
+            font-size:0.6875rem; font-weight:700; padding:2px 8px; border-radius:12px;">
+            {{ property.get_status_display }}
+          </span>
+        </p>
+      </div>
+      {# Manager editing someone else's listing — show ownership notice #}
+      {% if request.user != property.landlord %}
+      <div style="background:#FEF3C7; border:1px solid #FDE68A; border-radius:8px; padding:8px 14px; font-size:0.8125rem; color:#92400E;">
+        <strong>Managing on behalf of:</strong> {{ property.landlord.full_name }}
+        <br><span style="font-size:0.75rem; color:#B45309;">The landlord will be notified of your changes.</span>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <form method="post" enctype="multipart/form-data" id="listing-form" novalidate
+    action="{% url 'listings:edit_property' pk=property.pk %}">
+    {% csrf_token %}
+
+    {# lease_term_months as hidden — UI uses preset + custom, clean() resolves it #}
+    {{ form.lease_term_months }}
+
+    {{ photo_formset.management_form }}
+
+    {# Non-field errors #}
+    {% if form.non_field_errors %}
+    <div style="border:1px solid #FECACA; background:#FEF2F2; border-radius:10px; padding:12px; margin-bottom:16px;">
+      {% for error in form.non_field_errors %}
+      <p style="color:#B91C1C; font-size:0.875rem; margin:0 0 4px;">{{ error }}</p>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if photo_formset.non_form_errors %}
+    <div style="border:1px solid #FECACA; background:#FEF2F2; border-radius:10px; padding:12px; margin-bottom:16px;">
+      {% for error in photo_formset.non_form_errors %}
+      <p style="color:#B91C1C; font-size:0.875rem; margin:0 0 4px;">{{ error }}</p>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {# ─── Section 1: Basic Info ──────────────────────────────── #}
+    <div style="background:white; border:1px solid #E5E0D8; border-radius:14px; padding:24px; margin-bottom:20px;">
+      <h2 style="font-size:0.875rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#374151; margin:0 0 20px; padding-bottom:12px; border-bottom:1px solid #F0EBE3;">
+        Basic Information
+      </h2>
+      {% include "listings/_form_field.html" with field=form.title label="Property Title" %}
+      {% include "listings/_form_field.html" with field=form.property_type label="Property Type" %}
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+        {% include "listings/_form_field.html" with field=form.bedrooms label="Bedrooms" %}
+        {% include "listings/_form_field.html" with field=form.bathrooms label="Bathrooms" %}
+      </div>
+      {% include "listings/_form_field.html" with field=form.furnishing_status label="Furnishing" %}
+      {% include "listings/_form_field.html" with field=form.available_from label="Available From" %}
+
+      {# Lease term dropdown + custom reveal #}
+      <div style="margin-bottom:16px;">
+        <label style="display:block; font-size:0.8125rem; font-weight:600; color:#374151; margin-bottom:6px;">
+          Lease Term <span style="color:#C4622D;">*</span>
+        </label>
+        {{ form.lease_term_preset }}
+        <div id="custom-lease-wrap" style="display:none; margin-top:10px;">
+          <label style="display:block; font-size:0.8125rem; font-weight:600; color:#374151; margin-bottom:6px;">
+            Custom duration (months)
+          </label>
+          {{ form.lease_term_months_custom }}
+          {% if form.lease_term_months_custom.errors %}
+          <p style="color:#DC2626; font-size:0.8rem; margin:4px 0 0;">{{ form.lease_term_months_custom.errors.0 }}</p>
+          {% endif %}
+        </div>
+        {% if form.lease_term_preset.errors %}
+        <p style="color:#DC2626; font-size:0.8rem; margin:4px 0 0;">{{ form.lease_term_preset.errors.0 }}</p>
+        {% endif %}
+        <p style="font-size:0.75rem; color:#9CA3AF; margin:4px 0 0;">
+          Total duration of the tenancy. Drives the rent card and payment schedule.
+        </p>
+      </div>
+
+      {% include "listings/_form_field.html" with field=form.description label="Description" %}
+    </div>
+
+    {# ─── Section 2: Location ────────────────────────────────── #}
+    <div style="background:white; border:1px solid #E5E0D8; border-radius:14px; padding:24px; margin-bottom:20px;">
+      <h2 style="font-size:0.875rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#374151; margin:0 0 20px; padding-bottom:12px; border-bottom:1px solid #F0EBE3;">
+        Location
+      </h2>
+      {% include "listings/_form_field.html" with field=form.address label="Street Address" %}
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+        {% include "listings/_form_field.html" with field=form.neighbourhood label="Neighbourhood" %}
+        {% include "listings/_form_field.html" with field=form.city label="City" %}
+      </div>
+      {% include "listings/_form_field.html" with field=form.region label="Region" %}
+      <div style="background:#F7F3EC; border-radius:10px; padding:16px; margin-top:4px;">
+        <p style="font-size:0.8125rem; font-weight:600; color:#374151; margin:0 0 12px;">
+          GPS Coordinates
+          <span style="font-weight:400; color:#6B7280; font-size:0.8rem;"> — optional</span>
+        </p>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+          {% include "listings/_form_field.html" with field=form.latitude label="Latitude" hint="e.g. 5.603717" %}
+          {% include "listings/_form_field.html" with field=form.longitude label="Longitude" hint="e.g. -0.186964" %}
+        </div>
+      </div>
+    </div>
+
+    {# ─── Section 3: Financials ──────────────────────────────── #}
+    <div style="background:white; border:1px solid #E5E0D8; border-radius:14px; padding:24px; margin-bottom:20px;">
+      <h2 style="font-size:0.875rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#374151; margin:0 0 4px; padding-bottom:12px; border-bottom:1px solid #F0EBE3;">
+        Financials
+      </h2>
+      <div style="background:#ECFDF5; border:1px solid #A7F3D0; border-radius:8px; padding:12px 14px; margin-bottom:20px; font-size:0.8125rem; color:#065F46; line-height:1.5;">
+        <strong>✅ Act 220 — Section 25(5):</strong> Advance rent is capped at 6 months.
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+        {% include "listings/_form_field.html" with field=form.monthly_rent label="Monthly Rent (GHC)" %}
+        {% include "listings/_form_field.html" with field=form.payment_cycle label="Payment Cycle" %}
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+        <div style="margin-bottom:16px;">
+          <label style="display:block; font-size:0.8125rem; font-weight:600; color:#374151; margin-bottom:6px;">Advance Months</label>
+          {{ form.advance_months }}
+          {% if form.advance_months.errors %}
+          <p style="color:#DC2626; font-size:0.8rem; margin:4px 0 0;">{{ form.advance_months.errors.0 }}</p>
+          {% endif %}
+          <p style="font-size:0.75rem; color:#6B7280; margin:4px 0 0;">Maximum 6 months (Act 220 hard cap)</p>
+        </div>
+        <div style="margin-bottom:16px;">
+          <label style="display:block; font-size:0.8125rem; font-weight:600; color:#374151; margin-bottom:6px;">Total Advance Due</label>
+          <div style="background:#F7F3EC; border:1px solid #E5E0D8; border-radius:8px; padding:10px 14px; font-family:'Playfair Display',serif; font-size:1.25rem; font-weight:700; color:#1C3829;">
+            GHC <span id="advance_total">0</span>
+          </div>
+          <p style="font-size:0.75rem; color:#9CA3AF; margin:4px 0 0;">Updates as you type</p>
+        </div>
+      </div>
+      {% include "listings/_form_field.html" with field=form.security_deposit label="Security Deposit (GHC)" hint="Refundable deposit. Enter 0 if none." %}
+    </div>
+
+    {# ─── Section 4: Amenities ───────────────────────────────── #}
+    <div style="background:white; border:1px solid #E5E0D8; border-radius:14px; padding:24px; margin-bottom:20px;">
+      <h2 style="font-size:0.875rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#374151; margin:0 0 16px; padding-bottom:12px; border-bottom:1px solid #F0EBE3;">
+        Amenities
+      </h2>
+      <div style="display:flex; flex-wrap:wrap; gap:10px;">
+        {% for checkbox in form.amenities %}
+        <label style="display:inline-flex; align-items:center; gap:8px; background:#F7F3EC; border:1px solid #E5E0D8;
+                      border-radius:20px; padding:8px 14px; cursor:pointer; font-size:0.875rem; color:#374151;"
+          onmouseover="this.style.background='#ECFDF5'; this.style.borderColor='#1C3829';"
+          onmouseout="if(!this.querySelector('input').checked){this.style.background='#F7F3EC'; this.style.borderColor='#E5E0D8';}">
+          {{ checkbox.tag }}{{ checkbox.choice_label }}
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+
+    {# ─── Section 5: Photos & Video ──────────────────────────── #}
+    <div style="background:white; border:1px solid #E5E0D8; border-radius:14px; padding:24px; margin-bottom:24px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; padding-bottom:12px; border-bottom:1px solid #F0EBE3; margin-bottom:16px;">
+        <div>
+          <h2 style="font-size:0.875rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#374151; margin:0 0 2px;">
+            Photos &amp; Video
+          </h2>
+          <p style="font-size:0.8125rem; color:#6B7280; margin:0;">
+            Existing photos shown below. Add new ones or remove with ✕.
+            <span id="photo-count-display" style="font-weight:600; color:#1C3829;"></span>
+          </p>
+        </div>
+        <button type="button" id="add-photo-btn"
+                style="display:inline-flex; align-items:center; gap:6px; background:#ECFDF5; color:#1C3829;
+                       border:1px solid #A7F3D0; border-radius:8px; padding:8px 14px;
+                       font-size:0.8125rem; font-weight:600; cursor:pointer; white-space:nowrap;">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path d="M12 5v14M5 12h14"/>
+          </svg>
+          Add photo
+        </button>
+      </div>
+
+      {# Existing server-rendered photo rows #}
+      <div id="photo-rows">
+        {% for photo_form in photo_formset %}
+        <div class="photo-row" style="background:#F7F3EC; border-radius:10px; padding:16px; margin-bottom:12px; position:relative;">
+          {{ photo_form.id }}
+          {{ photo_form.DELETE }}
+          <div style="display:grid; grid-template-columns:1fr auto; gap:12px; align-items:start;">
+            <div>
+              {# Show existing image preview if this is an existing photo #}
+              {% if photo_form.instance.pk and photo_form.instance.image %}
+              <div style="margin-bottom:8px;">
+                <img src="{{ photo_form.instance.image.url }}" alt=""
+                     style="height:64px; width:88px; object-fit:cover; border-radius:6px; border:1px solid #E5E0D8;">
+                <p style="font-size:0.75rem; color:#9CA3AF; margin:4px 0 0;">Replace: upload a new file below</p>
+              </div>
+              {% endif %}
+              {{ photo_form.image }}
+              {% if photo_form.image.errors %}
+              <p style="color:#DC2626; font-size:0.8rem; margin:4px 0 0;">{{ photo_form.image.errors.0 }}</p>
+              {% endif %}
+              <div style="margin-top:8px;">{{ photo_form.caption }}</div>
+              <div class="photo-meta-fields">
+                {{ photo_form.is_primary.label_tag }}{{ photo_form.is_primary }}
+                <div class="field-divider"></div>
+                {{ photo_form.display_order.label_tag }}{{ photo_form.display_order }}
+              </div>
+            </div>
+            <button type="button" class="remove-photo-btn"
+                    style="background:none; border:1px solid #E5E0D8; border-radius:6px; padding:6px 8px;
+                           color:#9CA3AF; cursor:pointer; margin-top:2px; flex-shrink:0;"
+                    title="Remove this photo">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M18 6L6 18M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+          {% if photo_form.errors %}
+          <p style="color:#DC2626; font-size:0.8rem; margin:8px 0 0;">{{ photo_form.errors }}</p>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+
+      {# Empty template for JS cloning #}
+      <div id="empty-photo-template" style="display:none;" aria-hidden="true">
+        <div class="photo-row" style="background:#F7F3EC; border-radius:10px; padding:16px; margin-bottom:12px; position:relative;">
+          <input type="hidden" name="photos-__prefix__-id">
+          <input type="hidden" name="photos-__prefix__-DELETE">
+          <div style="display:grid; grid-template-columns:1fr auto; gap:12px; align-items:start;">
+            <div>
+              <input type="file" name="photos-__prefix__-image" accept="image/*"
+                     id="id_photos-__prefix__-image" style="font-size:0.8125rem; color:#6B7280;">
+              <div style="margin-top:8px;">
+                <input type="text" name="photos-__prefix__-caption" maxlength="200"
+                       id="id_photos-__prefix__-caption" placeholder="e.g. Living room, Master bedroom...">
+              </div>
+              <div class="photo-meta-fields">
+                <label for="id_photos-__prefix__-is_primary">Primary photo</label>
+                <input type="checkbox" name="photos-__prefix__-is_primary" id="id_photos-__prefix__-is_primary">
+                <div class="field-divider"></div>
+                <label for="id_photos-__prefix__-display_order">Order</label>
+                <input type="number" name="photos-__prefix__-display_order" id="id_photos-__prefix__-display_order" value="0" min="0">
+              </div>
+            </div>
+            <button type="button" class="remove-photo-btn"
+                    style="background:none; border:1px solid #E5E0D8; border-radius:6px; padding:6px 8px;
+                           color:#9CA3AF; cursor:pointer; margin-top:2px; flex-shrink:0;" title="Remove">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M18 6L6 18M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <p id="photo-limit-msg" style="display:none; font-size:0.8125rem; color:#C4622D; margin-top:4px; font-weight:600;">
+        Maximum 10 photos reached.
+      </p>
+
+      {# Video #}
+      <div style="margin-top:20px; padding-top:20px; border-top:1px solid #F0EBE3;">
+        <h3 style="font-size:0.8125rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#374151; margin:0 0 4px;">
+          Walkthrough Video
+        </h3>
+        {% if property.video_url %}
+        <div style="margin-bottom:12px;">
+          <video controls style="width:100%; max-height:200px; border-radius:8px; background:#000; display:block;">
+            <source src="{{ property.video_url }}" type="video/mp4">
+          </video>
+          <p style="font-size:0.75rem; color:#9CA3AF; margin:6px 0 0;">Upload a new video below to replace this one.</p>
+        </div>
+        {% endif %}
+        <div style="background:#F7F3EC; border-radius:10px; padding:16px;">
+          {{ form.video_file }}
+          {% if form.video_file.errors %}
+          <p style="color:#DC2626; font-size:0.8rem; margin:6px 0 0;">{{ form.video_file.errors.0 }}</p>
+          {% endif %}
+        </div>
+      </div>
+
+    </div>
+
+    {# Submit #}
+    <div style="display:flex; gap:12px; justify-content:flex-end; margin-bottom:40px;">
+      <a href="{{ property.get_absolute_url }}"
+        style="padding:12px 24px; border:1px solid #E5E0D8; border-radius:10px; color:#374151; text-decoration:none; font-weight:600; font-size:0.9375rem;">
+        Cancel
+      </a>
+      <button type="submit"
+              style="background:#1C3829; color:white; border:none; border-radius:10px;
+                     padding:12px 28px; font-weight:700; font-size:0.9375rem; cursor:pointer;">
+        Save Changes
+      </button>
+    </div>
+
+  </form>
+</div>
+
+<script src="{% static 'listings/script.js' %}"></script>
+
+<style>
+  #listing-form input[type="text"],
+  #listing-form input[type="number"],
+  #listing-form input[type="date"],
+  #listing-form select,
+  #listing-form textarea {
+    width:100%; padding:9px 12px; border:1px solid #E5E0D8; border-radius:8px;
+    font-size:0.9375rem; font-family:Inter,sans-serif; color:#374151;
+    background:#FAFAF9; box-sizing:border-box; transition:border-color 0.15s;
+  }
+  #listing-form input:focus, #listing-form select:focus, #listing-form textarea:focus {
+    outline:none; border-color:#1C3829; background:white;
+  }
+  #listing-form input[type="checkbox"] { accent-color:#1C3829; width:15px; height:15px; cursor:pointer; }
+  #listing-form input[type="file"] { font-size:0.8125rem; color:#6B7280; }
+  .photo-meta-fields { display:flex; align-items:flex-end; gap:20px; margin-top:12px; }
+  .photo-meta-fields label { display:block; font-size:0.8125rem; font-weight:600; color:#374151; margin-bottom:6px; }
+  #listing-form .photo-meta-fields input[type="number"] { width:110px !important; height:38px; padding:0 10px; }
+  #listing-form .photo-meta-fields input[type="checkbox"] { width:17px; height:17px; margin-top:10px; }
+  .field-divider { width:1px; height:38px; background:#E5E0D8; flex-shrink:0; margin-bottom:4px; }
+  #add-photo-btn:hover:not(:disabled) { background:#D1FAE5; border-color:#1C3829; }
+  #add-photo-btn:disabled { opacity:0.5; cursor:not-allowed; }
+</style>
+
+{% endblock %}

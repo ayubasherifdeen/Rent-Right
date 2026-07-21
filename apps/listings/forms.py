@@ -119,6 +119,15 @@ class PropertyForm(forms.ModelForm):
  
         preset = cleaned_data.get('lease_term_preset')
         custom = cleaned_data.get('lease_term_months_custom')
+        available_from =cleaned_data.get('available_from')
+
+        from django.utils.timezone import localdate
+        today = localdate()   
+        if available_from and available_from <= today:
+            self.add_error(
+                'available_from',
+                'Select available from date that is in the future.'
+            ) 
  
         if preset not in (None, ''):
             preset = int(preset)

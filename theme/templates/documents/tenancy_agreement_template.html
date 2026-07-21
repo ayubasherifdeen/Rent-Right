@@ -43,10 +43,6 @@
 </div>
 
 <div class="section-title">Tenancy Terms</div>
-{# NEW — display_advance_months/display_advance_amount reflect the
-   negotiated Proposal when one was accepted, falling back to the
-   tenancy's own frozen values otherwise. Previously this table always
-   used tenancy.advance_months/tenancy.advance_amount directly. #}
 {% if proposal and not proposal.is_opening_proposal %}
 <p class="negotiated-note">Advance and instalment terms below reflect the negotiated agreement — see the accompanying Instalment Addendum for the full schedule.</p>
 {% endif %}

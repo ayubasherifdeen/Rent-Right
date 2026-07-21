@@ -14,7 +14,14 @@ from apps.applications.models import Application
 from .models import Property, Amenity, ListingStatus
 from .forms import PropertyForm, PropertyPhotoFormSet
 from .filters import PropertyFilter
-from .services import create_listing, publish_listing, increment_view_count
+from .services import (create_listing,
+                     publish_listing,
+                       increment_view_count,
+                       pause_listing,
+                       resume_listing,
+                       archive_listing,
+                       update_listing
+)
 
 
 
@@ -182,6 +189,100 @@ def create_property(request):
     })
 
 
+@login_required
+def edit_property(request, pk):
+    """
+    Edit an existing listing — draft or otherwise.
+ 
+    Mirrors create_property but binds the form/formset to the existing
+    instance and routes through update_listing() instead of
+    create_listing(). Any status can be edited except archived: an
+    archived listing is meant to be permanently off the market, so it
+    has to be brought back some other way before it's editable again
+    (there currently isn't one — see note in handoff doc).
+    """
+    property_obj = get_object_or_404(Property, pk=pk, landlord=request.user)
+ 
+    if property_obj.status == ListingStatus.ARCHIVED:
+        messages.error(request, "Archived listings can't be edited.")
+        return redirect('listings:my_listings')
+ 
+    if request.method == 'POST':
+        form = PropertyForm(request.POST, request.FILES, instance=property_obj)
+        photo_formset = PropertyPhotoFormSet(
+            request.POST,
+            request.FILES,
+            instance=property_obj,
+            prefix='photos',
+        )
+ 
+        if form.is_valid() and photo_formset.is_valid():
+            try:
+                update_listing(
+                    property_obj=property_obj,
+                    form_data=form.cleaned_data.copy(),
+                    photo_formset=photo_formset,
+                )
+                messages.success(request, f"'{property_obj.title}' updated.")
+                return redirect('listings:property_detail', pk=property_obj.pk)
+            except ValidationError as e:
+                if hasattr(e, 'message_dict'):
+                    for field, errors in e.message_dict.items():
+                        for error in errors:
+                            if field in form.fields:
+                                form.add_error(field, error)
+                            else:
+                                form.add_error(None, error)
+                else:
+                    form.add_error(None, e)
+            except Exception as e:
+                messages.error(request, f"Error updating listing: {e}")
+    else:
+        form = PropertyForm(instance=property_obj)
+        photo_formset = PropertyPhotoFormSet(instance=property_obj, prefix='photos')
+ 
+    return render(request, 'listings/edit_property.html', {
+        'form':           form,
+        'photo_formset':  photo_formset,
+        'ACT_220_MAX':    6,
+        'editing':        True,
+        'property':       property_obj,
+    })
+ 
+ 
+@login_required
+def update_listing_status(request, pk):
+    """
+    Single endpoint for the status-change actions available from
+    'My Listings': pause, resume, archive. One view keyed off an
+    'action' POST field instead of three near-identical views —
+    each action already has its own guard in the service layer.
+    """
+    property_obj = get_object_or_404(Property, pk=pk, landlord=request.user)
+ 
+    if request.method != 'POST':
+        return redirect('listings:my_listings')
+ 
+    action_map = {
+        'pause':   pause_listing,
+        'resume':  resume_listing,
+        'archive': archive_listing,
+    }
+    handler = action_map.get(request.POST.get('action'))
+    if handler is None:
+        messages.error(request, "Unknown action.")
+        return redirect('listings:my_listings')
+ 
+    try:
+        handler(property_obj)
+        messages.success(
+            request,
+            f"'{property_obj.title}' is now {property_obj.get_status_display().lower()}."
+        )
+    except ValueError as e:
+        messages.error(request, str(e))
+ 
+    return redirect('listings:my_listings')
 
 @login_required
 def publish_prompt(request, pk):

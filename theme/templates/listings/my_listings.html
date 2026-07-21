@@ -76,6 +76,8 @@
           <span style="background:#F3F4F6; color:#6B7280; font-size:0.6875rem; font-weight:700; padding:2px 8px; border-radius:12px;">Paused</span>
           {% elif property.status == 'pending_payment' %}
           <span style="background:#92400E; color:#F9E076; font-size:0.6875rem; font-weight:700; padding:2px 8px; border-radius:12px;">Pending Payment</span>
+        {% elif property.status == 'archived' %}
+          <span style="background:#F3F4F6; color:#374151; font-size:0.6875rem; font-weight:700; padding:2px 8px; border-radius:12px;">Archived</span>
         {% endif %}
       </div>
       <p style="font-size:0.8125rem; color:#6B7280; margin:0;">
@@ -92,7 +94,7 @@
     </div>
 
     {# Actions #}
-    <div style="display:flex; gap:8px; flex-shrink:0;">
+    <div style="display:flex; gap:8px; flex-shrink:0; flex-wrap:wrap; justify-content:flex-end;">
       {% if property.status == 'draft' %}
       <form method="post" action="{% url 'listings:publish_prompt' pk=property.pk %}">
         {% csrf_token %}
@@ -102,6 +104,43 @@
         </button>
       </form>
       {% endif %}
+
+      {% if property.status == 'active' %}
+      <form method="post" action="{% url 'listings:update_listing_status' pk=property.pk %}">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="pause">
+        <button type="submit"
+                style="background:white; color:#92400E; border:1px solid #E5E0D8; border-radius:7px; padding:7px 14px; font-size:0.8125rem; font-weight:600; cursor:pointer;">
+          Pause
+        </button>
+      </form>
+      {% elif property.status == 'paused' %}
+      <form method="post" action="{% url 'listings:update_listing_status' pk=property.pk %}">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="resume">
+        <button type="submit"
+                style="background:#1C3829; color:white; border:none; border-radius:7px; padding:7px 14px; font-size:0.8125rem; font-weight:600; cursor:pointer;">
+          Resume
+        </button>
+      </form>
+      {% endif %}
+
+      {% if property.status == 'draft' or property.status == 'active' or property.status == 'paused' %}
+      <a href="{% url 'listings:edit_property' pk=property.pk %}"
+         style="display:inline-flex; align-items:center; border:1px solid #E5E0D8; border-radius:7px; padding:7px 14px; font-size:0.8125rem; color:#374151; text-decoration:none; font-weight:500;">
+        Edit
+      </a>
+      <form method="post" action="{% url 'listings:update_listing_status' pk=property.pk %}"
+            onsubmit="return confirm('Archive this listing? It will come off the market permanently.');">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="archive">
+        <button type="submit"
+                style="background:white; color:#B91C1C; border:1px solid #E5E0D8; border-radius:7px; padding:7px 14px; font-size:0.8125rem; font-weight:600; cursor:pointer;">
+          Archive
+        </button>
+      </form>
+      {% endif %}
+
       <a href="{{ property.get_absolute_url }}"
          style="display:inline-flex; align-items:center; border:1px solid #E5E0D8; border-radius:7px; padding:7px 14px; font-size:0.8125rem; color:#374151; text-decoration:none; font-weight:500;">
         View

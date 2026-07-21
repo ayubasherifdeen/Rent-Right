@@ -262,11 +262,16 @@
       <div style="display:flex; align-items:center; gap:12px;">
         <div style="width:40px; height:40px; border-radius:50%; background:#1C3829; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
           <span style="color:white; font-weight:700; font-size:1rem;">
-            {{ property.landlord.first_name|first|upper }}{{ property.landlord.last_name|first|upper }}
+            {% if property.landlord.profile_photo %}
+              {{ property.landlord.profile_photo }}
+            {% else %}
+              {{ property.landlord.first_name|first|upper }}{{ property.landlord.last_name|first|upper }}
+            {% endif %}
           </span>
         </div>
         <div>
           <p style="font-weight:600; color:#1C3829; margin:0; font-size:0.9375rem;">{{ property.landlord.full_name }}</p>
+          <p style="font-weight:600; color:#1C3829; margin:0; font-size:0.9375rem;">({{ property.landlord.email }} - {{ property.landlord.phone_number }})</p>
           <p style="font-size:0.8125rem; color:#6B7280; margin:2px 0 0; text-transform:capitalize;">
             {{ property.landlord.userprofile.get_role_display }}
           </p>
