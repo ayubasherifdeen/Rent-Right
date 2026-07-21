@@ -78,15 +78,16 @@ def accept_proposal_view(request, proposal_id):
 
     proposal = get_object_or_404(Proposal, pk=proposal_id)
     _require_party_or_staff(request.user, proposal.tenancy)
+    tenancy_id = proposal.tenancy_id
 
     try:
-        agreement = accept_proposal(proposal, accepted_by=request.user)
+        accept_proposal(proposal, accepted_by=request.user)
     except ValueError as exc:
         messages.error(request, str(exc))
         return redirect("negotiations:negotiation_detail", tenancy_id=proposal.tenancy_id)
 
-    messages.success(request, "Offer accepted — agreement created.")
-    return redirect("tenancies:agreement_detail", agreement_id=agreement.pk)
+    messages.success(request, "Offer accepted.")
+    return redirect("tenancies:agreement_detail", pk=tenancy_id)
 
 
 @login_required

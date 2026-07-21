@@ -48,7 +48,7 @@ class Proposal(models.Model):
     status = models.CharField(
         max_length=16, choices=ProposalStatus.choices, default=ProposalStatus.PENDING
     )
-
+    proposal_count = models.PositiveSmallIntegerField(blank = False, null = True, default = 1)
     # Instalment terms only — monthly_rent is never touched by this app.
     advance_months = models.PositiveSmallIntegerField(
         validators=[MinValueValidator(1), MaxValueValidator(ACT_220_MAX_ADVANCE_MONTHS)],

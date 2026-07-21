@@ -3,6 +3,8 @@ from django.db import transaction
 from django.utils import timezone
 from datetime import date
 
+from apps.accounts.services import send_tenancy_confirmation_otp
+from apps.accounts.services import send_tenancy_confirmation_otp
 from apps.listings.models import ACT_220_MAX_ADVANCE_MONTHS, PaymentCycle
 from apps.negotiations.models import Proposal, ProposalStatus
 
@@ -32,7 +34,7 @@ def _add_months(base_date, months):
     return date(year, month, day)
 
 
-def _build_default_instalment_schedule(rental_property, start_date):
+def _build_default_instalment_schedule(tenancy, instalment_count):
     """
     Property has no stored instalment schedule — only the inputs to
     compute one (monthly_rent, payment_cycle, lease_term_months, and the
@@ -46,13 +48,19 @@ def _build_default_instalment_schedule(rental_property, start_date):
     advance only," this needs to change to use rental_property.advance_months
     and rental_property.advance_amount instead of lease_term_months.
     """
-    interval_months = _CYCLE_INTERVAL_MONTHS.get(rental_property.payment_cycle, 12)
-    count = rental_property.payment_count
-    amount_per_instalment = rental_property.monthly_rent * interval_months
+    delta = relativedelta(tenancy.end_date, tenancy.start_date)
+    lease_term_months = delta.years * 12 + delta.months
+    total_rent = tenancy.monthly_rent * lease_term_months
+
+    interval_months = max(lease_term_months // instalment_count, 1)
+    amount_per_instalment = (total_rent / instalment_count).quantize(
+        tenancy.monthly_rent
+    )
+
 
     schedule = []
-    for i in range(count):
-        due = _add_months(start_date, interval_months * (i + 1))
+    for i in range(instalment_count):
+        due = _add_months(tenancy.start_date, interval_months * (i + 1))
         schedule.append({"due_date": due.isoformat(), "amount": str(amount_per_instalment)})
     return schedule
 
@@ -76,11 +84,6 @@ def open_negotiation(tenancy) -> Proposal:
     """
     rental_property = tenancy.rental_property
     instalment_count = _default_instalment_count(rental_property, tenancy)
-    start_date = (
-        getattr(tenancy, "start_date", None)
-        or rental_property.available_from
-        or date.today()
-    )
 
     with transaction.atomic():
         proposal = Proposal.objects.create(
@@ -90,9 +93,27 @@ def open_negotiation(tenancy) -> Proposal:
             status=ProposalStatus.PENDING,
             advance_months=rental_property.advance_months,
             instalment_count=instalment_count,
-            instalment_schedule=_build_default_instalment_schedule(rental_property, start_date),
+            instalment_schedule=_build_default_instalment_schedule(tenancy, instalment_count),
         )
     return proposal
+
+
+def _cancel_negotiation(tenancy):
+    """
+    Shared by counter_proposal() and reject_proposal() — cancels the
+    tenancy and reopens the property. Caller is responsible for wrapping
+    this in transaction.atomic() alongside whatever else needs to commit
+    together.
+    """
+    from apps.listings.models import ListingStatus
+    from apps.tenancies.models import TenancyStatus
+
+    tenancy.status = TenancyStatus.CANCELLED
+    tenancy.save(update_fields=["status", "updated_at"])
+
+    rental_property = tenancy.rental_property
+    rental_property.status = ListingStatus.ACTIVE
+    rental_property.save(update_fields=["status", "updated_at"])
 
 
 def counter_proposal(
@@ -119,23 +140,34 @@ def counter_proposal(
 
     from apps.tenancies.models import TenancyStatus
 
-    if previous_proposal.tenancy.status == TenancyStatus.CANCELLED:
+    if previous_proposal.status not in (ProposalStatus.PENDING, ProposalStatus.REJECTED):
+        raise ValueError(
+            f"Cannot counter a proposal with status "
+            f"'{previous_proposal.status}' — only PENDING or REJECTED "
+            f"proposals can be countered."
+        )
+
+    if previous_proposal.status == TenancyStatus.CANCELLED:
         raise ValueError(
             "This negotiation has been cancelled after too many rounds "
             "without agreement — no further counters possible."
         )
     
-    if previous_proposal.status != ProposalStatus.PENDING:
+    if previous_proposal.tenancy.proposals.count() >= MAX_NEGOTIATION_ROUNDS:
+        with transaction.atomic():
+            _cancel_negotiation(previous_proposal.tenancy)
         raise ValueError(
-            f"Cannot counter a proposal with status "
-            f"'{previous_proposal.status}' — only PENDING proposals can be countered."
+            f"This negotiation has reached the maximum of "
+            f"{MAX_NEGOTIATION_ROUNDS} rounds without agreement and has "
+            f"been cancelled. The property is available for new "
+            f"applications again."
         )
-
+    
     with transaction.atomic():
         previous_proposal.status = ProposalStatus.COUNTERED
         previous_proposal.responded_at = timezone.now()
         previous_proposal.save(update_fields=["status", "responded_at"])
-
+        
         new_proposal = Proposal.objects.create(
             tenancy=previous_proposal.tenancy,
             previous_proposal=previous_proposal,
@@ -192,6 +224,13 @@ def accept_proposal(proposal, accepted_by):
         tenancy.status = TenancyStatus.PENDING_AGREEMENT
         tenancy.save(update_fields=["status", "updated_at"])
 
+    send_tenancy_confirmation_otp(tenancy.landlord)
+    send_tenancy_confirmation_otp(tenancy.tenant)
+
+    # TODO: Call notifications.tasks.send_sms.delay(...) for both — same
+    # stub gap as everywhere else OTPs are sent; codes currently only
+    # reach logger.debug() until the notifications app exists.
+
     return agreement
 
 
@@ -223,12 +262,9 @@ def reject_proposal(proposal, rejected_by) -> None:
         round_count = tenancy.proposals.count()
 
         if round_count >= MAX_NEGOTIATION_ROUNDS:
-            tenancy.status = TenancyStatus.CANCELLED
-            tenancy.save(update_fields=["status", "updated_at"])
-
-            rental_property = tenancy.rental_property
-            rental_property.status = ListingStatus.ACTIVE
-            rental_property.save(update_fields=["status", "updated_at"])
+            _cancel_negotiation(tenancy)
+        
+    return proposal
 
 
 

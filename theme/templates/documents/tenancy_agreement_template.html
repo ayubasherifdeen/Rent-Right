@@ -16,6 +16,10 @@
     table.terms td:first-child { color: #555; width: 40%; }
     .section-title { font-size: 12pt; margin-top: 22px; margin-bottom: 6px; border-bottom: 1px solid #ccc; padding-bottom: 3px; }
     .special-conditions { white-space: pre-wrap; }
+    .negotiated-note { font-size: 8.5pt; color: #6D28D9; margin: -8px 0 12px; font-style: italic; }
+    table.instalments { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    table.instalments th { text-align: left; font-size: 9pt; color: #555; padding: 4px; border-bottom: 1px solid #999; }
+    table.instalments td { font-size: 9.5pt; padding: 5px 4px; border-bottom: 1px solid #eee; }
     .signatures { margin-top: 40px; display: flex; justify-content: space-between; }
     .sig-block { width: 45%; }
     .sig-line { border-top: 1px solid #333; margin-top: 40px; padding-top: 4px; font-size: 9.5pt; color: #555; }
@@ -39,14 +43,36 @@
 </div>
 
 <div class="section-title">Tenancy Terms</div>
+{# NEW — display_advance_months/display_advance_amount reflect the
+   negotiated Proposal when one was accepted, falling back to the
+   tenancy's own frozen values otherwise. Previously this table always
+   used tenancy.advance_months/tenancy.advance_amount directly. #}
+{% if proposal and not proposal.is_opening_proposal %}
+<p class="negotiated-note">Advance and instalment terms below reflect the negotiated agreement — see the accompanying Instalment Addendum for the full schedule.</p>
+{% endif %}
 <table class="terms">
     <tr><td>Property</td><td>{{ tenancy.rental_property }}</td></tr>
     <tr><td>Monthly Rent</td><td>{{ tenancy.monthly_rent }}</td></tr>
-    <tr><td>Advance Paid (months)</td><td>{{ tenancy.advance_months }}</td></tr>
-    <tr><td>Advance Amount</td><td>{{ tenancy.advance_amount }}</td></tr>
+    <tr><td>Advance Paid (months)</td><td>{{ display_advance_months }}</td></tr>
+    <tr><td>Advance Amount</td><td>{{ display_advance_amount }}</td></tr>
     <tr><td>Lease Start Date</td><td>{{ tenancy.start_date }}</td></tr>
     <tr><td>Lease End Date</td><td>{{ tenancy.end_date }}</td></tr>
 </table>
+
+{# ── Instalment Schedule — only when a negotiated proposal exists ── #}
+{% if proposal %}
+<div class="section-title">Instalment Schedule</div>
+<table class="instalments">
+    <thead>
+        <tr><th>Due Date</th><th>Amount</th></tr>
+    </thead>
+    <tbody>
+        {% for item in proposal.instalment_schedule %}
+        <tr><td>{{ item.due_date }}</td><td>{{ item.amount }}</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
 
 <div class="section-title">Special Conditions</div>
 <p class="special-conditions">{{ agreement.special_conditions|default:"None." }}</p>

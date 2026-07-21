@@ -166,6 +166,7 @@ def special_conditions_view(request, pk):
     }
     return render(request, "tenancies/special_conditions.html", context)
 
+
 @login_required
 @require_POST
 def request_agreement_otp_view(request, pk):
@@ -226,7 +227,11 @@ def agreement_detail(request, pk):
     (generic-FK'd to the Agreement) combined into one list, newest
     first. Empty until _execute_agreement() has run. agreement_detail.html
     still needs updating to actually render download links — not done
-    here, no template file for this session.
+    here
+
+    Also still needs updating (not done here) to render the new
+    "Request Code" button (POSTs to tenancies:request_agreement_otp)
+    alongside the existing OTP-entry form.
     """
     tenancy = get_object_or_404(Tenancy, pk=pk)
     if request.user not in (tenancy.landlord, tenancy.tenant):
