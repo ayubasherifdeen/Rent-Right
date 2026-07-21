@@ -9,8 +9,10 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST
 
 from apps.accounts.decorators import landlord_required, tenant_required
+from apps.accounts.services import send_tenancy_confirmation_otp
 from apps.applications.models import Application
 from apps.documents.services import get_documents_for
 from apps.tenancies.models import Agreement, Tenancy
@@ -84,6 +86,7 @@ def tenancy_detail(request, pk):
     still needs updating to actually render this — not done here, no
     template file for this session.
     """
+    from apps.negotiations.services import get_current_proposal
     tenancy = get_object_or_404(Tenancy, pk=pk)
 
     # Only the landlord or tenant party to this specific tenancy may view it.
@@ -94,6 +97,7 @@ def tenancy_detail(request, pk):
         "tenancy": tenancy,
         "is_landlord": request.user == tenancy.landlord,
         "agreement": getattr(tenancy, "agreement", None),
+        "current_proposal": get_current_proposal(tenancy),
         "documents": get_documents_for(tenancy),
     }
     return render(request, "tenancies/tenancy_detail.html", context)
@@ -162,7 +166,23 @@ def special_conditions_view(request, pk):
     }
     return render(request, "tenancies/special_conditions.html", context)
 
+@login_required
+@require_POST
+def request_agreement_otp_view(request, pk):
+    tenancy = get_object_or_404(Tenancy, pk=pk)
+    if request.user not in (tenancy.landlord, tenancy.tenant):
+        raise Http404
 
+    # Confirm an Agreement actually exists before sending a code for it —
+    # otherwise a party could request one before negotiation has even
+    # resolved.
+    get_object_or_404(Agreement, tenancy=tenancy)
+
+    send_tenancy_confirmation_otp(request.user)
+    # TODO: Call notifications.tasks.send_sms.delay(...) — same stub gap
+    # as resend_verification_otp, not new to this change.
+    messages.info(request, "A confirmation code has been sent to your phone.")
+    return redirect("tenancies:agreement_detail", pk=pk)
 # Shared: OTP confirmation for either party
 
 @login_required

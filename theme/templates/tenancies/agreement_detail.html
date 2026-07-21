@@ -53,12 +53,31 @@
     </div>
   </div>
 
-  {# OTP confirmation form — only shown to a party who hasn't confirmed yet #}
+  {# OTP confirmation — only shown to a party who hasn't confirmed yet #}
   {% if not agreement.is_fully_executed %}
     {% if is_landlord and not agreement.landlord_confirmed_at or not is_landlord and not agreement.tenant_confirmed_at %}
     <div class="rounded-2xl p-6 mb-6" style="background:white; border:0.5px solid #E5E0D8;">
       <h2 class="text-sm font-semibold uppercase tracking-widest mb-3" style="color:#9CA3AF;">Confirm via OTP</h2>
-      <p class="text-xs mb-4" style="color:#9CA3AF;">Enter the one-time code sent to your registered phone number.</p>
+      <p class="text-xs mb-4" style="color:#9CA3AF;">
+        Request a one-time code to your registered phone number, then enter it below to confirm.
+      </p>
+
+      {# NEW — Request Code. Separate explicit action, not auto-sent on
+         page load: create_otp() invalidates any unused code for this
+         purpose before issuing a new one, so auto-sending here would
+         silently kill a code the other party hasn't entered yet every
+         time either party views this page. #}
+      <form method="post" action="{% url 'tenancies:request_agreement_otp' tenancy.pk %}" class="mb-3">
+        {% csrf_token %}
+        <button type="submit"
+                class="text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
+                style="background:#F0FDF4; color:#166534; border:1px solid #BBF7D0;"
+                onmouseover="this.style.background='#DCFCE7'"
+                onmouseout="this.style.background='#F0FDF4'">
+          Send me a code
+        </button>
+      </form>
+
       <form method="post" action="{% url 'tenancies:confirm_agreement' tenancy.pk %}" class="flex gap-3">
         {% csrf_token %}
         <input type="text" name="otp_code" placeholder="6-digit code" maxlength="6"

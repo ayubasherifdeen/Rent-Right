@@ -35,12 +35,12 @@
         {% if photos.count > 1 %}
         <div style="display:flex; gap:8px; padding:8px; overflow-x:auto;">
           {% for photo in photos %}
-          <img src="{{ photo.image.url }}" alt="{{ photo.caption|default:property.title }}"
+          <img src="{{ photo.image.url }}" alt="{{ photo.caption|default:property.title }}" target="_blank"
                onclick="document.getElementById('main-photo').src=this.src"
                style="height:64px; width:88px; object-fit:cover; border-radius:6px; cursor:pointer;
                       border:2px solid {% if photo.is_primary %}#1C3829{% else %}transparent{% endif %};
                       flex-shrink:0;"
-               onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
+               onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'" >
           {% endfor %}
         </div>
         {% endif %}

@@ -49,6 +49,7 @@ LOCAL_APPS = [
     'apps.applications',
     'apps.tenancies',
     'apps.documents',
+    'apps.negotiations',
     #  apps.applications, etc. added as we build them
 ]
 

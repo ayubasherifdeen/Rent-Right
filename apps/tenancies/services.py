@@ -15,6 +15,8 @@ from django.utils import timezone
 
 from dateutil.relativedelta import relativedelta
 
+from apps.listings.models import ListingStatus
+
 
 
 def create_tenancy(application, landlord):
@@ -84,11 +86,15 @@ def create_tenancy(application, landlord):
         )
 
         # Lock the property — no further applications can be submitted.
-        
+        prop.status = ListingStatus.PENDING_PAYMENT
         prop.save(update_fields=["status", "updated_at"])
 
         #decline all other PENDING applications for this property.
         _decline_remaining_applications(prop, exclude_application=application)
+
+        #opens negotiation, prefilled with the property's default instalment terms.
+        from apps.negotiations.services import open_negotiation
+        open_negotiation(tenancy)
 
     return tenancy
 
@@ -207,10 +213,11 @@ def confirm_agreement_landlord(agreement, landlord, otp_code):
     if agreement.status == AgreementStatus.FULLY_EXECUTED:
         raise ValueError("This agreement has already been fully executed.")
 
-    otp_ref = verify_otp(landlord, otp_code, purpose="tenancy_confirm")
+    if not verify_otp(landlord, otp_code, purpose="tenancy_confirm"):
+        raise ValueError("Invalid or expired OTP.")
 
     agreement.landlord_confirmed_at = timezone.now()
-    agreement.landlord_otp_ref = otp_ref or ""
+    agreement.landlord_otp_ref = otp_code
 
     if agreement.tenant_confirmed_at:
         agreement.save(

@@ -1,3 +1,5 @@
+from django.contrib import messages
+
 from django.contrib.auth.decorators import login_required
 from django.http import Http404, HttpResponseBadRequest, HttpResponseNotAllowed
 from django.shortcuts import get_object_or_404, redirect, render
@@ -50,12 +52,6 @@ def counter_proposal_view(request, proposal_id):
     try:
         advance_months = int(request.POST["advance_months"])
         instalment_count = int(request.POST["instalment_count"])
-        # instalment_schedule expected as JSON-encoded string in POST —
-        # form/frontend shape not decided this pass, flagging rather
-        # than guessing at a form layout.
-        import json
-
-        instalment_schedule = json.loads(request.POST["instalment_schedule"])
     except (KeyError, ValueError, TypeError):
         return HttpResponseBadRequest("Invalid or missing proposal terms.")
 
@@ -65,11 +61,12 @@ def counter_proposal_view(request, proposal_id):
             proposed_by=request.user,
             advance_months=advance_months,
             instalment_count=instalment_count,
-            instalment_schedule=instalment_schedule,
         )
     except ValueError as exc:
-        return HttpResponseBadRequest(str(exc))
-
+        messages.error(request, str(exc))
+        return redirect("negotiations:negotiation_detail", tenancy_id=proposal.tenancy_id)
+        
+    messages.success(request, "Counter proposal submitted successfully.")
     return redirect("negotiations:negotiation_detail", tenancy_id=proposal.tenancy_id)
 
 
@@ -85,8 +82,10 @@ def accept_proposal_view(request, proposal_id):
     try:
         agreement = accept_proposal(proposal, accepted_by=request.user)
     except ValueError as exc:
-        return HttpResponseBadRequest(str(exc))
+        messages.error(request, str(exc))
+        return redirect("negotiations:negotiation_detail", tenancy_id=proposal.tenancy_id)
 
+    messages.success(request, "Offer accepted — agreement created.")
     return redirect("tenancies:agreement_detail", agreement_id=agreement.pk)
 
 
@@ -102,6 +101,21 @@ def reject_proposal_view(request, proposal_id):
     try:
         reject_proposal(proposal, rejected_by=request.user)
     except ValueError as exc:
-        return HttpResponseBadRequest(str(exc))
+        messages.error(request, str(exc))
+        return redirect("negotiations:negotiation_detail", tenancy_id=proposal.tenancy_id)
+    
+    proposal.tenancy.refresh_from_db()
+
+    from apps.tenancies.models import TenancyStatus
+
+    if proposal.tenancy.status == TenancyStatus.CANCELLED:
+        messages.info(
+            request,
+            "Offer rejected. This negotiation has gone through too many "
+            "rounds without agreement and has been cancelled — the "
+            "property is available for new applications again.",
+        )
+    else:
+        messages.info(request, "Offer rejected. You can submit a counter-offer below.")
 
     return redirect("negotiations:negotiation_detail", tenancy_id=proposal.tenancy_id)
