@@ -15,5 +15,7 @@ urlpatterns = [
     path('create/',                   views.create_property,              name='create_property'),
     path('<uuid:pk>/publish/',        views.publish_prompt,               name='publish_prompt'),
     path('my-listings/',              views.my_listings,                 name='my_listings'),
-   
+    path('<uuid:pk>/edit/', views.edit_property, name='edit_property'),
+   path('<uuid:pk>/status/', views.update_listing_status, name='update_listing_status'),
+
 ]

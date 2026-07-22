@@ -15,6 +15,8 @@ from django.utils import timezone
 
 from dateutil.relativedelta import relativedelta
 
+from apps.listings.models import ListingStatus
+
 
 
 def create_tenancy(application, landlord):
@@ -84,11 +86,15 @@ def create_tenancy(application, landlord):
         )
 
         # Lock the property — no further applications can be submitted.
-        
+        prop.status = ListingStatus.PENDING_PAYMENT
         prop.save(update_fields=["status", "updated_at"])
 
         #decline all other PENDING applications for this property.
         _decline_remaining_applications(prop, exclude_application=application)
+
+        #opens negotiation, prefilled with the property's default instalment terms.
+        from apps.negotiations.services import open_negotiation
+        open_negotiation(tenancy)
 
     return tenancy
 
@@ -207,10 +213,11 @@ def confirm_agreement_landlord(agreement, landlord, otp_code):
     if agreement.status == AgreementStatus.FULLY_EXECUTED:
         raise ValueError("This agreement has already been fully executed.")
 
-    otp_ref = verify_otp(landlord, otp_code, purpose="tenancy_confirm")
+    if not verify_otp(landlord, otp_code, purpose="tenancy_confirm"):
+        raise ValueError("Invalid or expired OTP.")
 
     agreement.landlord_confirmed_at = timezone.now()
-    agreement.landlord_otp_ref = otp_ref or ""
+    agreement.landlord_otp_ref = otp_code
 
     if agreement.tenant_confirmed_at:
         agreement.save(
@@ -252,7 +259,7 @@ def confirm_agreement_tenant(agreement, tenant, otp_code):
     otp_ref = verify_otp(tenant, otp_code, purpose="tenancy_confirm")
 
     agreement.tenant_confirmed_at = timezone.now()
-    agreement.tenant_otp_ref = otp_ref or ""
+    agreement.tenant_otp_ref = otp_code
 
     if agreement.landlord_confirmed_at:
         agreement.save(
@@ -290,16 +297,12 @@ def _execute_agreement(agreement):
     transaction.atomic() block — that's a product decision, not
     something to silently assume either way.
 
-    TODO (negotiations app): if agreement.tenancy ends up with a
-    negotiation carrying a non-standard instalment schedule, also
-    generate an instalment addendum here — no such document type or
-    generator exists yet.
-
     TODO (notifications app, Month 3): SMS both parties — currently a
     stub, per handoff §19 (`_notify(user, message)`).
     """
-    from apps.documents.services import generate_rent_card, generate_tenancy_agreement
+    from apps.documents.services import generate_rent_card, generate_tenancy_agreement, generate_instalment_addendum
     from apps.tenancies.models import AgreementStatus, TenancyStatus
+    from apps.negotiations.models import ProposalStatus
 
     with transaction.atomic():
         agreement.status = AgreementStatus.FULLY_EXECUTED
@@ -312,6 +315,10 @@ def _execute_agreement(agreement):
 
         generate_tenancy_agreement(agreement)
         generate_rent_card(tenancy)
+
+        accepted_proposal = tenancy.proposals.filter(status=ProposalStatus.ACCEPTED).first()
+        if accepted_proposal and not accepted_proposal.is_opening_proposal:
+            generate_instalment_addendum(agreement)
 
     return agreement
 

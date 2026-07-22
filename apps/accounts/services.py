@@ -172,3 +172,15 @@ def reset_password(user: User, code: str, new_password: str) -> bool:
     user.save(update_fields=['password'])
     return True
 
+
+def send_tenancy_confirmation_otp(user: User) -> OTP:
+    """
+    Create a tenancy-agreement-confirmation OTP and send it via SMS.
+    Mirrors send_phone_verification_otp exactly — same create_otp()
+    call, just a different purpose. Returns the OTP so the caller can
+    trigger the SMS task.
+    """
+    otp = create_otp(user, purpose='tenancy_confirm')
+    logger.debug(f"[DEV] Tenancy confirm OTP for {user.phone_number}: {otp.code}")
+    return otp
+

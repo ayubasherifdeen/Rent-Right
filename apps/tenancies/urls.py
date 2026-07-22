@@ -30,6 +30,11 @@ urlpatterns = [
     path("<uuid:pk>/", views.tenancy_detail, name="tenancy_detail"),
     path("<uuid:pk>/agreement/", views.agreement_detail, name="agreement_detail"),
     path(
+        "<uuid:pk>/agreement/request-otp/",
+        views.request_agreement_otp_view,
+        name="request_agreement_otp",
+    ),
+    path(
         "<uuid:pk>/agreement/confirm/",
         views.confirm_agreement_view,
         name="confirm_agreement",

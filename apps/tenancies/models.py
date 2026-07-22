@@ -12,6 +12,7 @@ class TenancyStatus(models.TextChoices):
     ACTIVE              = "active",              "Active"
     EXPIRING            = "expiring",            "Expiring"
     ENDED               = "ended",               "Ended"
+    CANCELLED           = "cancelled",           "Cancelled"  # Not used yet, but may be needed for future tenancy cancellation flow.
 
 
 class Tenancy(models.Model):
@@ -157,3 +158,7 @@ class Agreement(models.Model):
     @property
     def is_fully_executed(self):
         return self.status == AgreementStatus.FULLY_EXECUTED
+    
+    @property
+    def is_cancelled(self):
+        return self.tenancy.status == TenancyStatus.CANCELLED

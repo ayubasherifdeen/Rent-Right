@@ -9,6 +9,7 @@ from django.db import models
 class DocumentType(models.TextChoices):
     RENT_CARD = "rent_card", "Rent Card"
     TENANCY_AGREEMENT = "tenancy_agreement", "Tenancy Agreement"
+    INSTALMENT_ADDENDUM = "instalment_addendum", "Instalment Addendum"
 
 
 class Document(models.Model):

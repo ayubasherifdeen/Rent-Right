@@ -86,6 +86,54 @@ def update_listing(property_obj, form_data, photo_formset=None):
     return property_obj
 
 
+def pause_listing(property_obj):
+    """
+    Temporarily hide an active listing from tenants without losing it.
+    Landlord can resume later — e.g. taking a short break from showings.
+    """
+    if property_obj.status != ListingStatus.ACTIVE:
+        raise ValueError(
+            f"Cannot pause a listing with status '{property_obj.status}'. "
+            f"Only active listings can be paused."
+        )
+    property_obj.status = ListingStatus.PAUSED
+    property_obj.save(update_fields=['status', 'updated_at'])
+    logger.debug(f"[LISTINGS] Paused '{property_obj.title}'")
+    return property_obj
+ 
+ 
+def resume_listing(property_obj):
+    """Bring a paused listing back to active/visible."""
+    if property_obj.status != ListingStatus.PAUSED:
+        raise ValueError(
+            f"Cannot resume a listing with status '{property_obj.status}'. "
+            f"Only paused listings can be resumed."
+        )
+    property_obj.status = ListingStatus.ACTIVE
+    property_obj.save(update_fields=['status', 'updated_at'])
+    logger.debug(f"[LISTINGS] Resumed '{property_obj.title}'")
+    return property_obj
+ 
+ 
+def archive_listing(property_obj):
+    """
+    Permanently take a listing off the market.
+ 
+    Allowed from draft/active/paused. Deliberately NOT allowed from
+    'rented' — there's a live tenancy there
+    """
+    allowed = {ListingStatus.DRAFT, ListingStatus.ACTIVE, ListingStatus.PAUSED}
+    if property_obj.status not in allowed:
+        raise ValueError(
+            f"Cannot archive a listing with status '{property_obj.status}'. "
+            f"Only draft, active, or paused listings can be archived."
+        )
+    property_obj.status = ListingStatus.ARCHIVED
+    property_obj.save(update_fields=['status', 'updated_at'])
+    logger.debug(f"[LISTINGS] Archived '{property_obj.title}'")
+    return property_obj
+ 
+
 def publish_listing(property_obj):
     """Move a listing from DRAFT to ACTIVE"""
     if property_obj.status != ListingStatus.DRAFT:

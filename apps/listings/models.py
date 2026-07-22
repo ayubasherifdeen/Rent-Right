@@ -257,6 +257,22 @@ class Property(models.Model):
         """
         errors = {}
 
+        from django.utils.timezone import localdate
+        today = localdate()
+        is_new_or_changed = True
+        if self.pk:
+            previous_value = (
+                Property.objects.filter(pk=self.pk)
+                .values_list('available_from', flat=True)
+                .first()
+            )
+            is_new_or_changed = previous_value != self.available_from
+ 
+        if is_new_or_changed and self.available_from and self.available_from <= today:
+            errors['available_from'] = (
+                'Select available from date that is in the future.'
+            )
+
         if self.advance_months and self.advance_months > ACT_220_MAX_ADVANCE_MONTHS:
             errors['advance_months'] = (
                 f"Advance rent cannot exceed {ACT_220_MAX_ADVANCE_MONTHS} months "
@@ -358,7 +374,7 @@ class PropertyPhoto(models.Model):
     image       = models.ImageField(upload_to=_property_photo_path)
     caption     = models.CharField(max_length=200, blank=True)
     is_primary  = models.BooleanField(default=False)
-    display_order = models.PositiveSmallIntegerField(default=0, blank=True)
+    display_order = models.PositiveSmallIntegerField(default=0, blank=True, null=True, help_text="Lower numbers appear first in the gallery")
     uploaded_at   = models.DateTimeField(auto_now_add=True)
 
     class Meta:

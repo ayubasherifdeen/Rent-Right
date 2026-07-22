@@ -1,8 +1,12 @@
 import uuid
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
+
+from apps.listings.models import ACT_220_MAX_ADVANCE_MONTHS
 
 class ProposalStatus(models.TextChoices):
     PENDING = "pending", "Pending"
@@ -15,11 +19,11 @@ class Proposal(models.Model):
     """
     One step in a bilateral instalment negotiation for a Tenancy.
 
-    Immutable chain, not a mutated single row: every counter creates a
+    Immutable chain: every counter creates a
     new Proposal linked back to the one it responds to via
-    `previous_proposal`. This is deliberate — it gives full negotiation
-    history "for free" (needed later for documents.generate_dispute_packet(),
-    per handoff v9 §4), rather than something that would need to be
+    `previous_proposal`to give full negotiation
+    history "for free" (needed later for documents.generate_dispute_packet()),
+    rather than something that would need to be
     reconstructed after the fact.
 
     Only instalment structure is negotiable here — `monthly_rent` is
@@ -27,15 +31,6 @@ class Proposal(models.Model):
     `advance_months` is a real field (not just JSON) specifically so
     Section 25(5)'s 6-month advance cap can be validated against it
     directly.
-
-    accept_proposal() is the handoff into the Agreement lifecycle
-    (apps.tenancies). Note Agreement itself carries no instalment
-    fields — the accepted Proposal remains the source of truth for
-    those terms; anything reading instalment data after acceptance
-    (e.g. apps.documents.generate_tenancy_agreement) goes through
-    tenancy.proposals.get(status=ProposalStatus.ACCEPTED), not through
-    Agreement. See handoff discussion for why (no confirmed §16 spec
-    to source an alternative from).
     """
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -53,9 +48,14 @@ class Proposal(models.Model):
     status = models.CharField(
         max_length=16, choices=ProposalStatus.choices, default=ProposalStatus.PENDING
     )
-
+    proposal_count = models.PositiveSmallIntegerField(blank = False, null = True, default = 1)
     # Instalment terms only — monthly_rent is never touched by this app.
-    advance_months = models.PositiveSmallIntegerField()  # must stay <= 6, Section 25(5)
+    advance_months = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(ACT_220_MAX_ADVANCE_MONTHS)],
+        help_text=(
+            f"Maximum {ACT_220_MAX_ADVANCE_MONTHS} months per Section 25(5) of Act 220."
+        ),
+    )
     instalment_count = models.PositiveSmallIntegerField()
     instalment_schedule = models.JSONField()  # [{"due_date": ..., "amount": ...}, ...]
 
@@ -72,3 +72,21 @@ class Proposal(models.Model):
     @property
     def is_opening_proposal(self):
         return self.previous_proposal_id is None
+    
+    def clean(self):
+        """
+        Second layer of Section 25(5) enforcement, same reasoning as
+        Property.clean(): catches anything that bypasses the field
+        validator (bulk updates, admin edits, direct .save() calls that
+        skip full_clean()).
+        """
+        errors = {}
+        if self.advance_months and self.advance_months > ACT_220_MAX_ADVANCE_MONTHS:
+            errors["advance_months"] = (
+                f"Advance rent cannot exceed {ACT_220_MAX_ADVANCE_MONTHS} months "
+                f"under Section 25(5) of the Rent Act, 1963 (Act 220). "
+                f"You entered {self.advance_months} months."
+            )
+        if errors:
+            raise ValidationError(errors)
+
