@@ -1,0 +1,63 @@
+{% extends 'accounts/dashboard_base.html' %}
+{% block page_title %}Managed Properties{% endblock %}
+{% block page_subtitle %}Properties you manage on behalf of landlords{% endblock %}
+
+{% block sidebar_nav %}
+  <a href="{% url 'accounts:dashboard' %}" class="nav-link">
+    <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+    Dashboard
+  </a>
+  <a href="{% url 'accounts:managed_properties' %}" class="nav-link active">
+    <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l9-9 9 9M5 10v10a1 1 0 001 1h12a1 1 0 001-1V10"/></svg>
+    Managed Properties
+  </a>
+  <a href="{% url 'accounts:manager_invites' %}" class="nav-link">
+    <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+    Invites
+  </a>
+{% endblock %}
+
+{% block dashboard_content %}
+<div style="max-width:920px;">
+
+  {% if not properties %}
+    <div class="page-card" style="padding:40px; text-align:center;">
+      <p style="color:#9CA3AF; font-size:14px;">You're not managing any properties yet.</p>
+      <p style="color:#9CA3AF; font-size:13px; margin-top:6px;">
+        Ask a landlord to invite you, or check your
+        <a href="{% url 'accounts:manager_invites' %}" style="color:#1C3829; font-weight:600;">pending invites</a>.
+      </p>
+    </div>
+  {% else %}
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+      {% for property in properties %}
+        <div class="page-card" style="padding:20px;">
+          <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin-bottom:8px;">
+            <h3 style="font-family:'Playfair Display',Georgia,serif; font-size:16px; font-weight:700; color:#1C3829;">
+              {{ property.title }}
+            </h3>
+            <span style="flex-shrink:0; padding:3px 10px; border-radius:999px; font-size:10px; font-weight:700;
+                         text-transform:uppercase; letter-spacing:0.03em;
+                         {% if property.status == 'active' %}background:#F0FDF4; color:#166534;
+                         {% elif property.status == 'paused' %}background:#FFFBEB; color:#92400E;
+                         {% elif property.status == 'archived' %}background:#F3F4F6; color:#6B7280;
+                         {% else %}background:#EFF6FF; color:#1D4ED8;{% endif %}">
+              {{ property.get_status_display }}
+            </span>
+          </div>
+          <p class="text-xs" style="color:#6B7280; margin-bottom:14px;">{{ property.address }}</p>
+          <p class="text-xs" style="color:#9CA3AF; margin-bottom:16px;">
+            Landlord: {{ property.landlord.full_name }}
+          </p>
+          <a href="{% url 'listings:edit_property' property.pk %}"
+             style="display:inline-block; padding:9px 20px; border-radius:10px; border:1px solid #1C3829;
+                    color:#1C3829; font-size:13px; font-weight:600; text-decoration:none;">
+            Manage
+          </a>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

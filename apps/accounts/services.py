@@ -7,12 +7,14 @@ critical operation independently testable.
 import random
 import string
 from datetime import timedelta
+from django.core.exceptions import PermissionDenied, ValidationError
 
 from django.contrib.auth import authenticate
 from django.db import transaction
 from django.utils import timezone
 
-from .models import OTP, Role, User, UserProfile
+from .models import OTP, Role, User, UserProfile, ManagedProperty
+from apps.listings.models import Property
 
 import logging
 
@@ -184,3 +186,77 @@ def send_tenancy_confirmation_otp(user: User) -> OTP:
     logger.debug(f"[DEV] Tenancy confirm OTP for {user.phone_number}: {otp.code}")
     return otp
 
+
+def invite_manager(property, landlord, manager) -> ManagedProperty:
+    """Landlord invites a manager to a property. Consensual: creates a
+    PENDING link the manager must accept before it does anything."""
+    if property.landlord_id != landlord.id:
+        raise PermissionDenied("Only the property's landlord can invite a manager for it.")
+    if not getattr(manager, "is_property_manager", lambda: False)():
+        raise ValidationError("Invited user is not a property manager.")
+    existing = ManagedProperty.objects.filter(
+        property=property, manager=manager,
+        status__in=[ManagedProperty.Status.PENDING, ManagedProperty.Status.ACTIVE],
+    ).exists()
+    if existing:
+        raise ValidationError("A pending or active link already exists for this manager and property.")
+    return ManagedProperty.objects.create(
+        property=property, manager=manager, landlord=landlord,
+        status=ManagedProperty.Status.PENDING,
+    )
+ 
+ 
+def accept_management_invite(link: ManagedProperty, manager) -> ManagedProperty:
+    if link.manager_id != manager.id:
+        raise PermissionDenied("Only the invited manager can accept this invite.")
+    if link.status != ManagedProperty.Status.PENDING:
+        raise ValidationError("This invite is no longer pending.")
+    link.status = ManagedProperty.Status.ACTIVE
+    link.responded_at = timezone.now()
+    link.save(update_fields=["status", "responded_at"])
+    return link
+ 
+ 
+def revoke_management(link: ManagedProperty, actor) -> ManagedProperty:
+    """Either side can end it. REVOKED rather than deleted — keeps
+    history, and can_act_on_property() stops returning True for this
+    pair on the very next request; nothing else caches the permission."""
+    if actor.id not in (link.landlord_id, link.manager_id):
+        raise PermissionDenied("Only the landlord or the manager on this link can revoke it.")
+    if link.status == ManagedProperty.Status.REVOKED:
+        return link
+    link.status = ManagedProperty.Status.REVOKED
+    link.revoked_at = timezone.now()
+    link.save(update_fields=["status", "revoked_at"])
+    return link
+ 
+ 
+def properties_managed_by(user):
+    property_ids = ManagedProperty.objects.filter(
+        manager=user, status=ManagedProperty.Status.ACTIVE,
+    ).values_list("property_id", flat=True)
+    return Property.objects.filter(pk__in=property_ids)
+ 
+ 
+def can_act_on_property(user, property) -> bool:
+    """The one everything downstream (edit_property, update_listing_status,
+    eventually applications) should call instead of `landlord=user`."""
+    if property.landlord_id == user.id:
+        return True
+    return ManagedProperty.objects.filter(
+        property=property, manager=user, status=ManagedProperty.Status.ACTIVE,
+    ).exists()
+ 
+ 
+def can_create_for_landlord(manager, landlord) -> bool:
+    """A manager may create a *new* listing for a landlord only once
+    trust already exists — i.e. they already have at least one ACTIVE
+    link with that landlord on some other property. This reuses the
+    existing invite/accept trust mechanism instead of inventing a new
+    'landlord authorizes a manager in general' relationship, and stops
+    a manager from creating a listing for a landlord who never agreed
+    to work with them at all."""
+    return ManagedProperty.objects.filter(
+        manager=manager, landlord=landlord, status=ManagedProperty.Status.ACTIVE,
+    ).exists()
+ 

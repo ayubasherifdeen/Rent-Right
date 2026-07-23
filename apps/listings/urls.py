@@ -18,4 +18,6 @@ urlpatterns = [
     path('<uuid:pk>/edit/', views.edit_property, name='edit_property'),
    path('<uuid:pk>/status/', views.update_listing_status, name='update_listing_status'),
 
+   path("<uuid:pk>/mark-reviewed/", views.mark_listing_reviewed, name="mark_listing_reviewed"),
+
 ]
