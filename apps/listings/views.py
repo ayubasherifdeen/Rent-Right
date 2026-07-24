@@ -167,7 +167,7 @@ def create_property(request):
                         status=ManagedProperty.Status.ACTIVE,
                         responded_at=timezone.now(),
                     )
-                    notify_landlord_new_listing(property_obj, request.user)
+                    #notify_landlord_new_listing(property_obj, request.user)
                 messages.success(request, f"'{property_obj.title}' created as a draft.")
                 return redirect('listings:publish_prompt', pk=property_obj.pk)
             except ValidationError as e:

@@ -15,6 +15,7 @@ from apps.accounts.decorators import landlord_required, tenant_required
 from apps.accounts.services import send_tenancy_confirmation_otp
 from apps.applications.models import Application
 from apps.documents.services import get_documents_for
+from apps.payments.models import PaymentType
 from apps.tenancies.models import Agreement, Tenancy
 from apps.tenancies.services import (
     activate_tenancy,
@@ -89,6 +90,16 @@ def tenancy_detail(request, pk):
     from apps.negotiations.services import get_current_proposal
     tenancy = get_object_or_404(Tenancy, pk=pk)
 
+    from apps.payments.models import Payment, PaymentType
+    from apps.payments.services import get_instalment_schedule_with_status
+
+    move_in_payment = tenancy.payments.filter(payment_type=PaymentType.MOVE_IN).order_by("-created_at").first()
+    next_due_instalment = None
+    if tenancy.status == "active":
+        schedule = get_instalment_schedule_with_status(tenancy)
+        next_due_instalment = next((row for row in schedule if row["status"] != "paid"), None)
+
+
     # Only the landlord or tenant party to this specific tenancy may view it.
     if request.user not in (tenancy.landlord, tenancy.tenant):
         raise Http404
@@ -99,6 +110,8 @@ def tenancy_detail(request, pk):
         "agreement": getattr(tenancy, "agreement", None),
         "current_proposal": get_current_proposal(tenancy),
         "documents": get_documents_for(tenancy),
+        "move_in_payment": move_in_payment,
+        "next_due_instalment": next_due_instalment,
     }
     return render(request, "tenancies/tenancy_detail.html", context)
 

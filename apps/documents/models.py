@@ -10,7 +10,7 @@ class DocumentType(models.TextChoices):
     RENT_CARD = "rent_card", "Rent Card"
     TENANCY_AGREEMENT = "tenancy_agreement", "Tenancy Agreement"
     INSTALMENT_ADDENDUM = "instalment_addendum", "Instalment Addendum"
-
+    PAYMENT_RECEIPT     = "payment_receipt",      "Payment Receipt"
 
 class Document(models.Model):
     """

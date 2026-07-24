@@ -21,7 +21,6 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-# ─── OTP ──────────────────────────────────────────────────────────────────────
 
 OTP_EXPIRY_MINUTES = 10
 
@@ -231,11 +230,20 @@ def revoke_management(link: ManagedProperty, actor) -> ManagedProperty:
     return link
  
  
-def properties_managed_by(user):
-    property_ids = ManagedProperty.objects.filter(
-        manager=user, status=ManagedProperty.Status.ACTIVE,
-    ).values_list("property_id", flat=True)
+def properties_managed_by(user, landlord=None):
+    links = ManagedProperty.objects.filter(manager=user, status=ManagedProperty.Status.ACTIVE)
+    if landlord is not None:
+        links = links.filter(landlord=landlord)
+    property_ids = links.values_list("property_id", flat=True)
     return Property.objects.filter(pk__in=property_ids)
+
+
+def landlords_managed_for(user):
+    """Distinct landlords this manager has an ACTIVE link with."""
+    landlord_ids = ManagedProperty.objects.filter(
+        manager=user, status=ManagedProperty.Status.ACTIVE,
+    ).values_list("landlord_id", flat=True).distinct()
+    return User.objects.filter(pk__in=landlord_ids)
  
  
 def can_act_on_property(user, property) -> bool:

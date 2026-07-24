@@ -15,7 +15,7 @@ from django.views.decorators.http import require_POST
 from apps.tenancies.models import Tenancy
 
 from . import services
-from .models import PaymentType
+from .models import PaymentType, PaymentStatus
 
 
 def _tenancy_for_party_or_404(pk, user):
@@ -121,6 +121,68 @@ def paystack_webhook_view(request):
                 pass  # see docstring — logged inside the service layer
 
     return JsonResponse({"received": True})
+
+
+@login_required
+def payments_dashboard_view(request):
+    """
+    Landing page for the navbar's "Payments" tab. Two different views
+    depending on role — a tenant cares about what THEY owe (move-in due,
+    next instalment due); a landlord cares about what's been RECEIVED
+    and which tenants are overdue. A user who is both a landlord on some
+    properties and a tenant on others (not disallowed anywhere in the
+    models) sees both sections.
+ 
+    ASSUMPTION FLAGGED: I don't have your navbar template or an existing
+    aggregate tenancies list (my_tenancies.html / landlord_tenancies.html)
+    to confirm the query pattern against — this re-derives "tenancies I'm
+    a tenant/landlord on" directly from Tenancy rather than reusing a
+    helper that may already exist there. If tenancies/services.py has
+    something like get_tenant_tenancies()/get_landlord_tenancies(),
+    swap these two queries for that instead of duplicating the logic.
+    """
+    from apps.tenancies.models import Tenancy, TenancyStatus
+ 
+    tenant_rows = []
+    as_tenant = Tenancy.objects.filter(tenant=request.user).exclude(
+        status=TenancyStatus.CANCELLED
+    ).select_related("rental_property")
+    for tenancy in as_tenant:
+        if tenancy.status not in (TenancyStatus.PENDING_PAYMENT, TenancyStatus.ACTIVE):
+            continue  # nothing payment-related to show pre-agreement or post-tenancy
+        move_in_payment = (
+            tenancy.payments.filter(payment_type=PaymentType.MOVE_IN)
+            .order_by("-created_at")
+            .first()
+        )
+        next_due = None
+        if tenancy.status == TenancyStatus.ACTIVE:
+            schedule = services.get_instalment_schedule_with_status(tenancy)
+            next_due = next((row for row in schedule if row["status"] != "paid"), None)
+        tenant_rows.append(
+            {"tenancy": tenancy, "move_in_payment": move_in_payment, "next_due": next_due}
+        )
+ 
+    landlord_rows = []
+    as_landlord = Tenancy.objects.filter(landlord=request.user).exclude(
+        status=TenancyStatus.CANCELLED
+    ).select_related("rental_property")
+    for tenancy in as_landlord:
+        if tenancy.status not in (TenancyStatus.PENDING_PAYMENT, TenancyStatus.ACTIVE):
+            continue
+        overdue = services.get_overdue_instalments(tenancy) if tenancy.status == TenancyStatus.ACTIVE else []
+        move_in_paid = tenancy.payments.filter(
+            payment_type=PaymentType.MOVE_IN, status=PaymentStatus.SUCCESS
+        ).exists()
+        landlord_rows.append(
+            {"tenancy": tenancy, "move_in_paid": move_in_paid, "overdue_count": len(overdue)}
+        )
+ 
+    return render(
+        request,
+        "payments/payments_dashboard.html",
+        {"tenant_rows": tenant_rows, "landlord_rows": landlord_rows},
+    )
 
 
 @login_required

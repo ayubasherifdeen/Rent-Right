@@ -3,6 +3,29 @@
 {% block title %}Applications — RentRight GH{% endblock %}
 
 {% block sidebar_nav %}
+{% if is_manager %}
+  <a href="{% url 'accounts:manager_dashboard' %}" class="nav-link {% if request.path == '/accounts/dashboard/landlord/' %}active{% endif %}">
+    <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+    Dashboard
+  </a>
+  <a href="{% url 'accounts:managed_properties' %}" class="nav-link">
+    <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l9-9 9 9M5 10v10a1 1 0 001 1h12a1 1 0 001-1V10"/></svg>
+    Managed Properties
+  </a>
+  <a href="{% url 'listings:create_property' %}" class="nav-link {% if request.path == '/listings/create/' %}active{% endif %}">
+    <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>Add Property
+  </a>
+   <a href="{% url 'applications:received_applications' %}" class="nav-link {% if request.path == '/applications/landlord/' %}active{% endif %}">
+    <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>Applications
+  </a>
+  <a href="{% url 'accounts:manager_invites' %}" class="nav-link">
+    <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+    Invites
+    {% if pending_invites_count %}
+      <span style="margin-left:auto; background:#EF4444; color:white; font-size:10px; font-weight:700; border-radius:999px; padding:1px 7px;">{{ pending_invites_count }}</span>
+    {% endif %}
+  </a>
+  {% else %}
   <a href="{% url 'accounts:landlord_dashboard' %}" class="nav-link {% if request.path == '/accounts/dashboard/landlord/' %}active{% endif %}">
     <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
     Dashboard
@@ -10,12 +33,22 @@
   <a href="{% url 'listings:create_property' %}" class="nav-link {% if request.path == '/listings/create/' %}active{% endif %}">
     <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>Add Property
   </a>
-  <a href="{% url 'listings:my_listings' %}" class="nav-link"><svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5"/></svg>Properties</a>
-  <a href="{% url 'applications:received_applications' %}" class="nav-link"><svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>Applications</a>
-    <a href="{% url 'tenancies:landlord_tenancies' %}" class="nav-link"><svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>Tenancies</a>
-  <a href="#" class="nav-link"><svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>Payments</a>
+  <a href="{% url 'listings:my_listings' %}" class="nav-link {% if request.path == '/listings/my_listings/' %}active{% endif %}">
+    <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5"/></svg>Properties
+  </a>
+  <a href="{% url 'applications:received_applications' %}" class="nav-link active">
+    <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>Applications
+  </a>
+  {% endif %}
+  {% if not is_manager %}
+  <a href="{% url 'tenancies:landlord_tenancies' %}" class="nav-link {% if request.path == '/tenancies/landlord/' %}active{% endif %}">
+    <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>Tenancies
+  </a>
+  <a href="{% url 'payments:payments' %}" class="nav-link {% if request.path == '/payments/' %}active{% endif %}">
+    <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>Payments</a>
   <a href="#" class="nav-link"><svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>Maintenance</a>
   <a href="#" class="nav-link"><svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>Analytics</a>
+  {% endif %}
 {% endblock %}
 
 {% block dashboard_content %}
@@ -45,11 +78,90 @@
   {% endfor %}
   {% endif %}
 
+  {% if is_manager and available_landlords %}
+  <div style="background:linear-gradient(135deg,#F7F3EC 0%,#F0EBE0 100%); border:0.5px solid #E5E0D8;
+              border-radius:14px; padding:14px 18px; margin-bottom:20px;
+              display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+    <div style="display:flex; align-items:center; gap:8px; color:#7A9E7E;">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 21V7a2 2 0 012-2h5l2 2h5a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2z"/>
+      </svg>
+      <span style="font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; color:#6B7280;">
+        Landlord
+      </span>
+    </div>
+    <form method="get" style="flex:1; min-width:200px;">
+      {% if selected_status %}<input type="hidden" name="status" value="{{ selected_status }}">{% endif %}
+      <div style="position:relative; max-width:280px;">
+        <select id="landlord-filter" name="landlord" onchange="this.form.submit()"
+                style="width:100%; appearance:none; -webkit-appearance:none; padding:9px 34px 9px 14px;
+                       border:1px solid #D9CDBB; border-radius:10px; font-size:13px; font-weight:600;
+                       color:#1C3829; background:#fff; font-family:Inter,sans-serif; cursor:pointer;
+                       box-shadow:0 1px 2px rgba(28,56,41,0.06);">
+          <option value="">All landlords</option>
+          {% for landlord in available_landlords %}
+          <option value="{{ landlord.pk }}" {% if selected_landlord == landlord.pk|stringformat:"s" %}selected{% endif %}>
+            {{ landlord.get_full_name }}
+          </option>
+          {% endfor %}
+        </select>
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#7A9E7E"
+             style="position:absolute; right:12px; top:50%; transform:translateY(-50%); pointer-events:none;">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 9l6 6 6-6"/>
+        </svg>
+      </div>
+    </form>
+    {% if selected_landlord %}
+    <a href="?{% if selected_status %}status={{ selected_status }}{% endif %}"
+       style="font-size:12px; color:#9CA3AF; text-decoration:underline; text-decoration-color:#D9CDBB;
+              font-family:Inter,sans-serif; white-space:nowrap;">
+      Clear
+    </a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {# ── Filter tabs — segmented control, always visible so filters can be cleared from empty state too #}
+  <div style="display:inline-flex; padding:4px; background:#F0EBE0; border:0.5px solid #E5E0D8;
+              border-radius:12px; margin-bottom:20px; gap:2px; flex-wrap:wrap;">
+    <a href="?{% if selected_landlord %}landlord={{ selected_landlord }}{% endif %}"
+       style="padding:7px 16px; border-radius:9px; font-size:12.5px; font-weight:600;
+              text-decoration:none; font-family:Inter,sans-serif; transition:all .15s ease; white-space:nowrap;
+              {% if not selected_status %}background:#1C3829; color:#fff; box-shadow:0 1px 3px rgba(28,56,41,0.25);
+              {% else %}background:transparent; color:#6B7280;{% endif %}">
+      All
+    </a>
+    {% for status_val, status_label in status_choices %}
+    <a href="?status={{ status_val }}{% if selected_landlord %}&landlord={{ selected_landlord }}{% endif %}"
+       style="padding:7px 16px; border-radius:9px; font-size:12.5px; font-weight:600;
+              text-decoration:none; font-family:Inter,sans-serif; transition:all .15s ease; white-space:nowrap;
+              {% if selected_status == status_val %}background:#1C3829; color:#fff; box-shadow:0 1px 3px rgba(28,56,41,0.25);
+              {% else %}background:transparent; color:#6B7280;{% endif %}">
+      {{ status_label }}
+    </a>
+    {% endfor %}
+  </div>
+
   {# ── Empty state ───────────────────────────────────────────────────────── #}
   {% if not applications %}
   <div style="text-align:center; padding:64px 24px; background:#fff;
                 border:0.5px solid #E5E0D8; border-radius:14px;">
-    <p style="font-size:2rem; margin:0 0 12px;">📬</p>
+    <p style="font-size:2rem; margin:0 0 12px;">{% if selected_status or selected_landlord %}🔍{% else %}📬{% endif %}</p>
+    {% if selected_status or selected_landlord %}
+    <p style="font-family:'Playfair Display',Georgia,serif; font-size:1.2rem;
+                font-weight:700; color:#1C3829; margin:0 0 8px;">
+      No applications match this filter
+    </p>
+    <p style="font-size:13px; color:#9CA3AF; margin:0 0 16px;">
+      Try a different status or landlord.
+    </p>
+    <a href="{% url 'applications:received_applications' %}"
+       style="display:inline-block; padding:8px 18px; background:#1C3829; color:#fff;
+              border-radius:8px; font-size:13px; font-weight:600; text-decoration:none;
+              font-family:Inter,sans-serif;">
+      Clear filters
+    </a>
+    {% else %}
     <p style="font-family:'Playfair Display',Georgia,serif; font-size:1.2rem;
                 font-weight:700; color:#1C3829; margin:0 0 8px;">
       No applications yet
@@ -57,16 +169,10 @@
     <p style="font-size:13px; color:#9CA3AF; margin:0;">
       Applications will appear here when tenants apply for your properties.
     </p>
+    {% endif %}
   </div>
 
   {% else %}
-
-  {# ── Filter tabs (visual only — actual filtering handled in view queryset) #}
-  <div style="display:flex; gap:8px; margin-bottom:20px; flex-wrap:wrap;">
-    {% for status_val, status_label in status_choices %}
-    {# Future enhancement: add JS or URL params to filter by tab #}
-    {% endfor %}
-  </div>
 
   {# ── Application rows ──────────────────────────────────────────────── #}
   <div style="display:flex; flex-direction:column; gap:14px;">
@@ -95,6 +201,11 @@
             style="font-size:14px; font-weight:600; color:#2A5240; text-decoration:none;">
             {{ app.rental_property.title }}
           </a>
+          {% if is_manager %}
+<p style="font-size:12px; color:#9CA3AF; margin:2px 0 0;">
+  Landlord: {{ app.rental_property.landlord.get_full_name }}
+</p>
+{% endif %}
           <p style="font-size:12px; color:#9CA3AF; margin:4px 0 0;">
             Move-in: {{ app.move_in_date|date:"j M Y" }}
           </p>
@@ -151,7 +262,12 @@
         <a href="{% url 'tenancies:tenancy_detail' app.tenancy.pk %}">
           View Tenancy →
         </a>
-        {% else %}
+      
+      {% elif is_manager %}
+    <span style="font-size:13px; color:#6B7280; font-style:italic;">
+      Awaiting landlord to create tenancy
+    </span>
+  {% else %}
         <form method="post" action="{% url 'tenancies:create_tenancy' app.pk %}">
           {% csrf_token %}
           <button type="submit" class="text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"

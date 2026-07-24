@@ -20,13 +20,14 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_POST
 from django.http import HttpResponseForbidden
 
+from apps.accounts import models
 from apps.accounts.decorators import (
     tenant_required,
     landlord_or_manager_required,
     phone_verified_required,
 )
 from apps.listings.models import Property
-from .models import Application
+from .models import Application, ApplicationStatus
 from .forms import ApplicationForm
 from . import services
 
@@ -110,21 +111,51 @@ def received_applications(request):
     Filtered to only show applications for properties this landlord owns.
     A manager sees applications for all properties they manage.
     """
-    applications = (
+    from apps.accounts.services import properties_managed_by, landlords_managed_for
+
+    is_manager = request.user.is_property_manager()
+    base_qs = (
         Application.objects
-        .filter(rental_property__landlord=request.user)
-        .select_related('rental_property', 'tenant', 'tenant__userprofile')
-        .order_by('-created_at')
+        .select_related('rental_property', 'rental_property__landlord', 'tenant', 'tenant__userprofile')
     )
+
+    available_landlords = None
+    selected_landlord = None
+
+    if is_manager:
+        applications = base_qs.filter(rental_property__in=properties_managed_by(request.user))
+
+        selected_landlord = request.GET.get('landlord') or None
+        if selected_landlord:
+            applications = applications.filter(rental_property__landlord_id=selected_landlord)
+
+        available_landlords = landlords_managed_for(request.user)
+    else:
+        applications = base_qs.filter(rental_property__landlord=request.user)
+
+    #status filter
+    selected_status = request.GET.get('status') or None
+    valid_statuses = {choice.value for choice in ApplicationStatus}
+    if selected_status not in valid_statuses:
+        selected_status = None
+    if selected_status:
+        applications = applications.filter(status=selected_status)
+
+    applications = applications.order_by('-created_at')
+
     from apps.tenancies.models import Tenancy
     tenancy_app_pks = set(
-       Tenancy.objects.filter(
-           application__in=applications
-       ).values_list("application_id", flat=True)
+        Tenancy.objects.filter(application__in=applications).values_list("application_id", flat=True)
     )
+
     context = {
         'applications': applications,
-        'tenancy_app_pks': tenancy_app_pks
+        'tenancy_app_pks': tenancy_app_pks,
+        'is_manager': is_manager,
+        'available_landlords': available_landlords,
+        'selected_landlord': selected_landlord,
+        'selected_status': selected_status,
+        'status_choices': ApplicationStatus.choices,
     }
     
     return render(request, 'applications/received_applications.html', context)

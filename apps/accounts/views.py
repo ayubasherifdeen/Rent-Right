@@ -11,6 +11,7 @@ from django.shortcuts import redirect, render
 from django.views.decorators.http import require_http_methods, require_POST
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.shortcuts import get_object_or_404, redirect, render
+from httpcore import request
 from .decorators import phone_verified_required, property_manager_required
 from apps.accounts.models import ManagedProperty, User
 from apps.listings.models import Property
@@ -24,6 +25,7 @@ from .forms import (
 )
 from .services import (
     confirm_phone_verification,
+    landlords_managed_for,
     properties_managed_by,
     register_user,
     reset_password,
@@ -178,9 +180,16 @@ def revoke_management_view(request, link_pk):
  
 @property_manager_required
 def managed_properties_view(request):
-    """Replaces the currently-empty manager.html dashboard shell."""
-    properties = properties_managed_by(request.user)
-    return render(request, "accounts/managed_properties.html", {"properties": properties})
+    """Return the list of properties managed by the current user."""
+    landlord_id = request.GET.get("landlord")
+    landlord_obj = get_object_or_404(User, pk=landlord_id) if landlord_id else None
+    properties = properties_managed_by(request.user, landlord=landlord_obj)
+    return render(request, "accounts/managed_properties.html", {
+        "properties": properties,
+        "landlords": landlords_managed_for(request.user),
+        "selected_landlord": landlord_obj,
+    })
+ 
 
 # Dashboard
 
@@ -218,8 +227,16 @@ def tenant_dashboard(request):
 
 @login_required
 def manager_dashboard(request):
+    managed_qs = properties_managed_by(request.user)
+    pending_invites_count = ManagedProperty.objects.filter(
+        manager=request.user, status=ManagedProperty.Status.PENDING,
+    ).count()
     return render(request, 'accounts/dashboards/manager.html', {
         'user': request.user,
+        'managed_count': managed_qs.count(),
+        'recent_managed_properties': managed_qs.select_related('landlord')[:5],
+        'pending_invites_count': pending_invites_count,
+        'landlord_count': landlords_managed_for(request.user).count(),
     })
 
 

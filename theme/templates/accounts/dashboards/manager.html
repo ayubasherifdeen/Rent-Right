@@ -2,12 +2,32 @@
 {% block page_title %}Manager Dashboard{% endblock %}
 {% block page_subtitle %}Welcome back, {{ request.user.first_name }}{% endblock %}
 {% block sidebar_nav %}
-  <a href="{% url 'accounts:manager_dashboard' %}" class="nav-link active">
-    <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>Dashboard
+  <a href="{% url 'accounts:dashboard' %}" class="nav-link active">
+    <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+    Dashboard
   </a>
-  <a href="#" class="nav-link"><svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5"/></svg>Assigned Properties</a>
+  <a href="{% url 'accounts:managed_properties' %}" class="nav-link">
+    <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l9-9 9 9M5 10v10a1 1 0 001 1h12a1 1 0 001-1V10"/></svg>
+    Managed Properties
+  </a>
+  <a href="{% url 'listings:create_property' %}" class="nav-link {% if request.path == '/listings/create/' %}active{% endif %}">
+    <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>Add Property
+  </a>
+   <a href="{% url 'applications:received_applications' %}" class="nav-link {% if request.path == '/applications/received/' %}active{% endif %}">
+    <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>Applications</a>
+  <a href="{% url 'accounts:manager_invites' %}" class="nav-link">
+    <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+    Invites
+    {% if pending_invites_count %}
+      <span style="margin-left:auto; background:#EF4444; color:white; font-size:10px; font-weight:700; border-radius:999px; padding:1px 7px;">{{ pending_invites_count }}</span>
+    {% endif %}
+  </a>
 {% endblock %}
+
 {% block dashboard_content %}
+
+{% if managed_count == 0 and pending_invites_count == 0 %}
+  {# Genuinely nothing to show yet — keep the original empty state #}
   <div class="page-card" style="padding:60px 24px; text-align:center;">
     <div style="width:60px; height:60px; background:#F7F3EC; border-radius:16px; display:flex; align-items:center; justify-content:center; margin:0 auto 20px;">
       <svg width="28" height="28" fill="none" stroke="#7A9E7E" stroke-width="1.5" viewBox="0 0 24 24">
@@ -19,4 +39,55 @@
       A landlord needs to link you to their properties. Share your RentRight GH profile with landlords you work with.
     </p>
   </div>
+
+{% else %}
+
+  {# ── Stats row ─────────────────────────────────────────────── #}
+  <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:16px; margin-bottom:24px;">
+    <div class="page-card" style="padding:20px;">
+      <p class="text-xs font-semibold uppercase tracking-wider" style="color:#9CA3AF; margin-bottom:6px;">Managed Properties</p>
+      <p style="font-family:'Playfair Display',Georgia,serif; font-size:28px; font-weight:700; color:#1C3829;">{{ managed_count }}</p>
+    </div>
+    <div class="page-card" style="padding:20px;">
+      <p class="text-xs font-semibold uppercase tracking-wider" style="color:#9CA3AF; margin-bottom:6px;">Landlords You Work With</p>
+      <p style="font-family:'Playfair Display',Georgia,serif; font-size:28px; font-weight:700; color:#1C3829;">{{ landlord_count }}</p>
+    </div>
+    <div class="page-card" style="padding:20px; {% if pending_invites_count %}border-color:#FCD34D;{% endif %}">
+      <p class="text-xs font-semibold uppercase tracking-wider" style="color:#9CA3AF; margin-bottom:6px;">Pending Invites</p>
+      <p style="font-family:'Playfair Display',Georgia,serif; font-size:28px; font-weight:700; color:{% if pending_invites_count %}#92400E{% else %}#1C3829{% endif %};">
+        {{ pending_invites_count }}
+      </p>
+    </div>
+  </div>
+
+  {% if pending_invites_count %}
+    <div class="page-card" style="padding:16px 20px; margin-bottom:24px; background:#FFFBEB; border-color:#FCD34D; display:flex; align-items:center; justify-content:space-between;">
+      <p style="font-size:13px; color:#92400E; font-weight:600;">
+        You have {{ pending_invites_count }} pending invite{{ pending_invites_count|pluralize }}.
+      </p>
+      <a href="{% url 'accounts:manager_invites' %}" style="font-size:13px; font-weight:700; color:#92400E; text-decoration:underline;">Review →</a>
+    </div>
+  {% endif %}
+
+  {# ── Recent managed properties ────────────────────────────── #}
+  {% if recent_managed_properties %}
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+      <h2 style="font-family:'Playfair Display',Georgia,serif; font-size:18px; font-weight:700; color:#1C3829;">Recent properties</h2>
+      <a href="{% url 'accounts:managed_properties' %}" style="font-size:13px; font-weight:600; color:#1C3829; text-decoration:none;">View all →</a>
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+      {% for property in recent_managed_properties %}
+        <div class="page-card" style="padding:18px;">
+          <h3 style="font-family:'Playfair Display',Georgia,serif; font-size:15px; font-weight:700; color:#1C3829; margin-bottom:4px;">
+            {{ property.title }}
+          </h3>
+          <p class="text-xs" style="color:#6B7280; margin-bottom:2px;">{{ property.address }}</p>
+          <p class="text-xs" style="color:#9CA3AF;">Landlord: {{ property.landlord.full_name }}</p>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+{% endif %}
+
 {% endblock %}

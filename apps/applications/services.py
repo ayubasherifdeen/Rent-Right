@@ -15,6 +15,7 @@ Why ValueError (not PermissionDenied or Http404)?
 from django.conf import settings
 from django.db import IntegrityError
 
+
 from .models import Application, ApplicationStatus
 
 
@@ -100,7 +101,7 @@ def submit_application(tenant, property_obj, move_in_date, message='') -> Applic
     return application
 
 
-def approve_application(application, landlord) -> Application:
+def approve_application(application, actor) -> Application:
     """
     Move application from PENDING → APPROVED.
 
@@ -114,8 +115,9 @@ def approve_application(application, landlord) -> Application:
     "Create Tenancy" CTA, tenant sees "Awaiting tenancy setup".
     """
     # Guard 1 — ownership
-    if application.rental_property.landlord != landlord:
-        raise ValueError("You do not own this property.")
+    from apps.accounts.services import can_act_on_property
+    if not can_act_on_property(actor, application.rental_property):
+        raise ValueError("You do not have permission to act on this property.")
 
     # Guard 2 — status
     if application.status != ApplicationStatus.PENDING:
@@ -133,10 +135,18 @@ def approve_application(application, landlord) -> Application:
         f"Your landlord will set up the tenancy details shortly.",
     )
 
+    landlord = application.rental_property.landlord
+    if actor != landlord:
+        _notify(
+            landlord,
+            f"{actor.get_full_name()} (your property manager) approved an application "
+            f"from {application.tenant.get_full_name()} for {application.rental_property.title}.",
+        )
+
     return application
 
 
-def decline_application(application, landlord, reason='') -> Application:
+def decline_application(application, actor, reason='') -> Application:
     """
     Move application from PENDING → DECLINED.
 
@@ -149,8 +159,9 @@ def decline_application(application, landlord, reason='') -> Application:
     model has no reason field. Add it in a later migration when it's needed.
     """
     # Guard 1 — ownership
-    if application.rental_property.landlord != landlord:
-        raise ValueError("You do not own this property.")
+    from apps.accounts.services import can_act_on_property
+    if not can_act_on_property(actor, application.rental_property):
+        raise ValueError("You do not have permission to act on this property.")
 
     # Guard 2 — status
     if application.status != ApplicationStatus.PENDING:
@@ -168,6 +179,14 @@ def decline_application(application, landlord, reason='') -> Application:
         f"Your application for {application.rental_property.title} was not successful.{reason_text} "
         f"You are welcome to apply for other properties.",
     )
+
+    landlord = application.rental_property.landlord
+    if actor != landlord:
+        _notify(
+            landlord,
+            f"{actor.get_full_name()} (your property manager) declined an application "
+            f"from {application.tenant.get_full_name()} for {application.rental_property.title}.{reason_text}",
+        )
 
     return application
 
