@@ -1,4 +1,4 @@
-# InventiQ — Inventory & Sales Management
+# Rent Right GH - A Rent lifecycle management system
 
 # Background
 In Ghana, the rapid growth of population, especially in urban centers  has crated a situations where population overwhelms the housing. The renting sector/industry is the core housing facility adns seeing how much housing is overwhelmed, landlord take advangtage of this to exploit people with the most pervasive practice being the collecion of 2 - 3 years advance rent, apractice the country's laws specifically forbids, capping advance for long terms rent as 6 months and short term at 3 months
