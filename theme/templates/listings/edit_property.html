@@ -37,12 +37,16 @@
         </p>
       </div>
       {# Manager editing someone else's listing — show ownership notice #}
-      {% if request.user != property.landlord %}
-      <div style="background:#FEF3C7; border:1px solid #FDE68A; border-radius:8px; padding:8px 14px; font-size:0.8125rem; color:#92400E;">
-        <strong>Managing on behalf of:</strong> {{ property.landlord.full_name }}
-        <br><span style="font-size:0.75rem; color:#B45309;">The landlord will be notified of your changes.</span>
-      </div>
-      {% endif %}
+      {% if is_manager_editing %}
+  <div class="page-card" style="padding:16px 20px; margin-bottom:16px; background:#FFFBEB; border:1px solid #FCD34D; display:flex; align-items:center; gap:10px;">
+    <svg width="18" height="18" fill="none" stroke="#92400E" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0;">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M5.07 19h13.86c1.54 0 2.5-1.67 1.73-3L13.73 4c-.77-1.33-2.7-1.33-3.46 0L3.34 16c-.77 1.33.19 3 1.73 3z"/>
+    </svg>
+    <p style="font-size:13px; color:#92400E; font-weight:600;">
+      Managing on behalf of {{ property.landlord.full_name }}
+    </p>
+  </div>
+{% endif %}
     </div>
   </div>
 
@@ -323,6 +327,64 @@
     </div>
 
   </form>
+  {% if not is_manager_editing %}
+  <div class="page-card" style="padding:28px; margin-top:16px;">
+    <h2 style="font-family:'Playfair Display',Georgia,serif; font-size:20px; font-weight:700; color:#1C3829; margin-bottom:6px;">
+      Manage access
+    </h2>
+    <p class="text-xs mb-5" style="color:#9CA3AF;">
+      Invite a property manager to edit and manage this listing on your behalf.
+    </p>
+ 
+    {% if property.manager_links.all %}
+      <div style="margin-bottom:20px;">
+        {% for link in property.manager_links.all %}
+          {% if link.status != 'revoked' %}
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid #E5E0D8;">
+              <div>
+                <p style="font-size:13px; font-weight:600; color:#1C3829;">{{ link.manager.full_name }}</p>
+                <p class="text-xs" style="color:#9CA3AF;">
+                  {{ link.manager.email }} &middot;
+                  {% if link.status == 'pending' %}
+                    <span style="color:#92400E;">Invite pending</span>
+                  {% else %}
+                    <span style="color:#166534;">Active since {{ link.responded_at|date:"M j, Y" }}</span>
+                  {% endif %}
+                </p>
+              </div>
+              <form method="post" action="{% url 'accounts:revoke_management' link.pk %}"
+                    onsubmit="return confirm('Remove this manager from this property?');">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{% url 'listings:edit_property' property.pk %}"/>
+                <button type="submit"
+                        style="padding:7px 16px; border-radius:8px; border:1px solid #E5E0D8; background:white;
+                               color:#6B7280; font-size:12px; font-weight:600; cursor:pointer;">
+                  Remove
+                </button>
+              </form>
+            </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    {% endif %}
+ 
+    <form method="post" action="{% url 'accounts:invite_manager' property.pk %}"
+          style="display:flex; gap:10px; align-items:flex-end;">
+      {% csrf_token %}
+      <div style="flex:1;">
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-1.5" style="color:#6B7280;">
+          Manager's email
+        </label>
+        <input type="email" name="manager_email" required placeholder="manager@example.com"/>
+      </div>
+      <button type="submit"
+              style="padding:11px 24px; border-radius:10px; border:none; background:#1C3829;
+                     color:white; font-size:13px; font-weight:600; cursor:pointer; letter-spacing:0.02em;">
+        Invite
+      </button>
+    </form>
+  </div>
+{% endif %}
 </div>
 
 <script src="{% static 'listings/script.js' %}"></script>

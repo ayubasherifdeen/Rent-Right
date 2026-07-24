@@ -1,0 +1,77 @@
+{% extends 'accounts/dashboard_base.html' %}
+{% block page_title %}Property Invites{% endblock %}
+{% block page_subtitle %}Landlords who've invited you to manage a property{% endblock %}
+
+{% block sidebar_nav %}
+  <a href="{% url 'accounts:dashboard' %}" class="nav-link">
+    <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+    Dashboard
+  </a>
+  <a href="{% url 'accounts:managed_properties' %}" class="nav-link">
+    <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l9-9 9 9M5 10v10a1 1 0 001 1h12a1 1 0 001-1V10"/></svg>
+    Managed Properties
+  </a>
+  <a href="{% url 'listings:create_property' %}" class="nav-link {% if request.path == '/listings/create/' %}active{% endif %}">
+    <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>Add Property
+  </a>
+  <a href="{% url 'applications:received_applications' %}" class="nav-link {% if request.path == '/applications/landlord/' %}active{% endif %}">
+    <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>Applications
+  </a>
+  <a href="{% url 'accounts:manager_invites' %}" class="nav-link active">
+    <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+    Invites
+    {% if invites %}
+      <span style="margin-left:auto; background:#EF4444; color:white; font-size:10px; font-weight:700; border-radius:999px; padding:1px 7px;">{{ invites|length }}</span>
+    {% endif %}
+  </a>
+{% endblock %}
+
+{% block dashboard_content %}
+<div style="max-width:720px;">
+
+  {% if not invites %}
+    <div class="page-card" style="padding:40px; text-align:center;">
+      <p style="color:#9CA3AF; font-size:14px;">No pending invites right now.</p>
+      <p style="color:#9CA3AF; font-size:13px; margin-top:6px;">
+        When a landlord invites you to manage one of their properties, it'll show up here.
+      </p>
+    </div>
+  {% else %}
+    {% for invite in invites %}
+      <div class="page-card" style="padding:24px; margin-bottom:14px; display:flex; align-items:center; justify-content:space-between; gap:20px;">
+        <div>
+          <h3 style="font-family:'Playfair Display',Georgia,serif; font-size:17px; font-weight:700; color:#1C3829; margin-bottom:4px;">
+            {{ invite.property.title }}
+          </h3>
+          <p class="text-xs" style="color:#6B7280; margin-bottom:2px;">{{ invite.property.address }}</p>
+          <p class="text-xs" style="color:#9CA3AF;">
+            Invited by {{ invite.landlord.full_name }} &middot; {{ invite.invited_at|timesince }} ago
+          </p>
+        </div>
+
+        <div style="display:flex; gap:10px; flex-shrink:0;">
+          <form method="post" action="{% url 'accounts:accept_management_invite' invite.pk %}">
+            {% csrf_token %}
+            <button type="submit"
+                    style="padding:10px 22px; border-radius:10px; border:none; background:#1C3829;
+                           color:white; font-size:13px; font-weight:600; cursor:pointer; letter-spacing:0.02em;">
+              Accept
+            </button>
+          </form>
+          <form method="post" action="{% url 'accounts:revoke_management' invite.pk %}"
+                onsubmit="return confirm('Decline this invite?');">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{% url 'accounts:manager_invites' %}"/>
+            <button type="submit"
+                    style="padding:10px 22px; border-radius:10px; border:1px solid #E5E0D8; background:white;
+                           color:#6B7280; font-size:13px; font-weight:600; cursor:pointer;">
+              Decline
+            </button>
+          </form>
+        </div>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+</div>
+{% endblock %}

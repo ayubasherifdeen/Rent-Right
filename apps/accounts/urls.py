@@ -26,5 +26,12 @@ urlpatterns = [
     # Password reset
     path('password-reset/',          views.password_reset_request, name='password_reset_request'),
     path('password-reset/confirm/',  views.password_reset_confirm, name='password_reset_confirm'),
+
+    # Management delegation
+    path("properties/<uuid:property_pk>/invite-manager/", views.invite_manager_view, name="invite_manager"),
+    path("manager/invites/", views.manager_invites_view, name="manager_invites"),
+    path("manager/invites/<uuid:link_pk>/accept/", views.accept_management_invite_view, name="accept_management_invite"),
+    path("manager/links/<uuid:link_pk>/revoke/", views.revoke_management_view, name="revoke_management"),
+    path("manager/properties/", views.managed_properties_view, name="managed_properties"),
 ]
 

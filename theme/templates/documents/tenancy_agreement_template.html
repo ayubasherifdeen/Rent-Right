@@ -2,94 +2,261 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Tenancy Agreement</title>
+<title>Tenancy Agreement — {{ tenancy.id }}</title>
 <style>
     @page { size: A4; margin: 2.2cm; }
-    body { font-family: Georgia, 'Times New Roman', serif; font-size: 11pt; color: #1a1a1a; }
-    h1 { font-size: 16pt; text-align: center; margin-bottom: 0; }
-    .subtitle { text-align: center; font-size: 9.5pt; color: #555; margin-top: 4px; margin-bottom: 24px; }
+    body { font-family: Georgia, 'Times New Roman', serif; font-size: 10.5pt; color: #1a1a1a; line-height: 1.5; }
+
+    .doc-header { text-align: center; margin-bottom: 4px; }
+    .doc-header .ref { font-size: 8pt; color: #9CA3AF; font-family: 'Courier New', monospace; }
+    h1 { font-size: 16pt; text-align: center; margin: 6px 0 0; }
+    .subtitle { text-align: center; font-size: 9.5pt; color: #555; margin-top: 4px; margin-bottom: 20px; }
+
+    .recital { font-size: 10pt; margin-bottom: 20px; text-align: justify; }
     .parties { display: flex; justify-content: space-between; margin-bottom: 20px; }
     .party { width: 47%; }
-    .party h3 { font-size: 10.5pt; text-transform: uppercase; letter-spacing: 0.05em; color: #444; margin-bottom: 4px; }
-    table.terms { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-    table.terms td { padding: 6px 4px; border-bottom: 1px solid #ddd; }
-    table.terms td:first-child { color: #555; width: 40%; }
-    .section-title { font-size: 12pt; margin-top: 22px; margin-bottom: 6px; border-bottom: 1px solid #ccc; padding-bottom: 3px; }
-    .special-conditions { white-space: pre-wrap; }
-    .negotiated-note { font-size: 8.5pt; color: #6D28D9; margin: -8px 0 12px; font-style: italic; }
-    table.instalments { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-    table.instalments th { text-align: left; font-size: 9pt; color: #555; padding: 4px; border-bottom: 1px solid #999; }
+    .party h3 { font-size: 9.5pt; text-transform: uppercase; letter-spacing: 0.05em; color: #444; margin-bottom: 4px; }
+    .party p { font-size: 10.5pt; }
+    .party .sub { font-size: 8.5pt; color: #888; margin-top: 2px; }
+
+    .clause { margin-top: 18px; }
+    .clause-title {
+      font-size: 10.5pt; font-weight: bold; text-transform: uppercase;
+      letter-spacing: 0.03em; margin-bottom: 6px; border-bottom: 1px solid #ccc; padding-bottom: 3px;
+    }
+    .clause p { text-align: justify; margin-bottom: 6px; }
+    .clause ul { margin: 4px 0 4px 18px; }
+    .clause li { margin-bottom: 4px; text-align: justify; }
+
+    table.terms { width: 100%; border-collapse: collapse; margin-bottom: 6px; }
+    table.terms td { padding: 5px 4px; border-bottom: 1px solid #ddd; font-size: 10pt; }
+    table.terms td:first-child { color: #555; width: 42%; }
+
+    .negotiated-note { font-size: 8.5pt; color: #6D28D9; margin: 4px 0 10px; font-style: italic; }
+
+    table.instalments { width: 100%; border-collapse: collapse; margin: 6px 0 4px; }
+    table.instalments th { text-align: left; font-size: 8.5pt; color: #555; padding: 4px; border-bottom: 1px solid #999; }
     table.instalments td { font-size: 9.5pt; padding: 5px 4px; border-bottom: 1px solid #eee; }
-    .signatures { margin-top: 40px; display: flex; justify-content: space-between; }
+
+    .special-conditions { white-space: pre-wrap; }
+
+    .execution-note {
+      font-size: 8.5pt; color: #166534; background: #F0FDF4; border: 1px solid #BBF7D0;
+      border-radius: 6px; padding: 10px 14px; margin: 20px 0;
+    }
+
+    .signatures { margin-top: 30px; }
+    .sig-row { display: flex; justify-content: space-between; margin-bottom: 30px; }
     .sig-block { width: 45%; }
-    .sig-line { border-top: 1px solid #333; margin-top: 40px; padding-top: 4px; font-size: 9.5pt; color: #555; }
-    .footer-note { margin-top: 30px; font-size: 8.5pt; color: #777; text-align: center; }
+    .sig-line { border-top: 1px solid #333; margin-top: 34px; padding-top: 4px; font-size: 9pt; color: #555; }
+    .sig-block .role-label { font-size: 8.5pt; text-transform: uppercase; letter-spacing: 0.05em; color: #888; }
+
+    .footer-note { margin-top: 24px; font-size: 8pt; color: #999; text-align: center; }
 </style>
 </head>
 <body>
 
+<div class="doc-header">
+    <p class="ref">Ref: {{ tenancy.id }} · Agreement: {{ agreement.id }}</p>
+</div>
 <h1>Tenancy Agreement</h1>
 <p class="subtitle">Executed pursuant to the Rent Act, 1963 (Act 220)</p>
+
+<p class="recital">
+    This Tenancy Agreement is made this {% now "jS" %} day of {% now "F, Y" %} BETWEEN
+    <strong>{{ tenancy.landlord.get_full_name|default:tenancy.landlord }}</strong>
+    (hereinafter referred to as the "Landlord"), of the one part, AND
+    <strong>{{ tenancy.tenant.get_full_name|default:tenancy.tenant }}</strong>
+    (hereinafter referred to as the "Tenant"), of the other part. WHEREAS the
+    Landlord is the lawful owner (or authorised agent) of the property described
+    below and has agreed to let the same to the Tenant on the terms and
+    conditions contained herein.
+</p>
 
 <div class="parties">
     <div class="party">
         <h3>Landlord</h3>
         <p>{{ tenancy.landlord.get_full_name|default:tenancy.landlord }}</p>
+        <p class="sub">{{ tenancy.landlord.phone_number }}</p>
     </div>
     <div class="party">
         <h3>Tenant</h3>
         <p>{{ tenancy.tenant.get_full_name|default:tenancy.tenant }}</p>
+        <p class="sub">{{ tenancy.tenant.phone_number }}</p>
     </div>
 </div>
 
-<div class="section-title">Tenancy Terms</div>
-{% if proposal and not proposal.is_opening_proposal %}
-<p class="negotiated-note">Advance and instalment terms below reflect the negotiated agreement — see the accompanying Instalment Addendum for the full schedule.</p>
-{% endif %}
-<table class="terms">
-    <tr><td>Property</td><td>{{ tenancy.rental_property }}</td></tr>
-    <tr><td>Monthly Rent</td><td>{{ tenancy.monthly_rent }}</td></tr>
-    <tr><td>Advance Paid (months)</td><td>{{ display_advance_months }}</td></tr>
-    <tr><td>Advance Amount</td><td>{{ display_advance_amount }}</td></tr>
-    <tr><td>Lease Start Date</td><td>{{ tenancy.start_date }}</td></tr>
-    <tr><td>Lease End Date</td><td>{{ tenancy.end_date }}</td></tr>
-</table>
+<div class="clause">
+    <div class="clause-title">1. The Premises</div>
+    <p>
+        The property subject to this Agreement (the "Premises") is
+        <strong>{{ tenancy.rental_property.title }}</strong>, a
+        {{ tenancy.rental_property.get_furnishing_status_display|lower }}
+        {{ tenancy.rental_property.get_property_type_display|lower }}
+        {% if tenancy.rental_property.bedrooms %}with {{ tenancy.rental_property.bedrooms }} bedroom{{ tenancy.rental_property.bedrooms|pluralize }}{% if tenancy.rental_property.bathrooms %} and {{ tenancy.rental_property.bathrooms }} bathroom{{ tenancy.rental_property.bathrooms|pluralize }}{% endif %}, {% endif %}
+        located at {{ tenancy.rental_property.address }}, {{ tenancy.rental_property.city }},
+        {{ tenancy.rental_property.region }}.
+    </p>
+</div>
 
-{# ── Instalment Schedule — only when a negotiated proposal exists ── #}
-{% if proposal %}
-<div class="section-title">Instalment Schedule</div>
-<table class="instalments">
-    <thead>
-        <tr><th>Due Date</th><th>Amount</th></tr>
-    </thead>
-    <tbody>
-        {% for item in proposal.instalment_schedule %}
-        <tr><td>{{ item.due_date }}</td><td>{{ item.amount }}</td></tr>
-        {% endfor %}
-    </tbody>
-</table>
-{% endif %}
+<div class="clause">
+    <div class="clause-title">2. Term</div>
+    <table class="terms">
+        <tr><td>Commencement Date</td><td>{{ tenancy.start_date|date:"j F Y" }}</td></tr>
+        <tr><td>Expiry Date</td><td>{{ tenancy.end_date|date:"j F Y" }}</td></tr>
+    </table>
+    <p>
+        This tenancy shall run for the fixed term stated above. Any renewal
+        beyond the expiry date shall be subject to fresh agreement between the
+        parties and is not automatic.
+    </p>
+</div>
 
-<div class="section-title">Special Conditions</div>
-<p class="special-conditions">{{ agreement.special_conditions|default:"None." }}</p>
+<div class="clause">
+    <div class="clause-title">3. Rent</div>
+    {% if proposal and not proposal.is_opening_proposal %}
+    <p class="negotiated-note">Advance and instalment terms below reflect the negotiated agreement between the parties — see the accompanying Instalment Addendum for the full payment schedule.</p>
+    {% endif %}
+    <table class="terms">
+        <tr><td>Monthly Rent</td><td>GH₵ {{ tenancy.monthly_rent|floatformat:2 }}</td></tr>
+        <tr><td>Advance Paid</td><td>{{ display_advance_months }} month{{ display_advance_months|pluralize }} (GH₵ {{ display_advance_amount|floatformat:2 }})</td></tr>
+        <tr><td>Payment Cycle</td><td>{{ tenancy.rental_property.get_payment_cycle_display }}</td></tr>
+        <tr><td>Security Deposit</td><td>{% if tenancy.rental_property.security_deposit %}GH₵ {{ tenancy.rental_property.security_deposit|floatformat:2 }}, refundable at the end of the tenancy subject to Clause 9 (Inspection) and the condition of the Premises{% else %}None{% endif %}</td></tr>
+    </table>
+    <p>
+        The advance payment stated above does not exceed six (6) months, in
+        accordance with Section 25(5) of the Rent Act, 1963 (Act 220). The
+        Tenant shall pay rent in accordance with the payment cycle stated
+        above, or the instalment schedule below where one has been agreed.
+    </p>
+    {% if proposal %}
+    <table class="instalments">
+        <thead><tr><th>Due Date</th><th>Amount (GH₵)</th></tr></thead>
+        <tbody>
+            {% for item in proposal.instalment_schedule %}
+            <tr><td>{{ item.due_date }}</td><td>{{ item.amount }}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+</div>
+
+<div class="clause">
+    <div class="clause-title">4. Use of Premises</div>
+    <p>
+        The Premises shall be used strictly for the purposes for which they were
+        let and shall not be sublet, assigned, or used for any unlawful purpose
+        without the prior written consent of the Landlord.
+    </p>
+</div>
+
+<div class="clause">
+    <div class="clause-title">5. Maintenance and Repairs</div>
+    <ul>
+        <li>The Tenant shall keep the Premises in a clean and habitable condition and shall be responsible for minor repairs arising from ordinary use.</li>
+        <li>The Landlord shall be responsible for structural repairs and the maintenance of essential fixtures and amenities, save where damage is caused by the Tenant's negligence or misuse.</li>
+        <li>The Tenant shall not make structural alterations to the Premises without the Landlord's prior written consent.</li>
+    </ul>
+</div>
+
+<div class="clause">
+    <div class="clause-title">6. Utilities</div>
+    <p>
+        Except as otherwise agreed in the Special Conditions below, the Tenant
+        shall be responsible for the payment of all utility charges arising
+        from use of the Premises, including electricity, water, and waste
+        disposal.
+    </p>
+</div>
+
+<div class="clause">
+    <div class="clause-title">7. Termination</div>
+    <ul>
+        <li>Either party may terminate this Agreement prior to its expiry only in accordance with the terms herein or as otherwise agreed in writing between the parties.</li>
+        <li>Where the Tenant vacates the Premises voluntarily before the expiry of the term, any rent paid in advance shall be treated in accordance with the Special Conditions, or, where none are stated, shall not be refunded.</li>
+        <li>Should the Tenant remain in occupation of the Premises after expiry of this Agreement without the Landlord's written consent, such occupation shall be treated as unlawful holding over.</li>
+    </ul>
+</div>
+
+<div class="clause">
+    <div class="clause-title">8. Breach of Agreement</div>
+    <p>
+        A material breach of any term of this Agreement by either party may
+        entitle the other party to terminate this Agreement and to pursue such
+        remedies as are available at law, including compensation for any loss
+        or damage occasioned by the breach.
+    </p>
+</div>
+
+<div class="clause">
+    <div class="clause-title">9. Special Conditions</div>
+    <p class="special-conditions">{{ agreement.special_conditions|default:"None." }}</p>
+</div>
+
+<div class="clause">
+    <div class="clause-title">10. Governing Law and Dispute Resolution</div>
+    <p>
+        This Agreement is governed by the laws of the Republic of Ghana,
+        including the Rent Act, 1963 (Act 220). Any dispute arising from this
+        Agreement shall, in the first instance, be referred to the Rent
+        Control Department having jurisdiction over the Premises, or such
+        other forum as the parties may agree or as the law may require.
+    </p>
+</div>
+
+<div class="clause">
+    <div class="clause-title">11. Entire Agreement</div>
+    <p>
+        This document constitutes the entire agreement between the parties
+        with respect to the tenancy of the Premises and supersedes all prior
+        understandings, representations, or arrangements, whether oral or
+        written, save as expressly stated herein.
+    </p>
+</div>
+
+<div class="execution-note">
+    This Agreement was executed electronically via RentRight GH's dual one-time-password
+    (OTP) verification system: the Landlord confirmed on
+    {{ agreement.landlord_confirmed_at|date:"j F Y, H:i" }} and the Tenant confirmed on
+    {{ agreement.tenant_confirmed_at|date:"j F Y, H:i" }}, with full execution recorded on
+    {{ agreement.fully_executed_at|date:"j F Y, H:i" }}. This digital confirmation, together
+    with the OTP audit references retained on file, is treated by the parties as evidence of
+    valid execution. Signature blocks are provided below for the parties' records and for any
+    physical copy submitted to the Rent Control Department.
+</div>
 
 <div class="signatures">
-    <div class="sig-block">
-        <div class="sig-line">
-            Landlord — confirmed {{ agreement.landlord_confirmed_at|date:"j F Y, H:i" }}
+    <div class="sig-row">
+        <div class="sig-block">
+            <div class="sig-line">
+                <div class="role-label">Landlord</div>
+                {{ tenancy.landlord.get_full_name|default:tenancy.landlord }} · Date: ……………………
+            </div>
+        </div>
+        <div class="sig-block">
+            <div class="sig-line">
+                <div class="role-label">Tenant</div>
+                {{ tenancy.tenant.get_full_name|default:tenancy.tenant }} · Date: ……………………
+            </div>
         </div>
     </div>
-    <div class="sig-block">
-        <div class="sig-line">
-            Tenant — confirmed {{ agreement.tenant_confirmed_at|date:"j F Y, H:i" }}
+    <div class="sig-row">
+        <div class="sig-block">
+            <div class="sig-line">
+                <div class="role-label">Witness</div>
+                Name: …………………………………… · Date: ……………………
+            </div>
+        </div>
+        <div class="sig-block">
+            <div class="sig-line">
+                <div class="role-label">Witness</div>
+                Name: …………………………………… · Date: ……………………
+            </div>
         </div>
     </div>
 </div>
 
-<p class="footer-note">
-    Fully executed via dual OTP confirmation on {{ agreement.fully_executed_at|date:"j F Y, H:i" }}.
-    Generated by RentRight GH.
-</p>
+<p class="footer-note">Generated by RentRight GH · rentright.gh</p>
 
 </body>
 </html>

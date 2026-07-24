@@ -3,6 +3,7 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from django.conf import settings
 
 
 # Roles
@@ -139,4 +140,56 @@ class OTP(models.Model):
         """Mark OTP as used. Call this inside an atomic block."""
         self.is_used = True
         self.save(update_fields=['is_used'])
+
+
+class ManagedProperty(models.Model):
+    """
+    Relationship between a landlord and a property_manager, mediated by
+    a listings.Property. Lives in `accounts` rather than `listings`
+    because it's fundamentally about the two Users' relationship, and
+    `accounts` already owns role logic — keeps `listings` from having
+    to import an `accounts` concept.
+    """
+ 
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+ 
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
+        ACTIVE = "active", "Active"
+        REVOKED = "revoked", "Revoked"
+ 
+    property = models.ForeignKey(
+        "listings.Property", on_delete=models.CASCADE,
+        related_name="manager_links",
+    )
+    manager = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+        related_name="managed_properties",
+        limit_choices_to={"userprofile__role": "property_manager"},
+    )
+    # Denormalized off property.landlord on purpose: if a property's
+    # landlord FK is ever reassigned, old links should keep showing who
+    # *originally* delegated, not silently follow the new owner.
+    landlord = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+        related_name="delegated_properties",
+    )
+    status = models.CharField(
+        max_length=20, choices=Status.choices, default=Status.PENDING,
+    )
+    invited_at = models.DateTimeField(auto_now_add=True)
+    responded_at = models.DateTimeField(null=True, blank=True)
+    revoked_at = models.DateTimeField(null=True, blank=True)
+ 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["property", "manager"],
+                condition=models.Q(status__in=["pending", "active"]),
+                name="one_active_link_per_property_manager",
+            )
+        ]
+ 
+    def __str__(self):
+        return f"{self.manager} -> {self.property} ({self.status})"
 

@@ -1,0 +1,112 @@
+{% load humanize %}
+
+<div style="background:white; border:1px solid #E5E0D8; border-radius:12px; padding:16px 20px;
+            display:flex; align-items:center; gap:16px;">
+
+  {# Thumbnail #}
+  <div style="width:80px; height:64px; border-radius:8px; overflow:hidden; background:#F0EBE3; flex-shrink:0;">
+    {% with photo=property.primary_photo %}
+      {% if photo %}
+        <img src="{{ photo.image.url }}" alt="" style="width:100%; height:100%; object-fit:cover;">
+      {% else %}
+        <div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;">
+          <svg width="24" height="24" fill="none" stroke="#C4B8A8" stroke-width="1.5" viewBox="0 0 24 24">
+            <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21,15 16,10 5,21"/>
+          </svg>
+        </div>
+      {% endif %}
+    {% endwith %}
+  </div>
+
+  {# Info #}
+  <div style="flex:1; min-width:0;">
+    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:2px;">
+      <h3 style="font-weight:700; color:#1C3829; margin:0; font-size:1rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+        {{ property.title }}
+      </h3>
+      {# Status badge #}
+      {% if property.status == 'active' %}
+        <span style="background:#ECFDF5; color:#065F46; font-size:0.6875rem; font-weight:700; padding:2px 8px; border-radius:12px;">Active</span>
+      {% elif property.status == 'draft' %}
+        <span style="background:#FEF3C7; color:#92400E; font-size:0.6875rem; font-weight:700; padding:2px 8px; border-radius:12px;">Draft</span>
+      {% elif property.status == 'rented' %}
+        <span style="background:#EFF6FF; color:#1D4ED8; font-size:0.6875rem; font-weight:700; padding:2px 8px; border-radius:12px;">Rented</span>
+      {% elif property.status == 'paused' %}
+        <span style="background:#F3F4F6; color:#6B7280; font-size:0.6875rem; font-weight:700; padding:2px 8px; border-radius:12px;">Paused</span>
+      {% elif property.status == 'pending_payment' %}
+        <span style="background:#92400E; color:#F9E076; font-size:0.6875rem; font-weight:700; padding:2px 8px; border-radius:12px;">Pending Payment</span>
+      {% elif property.status == 'archived' %}
+        <span style="background:#F3F4F6; color:#374151; font-size:0.6875rem; font-weight:700; padding:2px 8px; border-radius:12px;">Archived</span>
+      {% endif %}
+      {% if property.created_by and property.created_by_id != property.landlord_id and not show_landlord %}
+        <span style="background:#EFF6FF; color:#1D4ED8; font-size:0.6875rem; font-weight:700; padding:2px 8px; border-radius:12px;">Added by manager</span>
+      {% endif %}
+    </div>
+    <p style="font-size:0.8125rem; color:#6B7280; margin:0;">
+      {{ property.address }} · {{ property.get_property_type_display }} · {{ property.bedrooms }} bed
+      {% if show_landlord %} · Landlord: {{ property.landlord.full_name }}{% endif %}
+    </p>
+  </div>
+
+  {# Price #}
+  <div style="text-align:right; flex-shrink:0;">
+    <p style="font-family:'Playfair Display',serif; font-size:1.1rem; font-weight:700; color:#1C3829; margin:0;">
+      GHC {{ property.monthly_rent|intcomma }}
+    </p>
+    <p style="font-size:0.75rem; color:#9CA3AF; margin:2px 0 0;">per month</p>
+  </div>
+
+  <div style="display:flex; gap:8px; flex-shrink:0; flex-wrap:wrap; justify-content:flex-end;">
+    {% if property.status == 'draft' %}
+    <form method="post" action="{% url 'listings:publish_prompt' pk=property.pk %}">
+      {% csrf_token %}
+      <button type="submit"
+              style="background:#1C3829; color:white; border:none; border-radius:7px; padding:7px 14px; font-size:0.8125rem; font-weight:600; cursor:pointer;">
+        Publish
+      </button>
+    </form>
+    {% endif %}
+
+    {% if property.status == 'active' %}
+    <form method="post" action="{% url 'listings:update_listing_status' pk=property.pk %}">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="pause">
+      <button type="submit"
+              style="background:white; color:#92400E; border:1px solid #E5E0D8; border-radius:7px; padding:7px 14px; font-size:0.8125rem; font-weight:600; cursor:pointer;">
+        Pause
+      </button>
+    </form>
+    {% elif property.status == 'paused' %}
+    <form method="post" action="{% url 'listings:update_listing_status' pk=property.pk %}">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="resume">
+      <button type="submit"
+              style="background:#1C3829; color:white; border:none; border-radius:7px; padding:7px 14px; font-size:0.8125rem; font-weight:600; cursor:pointer;">
+        Resume
+      </button>
+    </form>
+    {% endif %}
+
+    {% if property.status == 'draft' or property.status == 'active' or property.status == 'paused' %}
+    <a href="{% url 'listings:edit_property' pk=property.pk %}"
+       style="display:inline-flex; align-items:center; border:1px solid #E5E0D8; border-radius:7px; padding:7px 14px; font-size:0.8125rem; color:#374151; text-decoration:none; font-weight:500;">
+      Edit
+    </a>
+    <form method="post" action="{% url 'listings:update_listing_status' pk=property.pk %}"
+          onsubmit="return confirm('Archive this listing? It will come off the market permanently.');">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="archive">
+      <button type="submit"
+              style="background:white; color:#B91C1C; border:1px solid #E5E0D8; border-radius:7px; padding:7px 14px; font-size:0.8125rem; font-weight:600; cursor:pointer;">
+        Archive
+      </button>
+    </form>
+    {% endif %}
+
+    <a href="{{ property.get_absolute_url }}"
+       style="display:inline-flex; align-items:center; border:1px solid #E5E0D8; border-radius:7px; padding:7px 14px; font-size:0.8125rem; color:#374151; text-decoration:none; font-weight:500;">
+      View
+    </a>
+  </div>
+
+</div>

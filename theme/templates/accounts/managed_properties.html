@@ -1,0 +1,83 @@
+{% extends 'accounts/dashboard_base.html' %}
+{% block page_title %}Managed Properties{% endblock %}
+{% block page_subtitle %}Properties you manage on behalf of landlords{% endblock %}
+
+{% block sidebar_nav %}
+  <a href="{% url 'accounts:dashboard' %}" class="nav-link">
+    <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+    Dashboard
+  </a>
+  <a href="{% url 'accounts:managed_properties' %}" class="nav-link active">
+    <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l9-9 9 9M5 10v10a1 1 0 001 1h12a1 1 0 001-1V10"/></svg>
+    Managed Properties
+  </a>
+  <a href="{% url 'listings:create_property' %}" class="nav-link {% if request.path == '/listings/create/' %}active{% endif %}">
+    <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>Add Property
+  </a>
+  <a href="{% url 'applications:received_applications' %}" class="nav-link">
+    <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>Applications
+  </a>
+  <a href="{% url 'accounts:manager_invites' %}" class="nav-link">
+    <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+    Invites
+  </a>
+{% endblock %}
+
+{% block dashboard_content %}
+
+<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:12px;">
+  <div>
+    <h1 style="font-family:'Playfair Display',Georgia,serif; font-size:1.75rem; font-weight:700; color:#1C3829; margin:0;">
+      Managed Properties
+    </h1>
+    <p style="color:#6B7280; font-size:0.875rem; margin:4px 0 0;">
+      {{ properties.count }} propert{{ properties.count|pluralize:"y,ies" }} you manage
+      {% if selected_landlord %} for {{ selected_landlord.full_name }}{% endif %}
+    </p>
+  </div>
+
+  {% if landlords|length > 1 %}
+    <form method="get" style="display:flex; align-items:center; gap:10px;">
+      <label class="text-xs font-semibold uppercase tracking-wider" style="color:#6B7280;">Landlord</label>
+      <select name="landlord" onchange="this.form.submit()"
+              style="padding:8px 12px; border:1px solid #E5E0D8; border-radius:8px; font-size:0.8125rem; color:#374151; background:white;">
+        <option value="">All landlords</option>
+        {% for landlord in landlords %}
+          <option value="{{ landlord.pk }}" {% if selected_landlord and selected_landlord.pk == landlord.pk %}selected{% endif %}>
+            {{ landlord.full_name }}
+          </option>
+        {% endfor %}
+      </select>
+      {% if selected_landlord %}
+        <a href="{% url 'accounts:managed_properties' %}" style="font-size:0.75rem; color:#9CA3AF;">Clear</a>
+      {% endif %}
+    </form>
+  {% endif %}
+</div>
+
+{% if properties %}
+<div style="display:flex; flex-direction:column; gap:12px;">
+  {% for property in properties %}
+    {% include "listings/_property_row.html" with property=property show_landlord=True %}
+  {% endfor %}
+</div>
+
+{% else %}
+<div style="text-align:center; padding:80px 24px; background:white; border-radius:16px; border:1px solid #E5E0D8;">
+  <svg width="56" height="56" fill="none" stroke="#9CA3AF" stroke-width="1.5" viewBox="0 0 24 24" style="display:block; margin:0 auto 20px;">
+    <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/>
+  </svg>
+  <h2 style="font-family:'Playfair Display',serif; font-size:1.5rem; font-weight:700; color:#1C3829; margin:0 0 10px;">
+    {% if selected_landlord %}No properties managed for {{ selected_landlord.full_name }}{% else %}Not managing any properties yet{% endif %}
+  </h2>
+  <p style="color:#6B7280; margin:0 0 24px; font-size:0.9375rem;">
+    {% if selected_landlord %}
+      Try clearing the filter, or check your <a href="{% url 'accounts:manager_invites' %}" style="color:#1C3829; font-weight:600;">pending invites</a>.
+    {% else %}
+      Ask a landlord to invite you, or check your <a href="{% url 'accounts:manager_invites' %}" style="color:#1C3829; font-weight:600;">pending invites</a>.
+    {% endif %}
+  </p>
+</div>
+{% endif %}
+
+{% endblock %}

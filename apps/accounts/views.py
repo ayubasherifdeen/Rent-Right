@@ -9,8 +9,12 @@ from django.contrib.auth import login, logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_http_methods, require_POST
-
-from .decorators import phone_verified_required
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.shortcuts import get_object_or_404, redirect, render
+from httpcore import request
+from .decorators import phone_verified_required, property_manager_required
+from apps.accounts.models import ManagedProperty, User
+from apps.listings.models import Property
 from .forms import (
     LoginForm,
     OTPVerificationForm,
@@ -21,8 +25,13 @@ from .forms import (
 )
 from .services import (
     confirm_phone_verification,
+    landlords_managed_for,
+    properties_managed_by,
     register_user,
     reset_password,
+    invite_manager,
+    accept_management_invite,
+    revoke_management,
     send_password_reset_otp,
     send_phone_verification_otp,
 )
@@ -116,6 +125,72 @@ def resend_verification_otp(request):
     return redirect('accounts:verify_phone')
 
 
+@login_required
+def invite_manager_view(request, property_pk):
+    """POST from edit_property.html or a. Only
+    the property's own landlord may invite for it — enforced inside
+    invite_manager() too, but checked here first for a clean 404
+    instead of leaking property existence to non-owners."""
+    property = get_object_or_404(Property, pk=property_pk, landlord=request.user)
+    if request.method != "POST":
+        raise PermissionDenied
+    manager_email = request.POST.get("manager_email")
+    manager = get_object_or_404(
+        User, email=manager_email, userprofile__role="property_manager",
+    )
+    if manager.email == request.user.email:
+        messages.error(request, "You can't invite yourself as a manager.")
+        return redirect("listings:edit_property", pk=property.pk)
+    try:
+        invite_manager(property=property, landlord=request.user, manager=manager)
+        messages.success(request, f"Invited {manager.email} to manage this property.")
+    except ValidationError as e:
+        messages.error(request, str(e))
+    return redirect("listings:edit_property", pk=property.pk)
+ 
+ 
+@property_manager_required
+def manager_invites_view(request):
+    """Manager's list of PENDING links awaiting their response."""
+    invites = ManagedProperty.objects.filter(
+        manager=request.user, status=ManagedProperty.Status.PENDING,
+    ).select_related("property", "landlord")
+    return render(request, "accounts/manager_invites.html", {"invites": invites})
+ 
+ 
+@property_manager_required
+def accept_management_invite_view(request, link_pk):
+    link = get_object_or_404(ManagedProperty, pk=link_pk)
+    if request.method != "POST":
+        raise PermissionDenied
+    accept_management_invite(link, request.user)
+    return redirect("accounts:managed_properties")
+ 
+ 
+@login_required
+def revoke_management_view(request, link_pk):
+    """Either the landlord or the manager on the link may revoke."""
+    link = get_object_or_404(ManagedProperty, pk=link_pk)
+    if request.method != "POST":
+        raise PermissionDenied
+    revoke_management(link, request.user)
+    next_url = request.POST.get("next") or request.META.get("HTTP_REFERER", "/")
+    return redirect(next_url)
+ 
+ 
+@property_manager_required
+def managed_properties_view(request):
+    """Return the list of properties managed by the current user."""
+    landlord_id = request.GET.get("landlord")
+    landlord_obj = get_object_or_404(User, pk=landlord_id) if landlord_id else None
+    properties = properties_managed_by(request.user, landlord=landlord_obj)
+    return render(request, "accounts/managed_properties.html", {
+        "properties": properties,
+        "landlords": landlords_managed_for(request.user),
+        "selected_landlord": landlord_obj,
+    })
+ 
+
 # Dashboard
 
 @login_required
@@ -152,8 +227,16 @@ def tenant_dashboard(request):
 
 @login_required
 def manager_dashboard(request):
+    managed_qs = properties_managed_by(request.user)
+    pending_invites_count = ManagedProperty.objects.filter(
+        manager=request.user, status=ManagedProperty.Status.PENDING,
+    ).count()
     return render(request, 'accounts/dashboards/manager.html', {
         'user': request.user,
+        'managed_count': managed_qs.count(),
+        'recent_managed_properties': managed_qs.select_related('landlord')[:5],
+        'pending_invites_count': pending_invites_count,
+        'landlord_count': landlords_managed_for(request.user).count(),
     })
 
 

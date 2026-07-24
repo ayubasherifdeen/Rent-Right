@@ -61,9 +61,6 @@
       </ul>
     </div>
 
-    {# Actions only shown to the OTHER party, while there's still
-       something to respond to (PENDING or a REJECTED-but-not-cancelled
-       offer) #}
     {% if current_proposal.status == "pending" and request.user.pk != current_proposal.proposed_by_id %}
     <div class="mt-6 pt-6 flex gap-3 flex-wrap" style="border-top:1px solid #F0EBE3;">
       <form method="post" action="{% url 'negotiations:accept_proposal' current_proposal.id %}">
@@ -89,9 +86,6 @@
     </div>
     {% endif %}
 
-    {# Counter — shown for PENDING or REJECTED, as long as the tenancy
-       hasn't been cancelled by the round cap. A rejected offer isn't a
-       dead end below MAX_NEGOTIATION_ROUNDS — see reject_proposal(). #}
     {% if current_proposal.status == "pending" and request.user.pk != current_proposal.proposed_by_id %}
     <div class="mt-4 pt-4" style="border-top:1px solid #F0EBE3;">
       <p class="text-xs font-semibold uppercase tracking-widest mb-3" style="color:#9CA3AF;">Or Counter</p>

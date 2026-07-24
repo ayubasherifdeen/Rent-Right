@@ -234,6 +234,13 @@ class Property(models.Model):
     updated_at     = models.DateTimeField(auto_now=True)
     views_count    = models.PositiveIntegerField(default=0)
 
+    #delegation of property management
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='listings_created',
+    )
+    landlord_reviewed_at = models.DateTimeField(null=True, blank=True)
+
     class Meta:
         verbose_name_plural = 'properties'
         ordering = ['-created_at']

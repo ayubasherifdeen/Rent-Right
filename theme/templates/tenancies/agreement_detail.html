@@ -62,11 +62,7 @@
         Request a one-time code to your registered phone number, then enter it below to confirm.
       </p>
 
-      {# NEW — Request Code. Separate explicit action, not auto-sent on
-         page load: create_otp() invalidates any unused code for this
-         purpose before issuing a new one, so auto-sending here would
-         silently kill a code the other party hasn't entered yet every
-         time either party views this page. #}
+      
       <form method="post" action="{% url 'tenancies:request_agreement_otp' tenancy.pk %}" class="mb-3">
         {% csrf_token %}
         <button type="submit"
