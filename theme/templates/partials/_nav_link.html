@@ -1,0 +1,5 @@
+<a href="{% url url_name %}" class="nav-link{% if is_active %} active{% endif %}">
+  <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ icon_path }}"/></svg>
+  {{ label }}
+  {% if badge %}<span style="margin-left:auto; background:#EF4444; color:white; font-size:10px; font-weight:700; border-radius:999px; padding:1px 7px;">{{ badge }}</span>{% endif %}
+</a>

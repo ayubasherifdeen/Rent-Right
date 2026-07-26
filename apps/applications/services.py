@@ -66,7 +66,7 @@ def submit_application(tenant, property_obj, move_in_date, message='') -> Applic
         raise ValueError("Please verify your phone number before applying.")
 
     # Guard 3 — property availability
-    if property_obj.status != 'active':
+    if property_obj.status != 'live':
         raise ValueError("This property is not currently available for applications.")
 
     # Guard 4 — no live application

@@ -82,7 +82,7 @@ class PropertyCreatePublishViewTests(TestCase):
         property_obj.refresh_from_db()
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response, reverse('listings:property_detail', kwargs={'pk': property_obj.pk}))
-        self.assertEqual(property_obj.status, ListingStatus.ACTIVE)
+        self.assertEqual(property_obj.status, ListingStatus.LIVE)
 
     def test_create_property_requires_login(self):
         response = self.client.get(self.create_url)

@@ -66,6 +66,9 @@ def update_listing(property_obj, form_data, photo_formset=None):
     """Update an existing listing. Same atomic pattern as create."""
     with transaction.atomic():
         amenities = form_data.pop('amenities', [])
+        video_file = form_data.pop('video_file', None)
+        form_data.pop('lease_term_preset', None)
+        form_data.pop('lease_term_months_custom', None)
 
         for field, value in form_data.items():
             setattr(property_obj, field, value)
@@ -74,6 +77,15 @@ def update_listing(property_obj, form_data, photo_formset=None):
         property_obj.save()
         property_obj.amenities.set(amenities)
 
+        if video_file:
+            try:
+                url = upload_property_video(video_file, property_obj.pk)
+                property_obj.video_url = url
+                property_obj.save(update_fields=['video_url'])
+            except Exception:
+                logger.exception("Failed to upload property video")
+                raise ValueError("Failed to upload property video. Please try again later.")
+            
         if photo_formset:
             photos = photo_formset.save(commit=False)
             for photo in photos:
@@ -91,10 +103,10 @@ def pause_listing(property_obj):
     Temporarily hide an active listing from tenants without losing it.
     Landlord can resume later — e.g. taking a short break from showings.
     """
-    if property_obj.status != ListingStatus.ACTIVE:
+    if property_obj.status != ListingStatus.LIVE:
         raise ValueError(
             f"Cannot pause a listing with status '{property_obj.status}'. "
-            f"Only active listings can be paused."
+            f"Only live listings can be paused."
         )
     property_obj.status = ListingStatus.PAUSED
     property_obj.save(update_fields=['status', 'updated_at'])
@@ -109,7 +121,7 @@ def resume_listing(property_obj):
             f"Cannot resume a listing with status '{property_obj.status}'. "
             f"Only paused listings can be resumed."
         )
-    property_obj.status = ListingStatus.ACTIVE
+    property_obj.status = ListingStatus.LIVE
     property_obj.save(update_fields=['status', 'updated_at'])
     logger.debug(f"[LISTINGS] Resumed '{property_obj.title}'")
     return property_obj
@@ -122,11 +134,11 @@ def archive_listing(property_obj):
     Allowed from draft/active/paused. Deliberately NOT allowed from
     'rented' — there's a live tenancy there
     """
-    allowed = {ListingStatus.DRAFT, ListingStatus.ACTIVE, ListingStatus.PAUSED}
+    allowed = {ListingStatus.DRAFT, ListingStatus.LIVE, ListingStatus.PAUSED}
     if property_obj.status not in allowed:
         raise ValueError(
             f"Cannot archive a listing with status '{property_obj.status}'. "
-            f"Only draft, active, or paused listings can be archived."
+            f"Only draft, live, or paused listings can be archived."
         )
     property_obj.status = ListingStatus.ARCHIVED
     property_obj.save(update_fields=['status', 'updated_at'])
@@ -135,10 +147,10 @@ def archive_listing(property_obj):
  
 
 def publish_listing(property_obj):
-    """Move a listing from DRAFT to ACTIVE"""
+    """Move a listing from DRAFT to LIVE"""
     if property_obj.status != ListingStatus.DRAFT:
         raise ValueError(f"Cannot publish a listing with status '{property_obj.status}'.")
-    property_obj.status = ListingStatus.ACTIVE
+    property_obj.status = ListingStatus.LIVE
     property_obj.save(update_fields=['status', 'updated_at'])
     logger.debug(f"[LISTINGS] Published '{property_obj.title}'")
     return property_obj

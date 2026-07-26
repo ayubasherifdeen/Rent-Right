@@ -13,8 +13,10 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
 from apps.tenancies.models import Tenancy
+from apps.listings.models import ListingStatus
 
 from . import services
+from apps.documents.services import get_documents_for
 from .models import PaymentType, PaymentStatus
 
 
@@ -32,6 +34,7 @@ def initiate_move_in_payment_view(request, pk):
     try:
         payment, authorization_url = services.initiate_payment(
             tenancy, request.user, PaymentType.MOVE_IN, callback_url
+        
         )
     except (ValueError, services.PaystackError) as exc:
         return render(
@@ -83,7 +86,10 @@ def payment_callback_view(request):
         payment = services.verify_and_record_payment(reference)
     except (ValueError, services.PaystackError) as exc:
         return render(request, "payments/payment_error.html", {"error": str(exc)})
-    return render(request, "payments/payment_result.html", {"payment": payment})
+    return render(request, "payments/payment_result.html",
+                  {"payment": payment,
+                    "receipt": get_documents_for(payment).first()
+                })
 
 
 @csrf_exempt
@@ -192,8 +198,13 @@ def payment_history_view(request, pk):
     move_in_payment = (
         tenancy.payments.filter(payment_type=PaymentType.MOVE_IN).order_by("-created_at").first()
     )
+    move_in_receipt = get_documents_for(move_in_payment).first() if move_in_payment else None
+    for row in schedule:
+        row["receipt"] = get_documents_for(row["payment"]).first() if row["payment"] else None
+
     return render(
         request,
         "payments/payment_history.html",
-        {"tenancy": tenancy, "schedule": schedule, "move_in_payment": move_in_payment},
+        {"tenancy": tenancy, "schedule": schedule, "move_in_payment": move_in_payment, "move_in_receipt":move_in_receipt},
+
     )

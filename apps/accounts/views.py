@@ -11,7 +11,6 @@ from django.shortcuts import redirect, render
 from django.views.decorators.http import require_http_methods, require_POST
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.shortcuts import get_object_or_404, redirect, render
-from httpcore import request
 from .decorators import phone_verified_required, property_manager_required
 from apps.accounts.models import ManagedProperty, User
 from apps.listings.models import Property
@@ -34,6 +33,7 @@ from .services import (
     revoke_management,
     send_password_reset_otp,
     send_phone_verification_otp,
+    get_pending_invites_count
 )
 
 
@@ -236,7 +236,7 @@ def manager_dashboard(request):
         'managed_count': managed_qs.count(),
         'recent_managed_properties': managed_qs.select_related('landlord')[:5],
         'pending_invites_count': pending_invites_count,
-        'landlord_count': landlords_managed_for(request.user).count(),
+        'landlord_count': get_pending_invites_count(request.user),
     })
 
 

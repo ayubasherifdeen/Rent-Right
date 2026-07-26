@@ -1,8 +1,4 @@
 {% extends "accounts/dashboard_base.html" %}
-{# ASSUMPTION FLAGGED: extends dashboard_base.html to match my_listings.html's
-   convention (per listings handoff v11 §5.3, there's an unresolved mismatch
-   between dashboard.html and dashboard_base.html elsewhere in the project —
-   pick whichever is actually correct and adjust this line if needed). #}
 
 {% block dashboard_content %}
 <div class="max-w-xl mx-auto mt-10 px-6 py-8 bg-white rounded-lg shadow">
@@ -17,6 +13,11 @@
       for <span class="font-medium text-gray-900">{{ payment.tenancy.rental_property.title }}</span>
       has been recorded. A receipt has been generated and added to your documents.
     </p>
+    {% if payment.is_successful and receipt %}
+  <a href="{% url 'documents:download' receipt.id %}" class="inline-block px-4 py-2 rounded-md bg-green-700 text-white text-sm font-medium hover:bg-green-800 mr-2">
+    Download receipt
+  </a>
+{% endif %}
   {% else %}
     <div class="flex items-center gap-3 mb-4">
       <span class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-amber-100 text-amber-700 text-xl">!</span>

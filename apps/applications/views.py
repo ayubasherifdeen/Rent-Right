@@ -47,7 +47,7 @@ def apply(request, pk):
     property_obj = get_object_or_404(Property, pk=pk)
 
     # A landlord cannot apply to their own property. Service catches role,
-    if property_obj.status != 'active':
+    if property_obj.status != 'live':
         messages.error(request, "This property is not currently accepting applications.")
         return redirect('listings:property_detail', pk=pk)
 
@@ -172,7 +172,7 @@ def approve_application(request, pk):
     """
     application = get_object_or_404(Application, pk=pk)
     try:
-        services.approve_application(application, landlord=request.user)
+        services.approve_application(application, actor=request.user)
         messages.success(
             request,
             f"Application approved. {application.tenant.get_full_name()} has been notified."
@@ -193,7 +193,7 @@ def decline_application(request, pk):
     application = get_object_or_404(Application, pk=pk)
     reason = request.POST.get('reason', '')
     try:
-        services.decline_application(application, landlord=request.user, reason=reason)
+        services.decline_application(application, actor=request.user, reason=reason)
         messages.success(
             request,
             f"Application declined. {application.tenant.get_full_name()} has been notified."

@@ -1,3 +1,5 @@
+import re
+
 from dateutil.relativedelta import relativedelta
 from django.db import transaction
 from django.utils import timezone
@@ -34,56 +36,51 @@ def _add_months(base_date, months):
     return date(year, month, day)
 
 
-def _build_default_instalment_schedule(tenancy, instalment_count):
+def _build_default_instalment_schedule(tenancy, advance_months, instalment_count):
     """
-    Property has no stored instalment schedule — only the inputs to
-    compute one (monthly_rent, payment_cycle, lease_term_months, and the
-    payment_count property). This builds an evenly-spaced schedule from
-    those, starting one interval after start_date.
-
-    This is a real design choice, not a neutral default: it assumes the
-    schedule should span the whole lease term at monthly_rent per
-    interval, rather than being specifically about spreading out the
-    advance payment. If the intent is closer to "instalments on the
-    advance only," this needs to change to use rental_property.advance_months
-    and rental_property.advance_amount instead of lease_term_months.
+    Splits lease term remaiing after advance and covers whats left
     """
     delta = relativedelta(tenancy.end_date, tenancy.start_date)
     lease_term_months = delta.years * 12 + delta.months
-    total_rent = tenancy.monthly_rent * lease_term_months
+    remaining_months =max(lease_term_months - advance_months, 0)
 
-    interval_months = max(lease_term_months // instalment_count, 1)
-    amount_per_instalment = (total_rent / instalment_count).quantize(
+    if instalment_count <= 0 or remaining_months <= 0:
+        return []
+    
+    remaining_rent = tenancy.monthly_rent * remaining_months
+
+    interval_months = max(remaining_months // instalment_count, 1)
+    amount_per_instalment = (remaining_rent / instalment_count).quantize(
         tenancy.monthly_rent
     )
 
 
     schedule = []
     for i in range(instalment_count):
-        due = _add_months(tenancy.start_date, interval_months * (i + 1))
+        due = _add_months(tenancy.start_date, advance_months + interval_months * (i + 1))
         schedule.append({"due_date": due.isoformat(), "amount": str(amount_per_instalment)})
     return schedule
 
-def _default_instalment_count(rental_property, tenancy):
-    """Payment-cycle-derived default count for the opening Proposal —
-    live rental_property.payment_cycle is the one non-frozen input here,
-    same flagged gap as before (Tenancy doesn't freeze payment_cycle)."""
+def _default_instalment_count(rental_property, tenancy, advance_months):
+    """Payment-cycle-derived default count for the opening Proposal — based
+    on months remaining after advance"""
     interval_months = _CYCLE_INTERVAL_MONTHS.get(rental_property.payment_cycle, 12)
     delta = relativedelta(tenancy.end_date, tenancy.start_date)
     lease_term_months = delta.years * 12 + delta.months
-    return max(lease_term_months // interval_months, 1)
+    remaining_months = max(lease_term_months - advance_months, 0)
+    if remaining_months <= 0:
+        return 0
+    return max(remaining_months // interval_months, 1)
 
 def open_negotiation(tenancy) -> Proposal:
     """
-    Called explicitly from tenancies/services.py at the point a Tenancy
-    enters PENDING_NEGOTIATION (mirrors the explicit-call pattern
-    _execute_agreement() already uses for documents — not a signal).
-
     Creates the landlord's opening Proposal, pre-filled from the
     Listing's stated instalment terms.
+
+    called from tenancies/services when new tenancy is created
     """
     rental_property = tenancy.rental_property
-    instalment_count = _default_instalment_count(rental_property, tenancy)
+    instalment_count = _default_instalment_count(rental_property, tenancy, tenancy.advance_months)
 
     with transaction.atomic():
         proposal = Proposal.objects.create(
@@ -93,7 +90,7 @@ def open_negotiation(tenancy) -> Proposal:
             status=ProposalStatus.PENDING,
             advance_months=rental_property.advance_months,
             instalment_count=instalment_count,
-            instalment_schedule=_build_default_instalment_schedule(tenancy, instalment_count),
+            instalment_schedule=_build_default_instalment_schedule(tenancy, rental_property.advance_months, instalment_count),
         )
     return proposal
 
@@ -112,7 +109,7 @@ def _cancel_negotiation(tenancy):
     tenancy.save(update_fields=["status", "updated_at"])
 
     rental_property = tenancy.rental_property
-    rental_property.status = ListingStatus.ACTIVE
+    rental_property.status = ListingStatus.LIVE
     rental_property.save(update_fields=["status", "updated_at"])
 
 
@@ -135,8 +132,8 @@ def counter_proposal(
             f"Advance months must be between 1 and {ACT_220_MAX_ADVANCE_MONTHS} "
             f"per Section 25(5) of Act 220. Got {advance_months}."
         )
-    if instalment_count < 1:
-        raise ValueError("Instalment count must be at least 1.")
+    if instalment_count < 0:
+        raise ValueError("Instalment cannot be negative.")
 
     from apps.tenancies.models import TenancyStatus
 
@@ -147,7 +144,7 @@ def counter_proposal(
             f"proposals can be countered."
         )
 
-    if previous_proposal.status == TenancyStatus.CANCELLED:
+    if previous_proposal.tenancy.status == TenancyStatus.CANCELLED:
         raise ValueError(
             "This negotiation has been cancelled after too many rounds "
             "without agreement — no further counters possible."
@@ -175,7 +172,7 @@ def counter_proposal(
             status=ProposalStatus.PENDING,
             advance_months=advance_months,
             instalment_count=instalment_count,
-            instalment_schedule=_build_default_instalment_schedule(previous_proposal.tenancy, instalment_count),
+            instalment_schedule=_build_default_instalment_schedule(previous_proposal.tenancy,advance_months, instalment_count),
         )
     return new_proposal
 
@@ -189,7 +186,7 @@ def accept_proposal(proposal, accepted_by):
     proposal — can't accept your own offer.
 
     Deliberately does NOT copy advance_months / instalment_schedule onto
-    Agreement — Agreement (per the real model, handoff v9) has no fields
+    Agreement — Agreement has no fields
     for those. The accepted Proposal remains the source of truth for
     instalment terms; anything needing them after acceptance should read
     tenancy.proposals.get(status=ProposalStatus.ACCEPTED), not Agreement.
@@ -242,7 +239,6 @@ def reject_proposal(proposal, rejected_by) -> None:
     something else?) is not decided here; out of scope for this pass,
     flagging rather than guessing at tenancy-level fallout.
     """
-    from apps.listings.models import ListingStatus
     from apps.tenancies.models import TenancyStatus
     if proposed_by_id_matches(rejected_by, proposal.proposed_by):
         raise ValueError("Cannot reject your own proposal.")
@@ -259,8 +255,8 @@ def reject_proposal(proposal, rejected_by) -> None:
         proposal.save(update_fields=["status", "responded_at"])
 
         tenancy = proposal.tenancy
+        
         round_count = tenancy.proposals.count()
-
         if round_count >= MAX_NEGOTIATION_ROUNDS:
             _cancel_negotiation(tenancy)
         

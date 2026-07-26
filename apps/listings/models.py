@@ -36,7 +36,7 @@ class FurnishingStatus(models.TextChoices):
 
 class ListingStatus(models.TextChoices):
     DRAFT     = 'draft',     'Draft'        # landlord hasn't published yet
-    ACTIVE    = 'active',    'Active'       # visible to tenants, available
+    LIVE      = 'live',    'live'       # visible to tenants, available
     RENTED    = 'rented',    'Rented'       # currently occupied
     PAUSED    = 'paused',    'Paused'       # landlord hid it temporarily
     ARCHIVED  = 'archived',  'Archived'     # permanently off market
@@ -78,7 +78,7 @@ class Amenity(models.Model):
     """
     name = models.CharField(max_length=100, unique=True)
     icon = models.CharField(
-        max_length=50,
+        max_length=800,        
         blank=True,
         help_text="SVG icon name or identifier for display in templates"
     )
@@ -312,7 +312,7 @@ class Property(models.Model):
 
     @property
     def is_available(self):
-        return self.status == ListingStatus.ACTIVE
+        return self.status == ListingStatus.LIVE
 
     @property
     def primary_photo(self):

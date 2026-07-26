@@ -102,10 +102,8 @@ def create_tenancy(application, landlord):
 def activate_tenancy(tenancy, landlord):
     """
     Transition a tenancy from PENDING_PAYMENT → ACTIVE.
-
-    Called after advance payment is confirmed (Month 3 Paystack integration).
-    For now, landlords can manually activate from the tenancy detail page.
-
+    Called after advance payment is confirmed .
+    
     Guards:
       1. landlord owns the property
       2. tenancy is in PENDING_PAYMENT state
@@ -123,6 +121,8 @@ def activate_tenancy(tenancy, landlord):
 
     tenancy.status = TenancyStatus.ACTIVE
     tenancy.save(update_fields=["status", "updated_at"])
+    tenancy.rental_property.status = ListingStatus.RENTED
+    tenancy.rental_property.save(update_fields=["status"])
 
     return tenancy
 
@@ -216,6 +216,7 @@ def confirm_agreement_landlord(agreement, landlord, otp_code):
     if not verify_otp(landlord, otp_code, purpose="tenancy_confirm"):
         raise ValueError("Invalid or expired OTP.")
 
+
     agreement.landlord_confirmed_at = timezone.now()
     agreement.landlord_otp_ref = otp_code
 
@@ -256,7 +257,8 @@ def confirm_agreement_tenant(agreement, tenant, otp_code):
     if agreement.status == AgreementStatus.FULLY_EXECUTED:
         raise ValueError("This agreement has already been fully executed.")
 
-    otp_ref = verify_otp(tenant, otp_code, purpose="tenancy_confirm")
+    if not verify_otp(tenant, otp_code, purpose="tenancy_confirm"):
+        raise ValueError("Invalid or expired OTP")
 
     agreement.tenant_confirmed_at = timezone.now()
     agreement.tenant_otp_ref = otp_code
@@ -286,8 +288,7 @@ def _execute_agreement(agreement):
     agreement, advances the tenancy to PENDING_PAYMENT, and generates
     the Tenancy Agreement + Rent Card PDFs.
 
-    documents app (handoff v9): PDF generation is no longer a TODO stub
-    — apps.documents.services.generate_tenancy_agreement() and
+    apps.documents.services.generate_tenancy_agreement() and
     generate_rent_card() are called here, inside the same atomic block,
     so a failure generating either PDF rolls back the FULLY_EXECUTED /
     PENDING_PAYMENT transition rather than leaving the agreement
@@ -315,10 +316,7 @@ def _execute_agreement(agreement):
 
         generate_tenancy_agreement(agreement)
         generate_rent_card(tenancy)
-
-        accepted_proposal = tenancy.proposals.filter(status=ProposalStatus.ACCEPTED).first()
-        if accepted_proposal and not accepted_proposal.is_opening_proposal:
-            generate_instalment_addendum(agreement)
+        generate_instalment_addendum(agreement)
 
     return agreement
 
