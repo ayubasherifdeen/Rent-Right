@@ -70,4 +70,4 @@ class PropertyFilter(django_filters.FilterSet):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Only show active listings to tenants
-        self.queryset = self.queryset.filter(status='active')
+        self.queryset = self.queryset.filter(status='live')

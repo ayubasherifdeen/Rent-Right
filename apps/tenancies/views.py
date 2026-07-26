@@ -17,6 +17,8 @@ from apps.applications.models import Application
 from apps.documents.services import get_documents_for
 from apps.payments.models import PaymentType
 from apps.tenancies.models import Agreement, Tenancy
+from django.db.models import Count, Q
+from apps.tenancies.models import TenancyStatus
 from apps.tenancies.services import (
     activate_tenancy,
     confirm_agreement_landlord,
@@ -135,8 +137,15 @@ def landlord_tenancies(request):
         .select_related("rental_property", "tenant")
         .order_by("-created_at")
     )
+    counts = tenancies.aggregate(
+        total=Count("id"),
+        active=Count("id", filter=Q(status=TenancyStatus.ACTIVE)),
+        pending_payment=Count("id", filter=Q(status=TenancyStatus.PENDING_PAYMENT)),
+    )
     return render(
-        request, "tenancies/landlord_tenancies.html", {"tenancies": tenancies}
+        request, 
+        "tenancies/landlord_tenancies.html",
+        {"tenancies": tenancies, "counts":counts}
     )
 
 

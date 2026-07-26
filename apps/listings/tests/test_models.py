@@ -91,7 +91,7 @@ class PropertyModelTest(TestCase):
         prop = self._make_property()
         prop.status = ListingStatus.DRAFT
         self.assertFalse(prop.is_available)
-        prop.status = ListingStatus.ACTIVE
+        prop.status = ListingStatus.LIVE
         self.assertTrue(prop.is_available)
 
     # ── GPS validation ────────────────────────────────────────────

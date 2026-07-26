@@ -48,7 +48,7 @@ def make_unverified_tenant(email='unverified@test.com', phone='0244300003'):
     return user
 
 
-def make_property(landlord, status='active', **kwargs):
+def make_property(landlord, status='live', **kwargs):
     defaults = {
         'title':             'Test Apartment',
         'property_type':     'apartment',

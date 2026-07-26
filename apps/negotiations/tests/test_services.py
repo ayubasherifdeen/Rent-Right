@@ -244,7 +244,7 @@ class RejectProposalTests(TestCase):
         prop.refresh_from_db()
 
         self.assertEqual(self.tenancy.status, TenancyStatus.CANCELLED)
-        self.assertEqual(prop.status, ListingStatus.ACTIVE)
+        self.assertEqual(prop.status, ListingStatus.LIVE)
 
     def test_countering_a_cancelled_negotiation_raises(self):
         from apps.negotiations.services import MAX_NEGOTIATION_ROUNDS
@@ -313,7 +313,7 @@ class RejectProposalTests(TestCase):
         self.tenancy.refresh_from_db()
         prop.refresh_from_db()
         self.assertEqual(self.tenancy.status, TenancyStatus.CANCELLED)
-        self.assertEqual(prop.status, ListingStatus.ACTIVE)
+        self.assertEqual(prop.status, ListingStatus.LIVE)
 
 
 class ChainHelperTests(TestCase):

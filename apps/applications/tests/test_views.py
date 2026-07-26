@@ -31,7 +31,7 @@ class ApplyViewTests(TestCase):
         self.client   = Client()
         self.landlord = make_landlord()
         self.tenant   = make_verified_tenant()
-        self.property = make_property(self.landlord, status='active')
+        self.property = make_property(self.landlord, status='live')
         self.url      = reverse('listings:apply', kwargs={'pk': self.property.pk})
 
     def test_get_renders_form(self):

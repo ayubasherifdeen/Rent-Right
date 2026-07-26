@@ -60,7 +60,7 @@ def make_verified_tenant(email="tenant@test.com", phone="0244000002"):
 # ---------------------------------------------------------------------------
 
 
-def make_property(landlord, status="active", **kwargs):
+def make_property(landlord, status="live", **kwargs):
     defaults = dict(
         title="Test Property",
         property_type="apartment",

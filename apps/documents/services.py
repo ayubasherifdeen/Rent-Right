@@ -117,6 +117,25 @@ def generate_instalment_addendum(agreement, generated_by=None):
     return document
 
 
+def generate_payment_receipt(payment, generated_by=None):
+    """
+    Act 220 Section 33 — payment receipts must be issued. Called
+    automatically once a Payment is confirmed successful by
+    payments.services._on_payment_success().
+    """
+    context = {"payment": payment, "tenancy": payment.tenancy}
+    pdf_bytes = _render_pdf("documents/payment_receipt_template.html", context)
+
+    document = Document.objects.create(
+        document_type=DocumentType.PAYMENT_RECEIPT,
+        content_type=ContentType.objects.get_for_model(payment),
+        object_id=payment.pk,
+        generated_by=generated_by,
+    )
+    document.file.save(f"receipt_{payment.pk}.pdf", ContentFile(pdf_bytes), save=True)
+    return document
+
+
 def get_documents_for(obj):
     """Return all Documents generic-FK'd to a given object (Tenancy, Agreement, ...)."""
     ct = ContentType.objects.get_for_model(obj)

@@ -35,7 +35,7 @@ class SubmitApplicationTests(TestCase):
     def setUp(self):
         self.landlord = make_landlord()
         self.tenant   = make_verified_tenant()
-        self.property = make_property(self.landlord, status='active')
+        self.property = make_property(self.landlord, status='live')
 
     def test_creates_pending_application(self):
         app = submit_application(self.tenant, self.property, future_date())

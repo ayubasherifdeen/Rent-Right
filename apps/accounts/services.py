@@ -267,4 +267,9 @@ def can_create_for_landlord(manager, landlord) -> bool:
     return ManagedProperty.objects.filter(
         manager=manager, landlord=landlord, status=ManagedProperty.Status.ACTIVE,
     ).exists()
- 
+
+
+def get_pending_invites_count(manager) -> int:
+    return ManagedProperty.objects.filter(
+        manager=manager, status=ManagedProperty.Status.PENDING,
+    ).count()

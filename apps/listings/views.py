@@ -45,7 +45,7 @@ class PropertyListView(ListView):
     def get_queryset(self):
         qs = (
             Property.objects
-            .filter(status=ListingStatus.ACTIVE)
+            .filter(status=ListingStatus.LIVE)
             .select_related('landlord')
             .prefetch_related('photos', 'amenities')
             .order_by('-created_at')
@@ -88,6 +88,7 @@ class PropertyDetailView(DetailView):
         prop = self.object
         context['photos']      = prop.photos.order_by('-is_primary', 'display_order')
         context['amenities']   = prop.amenities.all()
+        context['video']       = prop.video_url
         context['can_apply']   = (
             self.request.user.is_authenticated
             and hasattr(self.request.user, 'userprofile')
@@ -167,6 +168,12 @@ def create_property(request):
                         status=ManagedProperty.Status.ACTIVE,
                         responded_at=timezone.now(),
                     )
+                    # TODO: notify_landlord_new_listing(property_obj, request.user)
+                    # Stubbed — notifications app not built yet (Month 3 per
+                    # roadmap). The dashboard badge (unreviewed_manager_listings
+                    # in my_listings(), created_by + landlord_reviewed_at on
+                    # Property) is the alert mechanism until then. Wire this
+                    # call back in once apps.accounts.notifications exists.
                     #notify_landlord_new_listing(property_obj, request.user)
                 messages.success(request, f"'{property_obj.title}' created as a draft.")
                 return redirect('listings:publish_prompt', pk=property_obj.pk)
@@ -354,9 +361,20 @@ def my_listings(request):
         created_by__isnull=False, landlord_reviewed_at__isnull=True,
     ).exclude(created_by=request.user)
 
+    status_filter = request.GET.get('status') or ''
+    needs_review = request.GET.get('needs_review') == '1'
+
+    if needs_review:
+        properties = properties.filter(pk__in=unreviewed_manager_listings.values_list('pk', flat=True))
+    elif status_filter:
+        properties = properties.filter(status=status_filter)
+
     context = {
         'properties': properties,
         'unreviewed_manager_listings': unreviewed_manager_listings,
+        'status_filter': status_filter,
+        'needs_review': needs_review,
+        'listing_statuses': ListingStatus.choices,
     }
 
     if hasattr(request.user, 'userprofile') and request.user.userprofile.role == 'property_manager':
@@ -385,7 +403,7 @@ def map_data(request):
     properties = (
         Property.objects
         .filter(
-            status__in=[ListingStatus.ACTIVE, ListingStatus.RENTED],
+            status__in=[ListingStatus.LIVE, ListingStatus.RENTED],
             latitude__isnull=False,
             longitude__isnull=False,
         )

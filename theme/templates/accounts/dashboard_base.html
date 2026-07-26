@@ -94,8 +94,12 @@
       </div>
     </div>
 
+    {% load nav_tags %}
     <nav class="flex-1 px-3 py-2 overflow-y-auto flex flex-col gap-0.5">
-      {% block sidebar_nav %}{% endblock %}
+      {% for item in nav_items %}
+        {% nav_link item.url item.label item.icon item.badge %}
+      {% endfor %}
+      {% block sidebar_nav_extra %}{% endblock %}
     </nav>
 
     <div class="p-3 border-t border-[#7A9E7E]/15 flex flex-col gap-0.5">
