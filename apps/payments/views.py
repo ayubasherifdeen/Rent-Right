@@ -18,6 +18,7 @@ from apps.listings.models import ListingStatus
 from . import services
 from apps.documents.services import get_documents_for
 from .models import PaymentType, PaymentStatus
+from apps.documents.models import DocumentType
 
 
 def _tenancy_for_party_or_404(pk, user):
@@ -202,9 +203,26 @@ def payment_history_view(request, pk):
     for row in schedule:
         row["receipt"] = get_documents_for(row["payment"]).first() if row["payment"] else None
 
+    rent_cards = list(
+        get_documents_for(tenancy).filter(document_type=DocumentType.RENT_CARD).order_by("generated_at")
+    )
+    successful_payments = list(tenancy.payments.filter(status=PaymentStatus.SUCCESS).order_by("paid_at"))
+    rent_card_by_payment = dict(zip(successful_payments, rent_cards))
+
+    move_in_rent_card = rent_card_by_payment.get(move_in_payment) if move_in_payment else None
+    for row in schedule:
+        row["receipt"] = get_documents_for(row["payment"]).first() if row["payment"] else None
+        row["rent_card"] = rent_card_by_payment.get(row["payment"]) if row["payment"] else None
+
     return render(
         request,
         "payments/payment_history.html",
-        {"tenancy": tenancy, "schedule": schedule, "move_in_payment": move_in_payment, "move_in_receipt":move_in_receipt},
+        {"tenancy": tenancy,
+         "schedule": schedule,
+         "move_in_payment": move_in_payment,
+         "move_in_receipt":move_in_receipt,
+         "move_in_rent_card": move_in_rent_card,
+         "latest_rent_card": rent_cards[-1] if rent_cards else None
+         },
 
     )

@@ -14,7 +14,8 @@ from django.views.decorators.http import require_POST
 from apps.accounts.decorators import landlord_required, tenant_required
 from apps.accounts.services import send_tenancy_confirmation_otp
 from apps.applications.models import Application
-from apps.documents.services import get_documents_for
+from apps.documents.models import DocumentType
+from apps.documents.services import get_documents_for, get_latest_document
 from apps.payments.models import PaymentType
 from apps.tenancies.models import Agreement, Tenancy
 from django.db.models import Count, Q
@@ -114,6 +115,7 @@ def tenancy_detail(request, pk):
         "documents": get_documents_for(tenancy),
         "move_in_payment": move_in_payment,
         "next_due_instalment": next_due_instalment,
+        "current_rent_card": get_latest_document(tenancy, DocumentType.RENT_CARD),
     }
     return render(request, "tenancies/tenancy_detail.html", context)
 

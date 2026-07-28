@@ -4,6 +4,7 @@ Uses WeasyPrint (HTML/CSS -> PDF)
 """
 
 from django.contrib.contenttypes.models import ContentType
+from django.utils import timezone
 from django.core.files.base import ContentFile
 from django.template.loader import render_to_string
 
@@ -53,7 +54,9 @@ def generate_rent_card(tenancy, generated_by=None):
     from the tenancies app, handoff v8 §2.9) into a PDF and stores it as
     a Document generic-FK'd to the Tenancy.
     """
-    context = {"tenancy": tenancy, **_financial_display_context(tenancy)}
+    from apps.payments.models import PaymentStatus
+    payment_history = tenancy.payments.filter(status=PaymentStatus.SUCCESS).order_by("paid_at")
+    context = {"tenancy": tenancy, "payment_history": payment_history, **_financial_display_context(tenancy)}
     pdf_bytes = _render_pdf("tenancies/rent_card_template.html", context)
 
     document = Document.objects.create(
@@ -62,7 +65,7 @@ def generate_rent_card(tenancy, generated_by=None):
         object_id=tenancy.pk,
         generated_by=generated_by,
     )
-    document.file.save(f"rent_card_{tenancy.pk}.pdf", ContentFile(pdf_bytes), save=True)
+    document.file.save(f"rent_card_{tenancy.pk}_{timezone.now():%Y-%m-%d_%H-%M-%S}.pdf", ContentFile(pdf_bytes), save=True)
     return document
 
 
@@ -84,7 +87,7 @@ def generate_tenancy_agreement(agreement, generated_by=None):
         object_id=agreement.pk,
         generated_by=generated_by,
     )
-    document.file.save(f"tenancy_agreement_{agreement.pk}.pdf", ContentFile(pdf_bytes), save=True)
+    document.file.save(f"tenancy_agreement_{agreement.pk}_{timezone.now():%Y-%m-%d_%H-%M-%S}.pdf", ContentFile(pdf_bytes), save=True)
     return document
 
 
@@ -112,7 +115,7 @@ def generate_instalment_addendum(agreement, generated_by=None):
         generated_by=generated_by,
     )
     document.file.save(
-        f"instalment_addendum_{agreement.pk}.pdf", ContentFile(pdf_bytes), save=True
+        f"instalment_addendum_{agreement.pk}_{timezone.now():%Y-%m-%d_%H-%M-%S}.pdf", ContentFile(pdf_bytes), save=True
     )
     return document
 
@@ -132,8 +135,19 @@ def generate_payment_receipt(payment, generated_by=None):
         object_id=payment.pk,
         generated_by=generated_by,
     )
-    document.file.save(f"receipt_{payment.pk}.pdf", ContentFile(pdf_bytes), save=True)
+    document.file.save(f"receipt_{payment.pk}_{timezone.now():%Y-%m-%d_%H-%M-%S}.pdf", ContentFile(pdf_bytes), save=True)
     return document
+
+
+def get_latest_document(obj, document_type):
+    """
+    Most recent Document of a given type for obj, or None. Needed now
+    that RENT_CARD can have multiple snapshots per tenancy — use this
+    wherever a template wants "the current one," e.g. the Agreement or
+    Tenancy detail panel, rather than get_documents_for() which returns
+    every snapshot.
+    """
+    return get_documents_for(obj).filter(document_type=document_type).first()
 
 
 def get_documents_for(obj):

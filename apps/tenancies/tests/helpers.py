@@ -110,7 +110,7 @@ def make_approved_application(landlord=None, tenant=None, prop=None):
 # ---------------------------------------------------------------------------
 
 
-def make_tenancy(application=None, landlord=None):
+def make_tenancy(application=None, landlord=None, tenant=None):
     """
     Calls create_tenancy() so all service-layer side effects are exercised.
     Returns the created Tenancy — status will be PENDING_NEGOTIATION.
@@ -120,7 +120,9 @@ def make_tenancy(application=None, landlord=None):
     if application is None:
         if landlord is None:
             landlord = make_landlord(email="landlord2@test.com", phone="0244000010")
-        application = make_approved_application(landlord=landlord)
+        if tenant is None:
+            tenant = make_verified_tenant(email="tenant2@test.com", phone="0244000011")
+        application = make_approved_application(landlord=landlord, tenant=tenant)
     elif landlord is None:
         landlord = application.rental_property.landlord
 

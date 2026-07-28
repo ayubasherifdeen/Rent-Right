@@ -1,0 +1,47 @@
+{% extends "accounts/dashboard_base.html" %}
+{% block dashboard_content %}
+<div class="max-w-2xl mx-auto">
+  <h1 class="font-['Playfair_Display'] text-3xl font-bold text-[#1C3829] mb-1">Report a maintenance issue</h1>
+  <p class="text-[#6B7280] mb-6">{{ tenancy.rental_property.title }}</p>
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="mb-4 px-4 py-3 rounded-lg bg-[#FEE2E2] text-[#B91C1C] text-sm">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+
+  <form method="post" enctype="multipart/form-data" class="page-card p-6 space-y-5">
+    {% csrf_token %}
+
+    <div>
+      <label class="block text-sm font-semibold text-[#1C3829] mb-1">Category</label>
+      {{ form.category }}
+      {% if form.category.errors %}<p class="text-[#B91C1C] text-xs mt-1">{{ form.category.errors.0 }}</p>{% endif %}
+    </div>
+
+    <div>
+      <label class="block text-sm font-semibold text-[#1C3829] mb-1">Title</label>
+      {{ form.title }}
+      {% if form.title.errors %}<p class="text-[#B91C1C] text-xs mt-1">{{ form.title.errors.0 }}</p>{% endif %}
+    </div>
+
+    <div>
+      <label class="block text-sm font-semibold text-[#1C3829] mb-1">Description</label>
+      {{ form.description }}
+      {% if form.description.errors %}<p class="text-[#B91C1C] text-xs mt-1">{{ form.description.errors.0 }}</p>{% endif %}
+    </div>
+
+    <div>
+      <label class="block text-sm font-semibold text-[#1C3829] mb-1">Photos or video (optional)</label>
+      <input type="file" name="media" multiple accept="image/*,video/*"
+             class="w-full text-sm text-[#6B7280] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-[#1C3829] file:text-white file:text-sm hover:file:bg-[#2A5240]">
+      <p class="text-xs text-[#9CA3AF] mt-1">Some issues — a leak, a noise, a flicker — come across better on video than in a still photo. Neither is required.</p>
+    </div>
+
+    <button type="submit"
+            class="w-full py-3 rounded-lg bg-[#C4622D] text-white font-semibold hover:opacity-90 transition">
+      Submit report
+    </button>
+  </form>
+</div>
+{% endblock %}

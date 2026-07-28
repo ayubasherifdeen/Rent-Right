@@ -84,6 +84,8 @@ def accept_proposal_view(request, proposal_id):
         accept_proposal(proposal, accepted_by=request.user)
     except ValueError as exc:
         messages.error(request, str(exc))
+        if str(exc) == "Cannot accept your own proposal.":
+            return HttpResponseBadRequest(str(exc))
         return redirect("negotiations:negotiation_detail", tenancy_id=proposal.tenancy_id)
 
     messages.success(request, "Offer accepted.")

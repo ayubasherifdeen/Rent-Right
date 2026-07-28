@@ -1,0 +1,19 @@
+{% comment %}
+Usage: {% include "maintenance/_status_badge.html" with status=maintenance_request.status %}
+Color mapping follows the canonical status-badge colors from the design
+system (handoff v15 §5) where a direct match exists (resolved=success,
+cancelled=error, submitted=pending/warning). "Acknowledged" has no
+existing precedent in the doc's status vocabulary, so it borrows the
+sage tone already used for secondary/muted UI rather than inventing a
+new color — flag this if a closer match already exists in
+tailwind.config.js once that file is shared.
+{% endcomment %}
+{% if status == "submitted" %}
+  <span class="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-[#FEF9C3] text-[#92400E]">Submitted</span>
+{% elif status == "acknowledged" %}
+  <span class="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-[#7A9E7E]/20 text-[#2A5240]">Acknowledged</span>
+{% elif status == "resolved" %}
+  <span class="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-[#DCFCE7] text-[#166534]">Resolved</span>
+{% elif status == "cancelled" %}
+  <span class="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-[#FEE2E2] text-[#B91C1C]">Cancelled</span>
+{% endif %}

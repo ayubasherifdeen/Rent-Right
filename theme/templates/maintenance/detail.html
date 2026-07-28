@@ -1,0 +1,115 @@
+{% extends "accounts/dashboard_base.html" %}
+{% block dashboard_content %}
+<div class="max-w-3xl mx-auto">
+
+  <div class="flex items-start justify-between mb-1">
+    <h1 class="font-['Playfair_Display'] text-3xl font-bold text-[#1C3829]">{{ maintenance_request.title }}</h1>
+    {% include "maintenance/_status_badge.html" with status=maintenance_request.status %}
+  </div>
+  <p class="text-[#6B7280] mb-6">
+    {{ maintenance_request.tenancy.rental_property.title }} · {{ maintenance_request.get_category_display }}
+    · reported {{ maintenance_request.created_at|date:"M j, Y" }}
+  </p>
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="mb-4 px-4 py-3 rounded-lg bg-[#FEE2E2] text-[#B91C1C] text-sm">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="page-card p-6 mb-6">
+    <h2 class="font-semibold text-[#1C3829] mb-2">Description</h2>
+    <p class="text-[#374151] whitespace-pre-line">{{ maintenance_request.description }}</p>
+  </div>
+
+  {% if media %}
+    <div class="page-card p-6 mb-6">
+      <h2 class="font-semibold text-[#1C3829] mb-3">Evidence — reported</h2>
+      <div class="grid grid-cols-3 gap-3 mb-4">
+        {% for item in media %}
+          {% if item.stage == "reported" %}
+            {% if item.media_type == "video" %}
+              <video src="{{ item.file.url }}" controls class="rounded-lg aspect-square object-cover bg-black"></video>
+            {% else %}
+              <img src="{{ item.file.url }}" class="rounded-lg aspect-square object-cover">
+            {% endif %}
+          {% endif %}
+        {% endfor %}
+      </div>
+      {% if maintenance_request.status == "resolved" %}
+        <h2 class="font-semibold text-[#1C3829] mb-3">Evidence — resolution</h2>
+        <div class="grid grid-cols-3 gap-3">
+          {% for item in media %}
+            {% if item.stage == "resolution" %}
+              {% if item.media_type == "video" %}
+                <video src="{{ item.file.url }}" controls class="rounded-lg aspect-square object-cover bg-black"></video>
+              {% else %}
+                <img src="{{ item.file.url }}" class="rounded-lg aspect-square object-cover">
+              {% endif %}
+            {% endif %}
+          {% endfor %}
+        </div>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  {% if can_manage %}
+    <div class="page-card p-6 mb-6 space-y-4">
+      <h2 class="font-semibold text-[#1C3829]">Actions</h2>
+
+      {% if maintenance_request.status == "submitted" %}
+        <form method="post" action="{% url 'maintenance:acknowledge' maintenance_request.pk %}">
+          {% csrf_token %}
+          <button type="submit" class="px-4 py-2 rounded-lg bg-[#2A5240] text-white text-sm font-semibold hover:opacity-90">
+            Acknowledge
+          </button>
+        </form>
+      {% endif %}
+
+      {% if maintenance_request.status == "submitted" or maintenance_request.status == "acknowledged" %}
+        <form method="post" action="{% url 'maintenance:resolve' maintenance_request.pk %}" enctype="multipart/form-data" class="space-y-3">
+          {% csrf_token %}
+          <label class="block text-sm font-semibold text-[#1C3829]">Mark resolved</label>
+          {{ resolution_form.note }}
+          <input type="file" name="media" multiple accept="image/*,video/*"
+                 class="w-full text-sm text-[#6B7280] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-[#1C3829] file:text-white file:text-sm hover:file:bg-[#2A5240]">
+          <button type="submit" class="px-4 py-2 rounded-lg bg-[#C4622D] text-white text-sm font-semibold hover:opacity-90">
+            Mark resolved
+          </button>
+        </form>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  {% if is_reporter and maintenance_request.status == "submitted" %}
+    <form method="post" action="{% url 'maintenance:cancel' maintenance_request.pk %}" class="mb-6">
+      {% csrf_token %}
+      <button type="submit" class="text-sm text-[#B91C1C] hover:underline">Cancel this report</button>
+    </form>
+  {% endif %}
+
+  <div class="page-card p-6">
+    <h2 class="font-semibold text-[#1C3829] mb-4">Trail</h2>
+    <div class="space-y-4">
+      {% for update in updates %}
+        <div class="flex gap-3 text-sm">
+          <div class="w-2 h-2 rounded-full bg-[#7A9E7E] mt-1.5 flex-shrink-0"></div>
+          <div>
+            <p class="text-[#1C3829]">
+              <span class="font-semibold">{{ update.actor.get_full_name|default:update.actor.email }}</span>
+              {% if update.old_status == update.new_status %}
+                filed the report
+              {% else %}
+                moved status to <strong>{{ update.get_new_status_display }}</strong>
+              {% endif %}
+            </p>
+            {% if update.note %}<p class="text-[#6B7280] mt-0.5">{{ update.note }}</p>{% endif %}
+            <p class="text-[#9CA3AF] text-xs mt-0.5">{{ update.created_at|date:"M j, Y · g:i A" }}</p>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

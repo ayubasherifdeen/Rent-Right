@@ -1,9 +1,10 @@
 import re
+from decimal import Decimal
+from datetime import date
 
 from dateutil.relativedelta import relativedelta
 from django.db import transaction
 from django.utils import timezone
-from datetime import date
 
 from apps.accounts.services import send_tenancy_confirmation_otp
 from apps.accounts.services import send_tenancy_confirmation_otp
@@ -47,12 +48,10 @@ def _build_default_instalment_schedule(tenancy, advance_months, instalment_count
     if instalment_count <= 0 or remaining_months <= 0:
         return []
     
-    remaining_rent = tenancy.monthly_rent * remaining_months
+    remaining_rent = Decimal(str(tenancy.monthly_rent)) * remaining_months
 
     interval_months = max(remaining_months // instalment_count, 1)
-    amount_per_instalment = (remaining_rent / instalment_count).quantize(
-        tenancy.monthly_rent
-    )
+    amount_per_instalment = (remaining_rent / Decimal(instalment_count)).quantize(Decimal("0.01"))
 
 
     schedule = []
@@ -88,9 +87,9 @@ def open_negotiation(tenancy) -> Proposal:
             previous_proposal=None,
             proposed_by=tenancy.landlord,
             status=ProposalStatus.PENDING,
-            advance_months=rental_property.advance_months,
+            advance_months=tenancy.advance_months,
             instalment_count=instalment_count,
-            instalment_schedule=_build_default_instalment_schedule(tenancy, rental_property.advance_months, instalment_count),
+            instalment_schedule=_build_default_instalment_schedule(tenancy, tenancy.advance_months, instalment_count),
         )
     return proposal
 
@@ -265,13 +264,33 @@ def reject_proposal(proposal, rejected_by) -> None:
 
 
 def get_current_proposal(tenancy):
-    """The latest (most recent) Proposal in tenancy's chain, or None."""
-    return tenancy.proposals.order_by("-created_at").first()
+    """Return the latest leaf proposal in the tenancy's negotiation history, or None."""
+    current = tenancy.proposals.order_by("-created_at", "-id").first()
+    if current is None:
+        return None
+
+    while True:
+        child = current.countered_by.order_by("-created_at", "-id").first()
+        if child is None:
+            return current
+        current = child
 
 
 def get_proposal_chain(tenancy):
-    """Full chain, oldest first — for negotiation history display."""
-    return tenancy.proposals.order_by("created_at")
+    """Return the active proposal chain for the latest negotiation, oldest first."""
+    latest = get_current_proposal(tenancy)
+    if latest is None:
+        return []
+
+    chain = []
+    current = latest
+    seen_ids = set()
+    while current is not None and current.pk not in seen_ids:
+        chain.append(current)
+        seen_ids.add(current.pk)
+        current = current.previous_proposal
+
+    return list(reversed(chain))
 
 
 def proposed_by_id_matches(user_a, user_b) -> bool:

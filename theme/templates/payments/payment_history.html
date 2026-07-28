@@ -1,10 +1,16 @@
 {% extends "accounts/dashboard_base.html" %}
-
+ 
 {% block dashboard_content %}
 <div class="max-w-3xl mx-auto mt-10 px-6">
-  <h1 class="text-xl font-semibold text-gray-900 mb-1">Payments</h1>
+  <div class="flex items-center justify-between mb-1">
+    <h1 class="text-xl font-semibold text-gray-900">Payments</h1>
+    {% if latest_rent_card %}
+    <a href="{% url 'documents:download' latest_rent_card.id %}"
+      class="text-sm font-medium text-blue-700 hover:underline">Download current Rent Card</a>
+    {% endif %}
+  </div>
   <p class="text-gray-500 mb-6">{{ tenancy.rental_property.title }}</p>
-
+ 
   <section class="bg-white rounded-lg shadow p-6 mb-6">
     <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Move-in payment</h2>
     {% if move_in_payment %}
@@ -17,10 +23,16 @@
         {{ move_in_payment.get_status_display }}
       </span>
     </div>
-    {% if move_in_receipt %}
-    <a href="{% url 'documents:download' move_in_receipt.id %}"
-      class="text-sm font-medium text-blue-700 hover:underline">Download receipt</a>
-    {% endif %}
+    <div class="flex gap-4 mt-2">
+      {% if move_in_receipt %}
+      <a href="{% url 'documents:download' move_in_receipt.id %}"
+        class="text-sm font-medium text-blue-700 hover:underline">Receipt</a>
+      {% endif %}
+      {% if move_in_rent_card %}
+      <a href="{% url 'documents:download' move_in_rent_card.id %}"
+        class="text-sm font-medium text-blue-700 hover:underline">Rent Card</a>
+      {% endif %}
+    </div>
     {% elif request.user == tenancy.tenant and tenancy.is_pending_payment %}
     <a href="{% url 'payments:pay_move_in' pk=tenancy.pk %}"
       class="inline-block px-4 py-2 rounded-md bg-gray-900 text-white text-sm font-medium hover:bg-gray-800">
@@ -30,7 +42,7 @@
     <p class="text-gray-400 text-sm">Not yet due.</p>
     {% endif %}
   </section>
-
+ 
   <section class="bg-white rounded-lg shadow p-6">
     <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Instalment schedule</h2>
     {% if schedule %}
@@ -64,6 +76,10 @@
             {% if row.status == 'paid' and row.receipt %}
             <a href="{% url 'documents:download' row.receipt.id %}"
               class="text-sm font-medium text-blue-700 hover:underline">Receipt</a>
+            {% endif %}
+            {% if row.status == 'paid' and row.rent_card %}
+            <a href="{% url 'documents:download' row.rent_card.id %}"
+              class="text-sm font-medium text-gray-600 hover:underline ml-3">Rent Card</a>
             {% endif %}
           </td>
         </tr>

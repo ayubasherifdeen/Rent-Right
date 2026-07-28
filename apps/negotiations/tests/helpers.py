@@ -27,7 +27,7 @@ def make_proposal(tenancy, proposed_by, previous_proposal=None, status=ProposalS
         previous_proposal=previous_proposal,
         proposed_by=proposed_by,
         status=status,
-        advance_months=3,
+        advance_months=tenancy.advance_months,
         instalment_count=3,
         instalment_schedule=[
             {"due_date": "2026-08-01", "amount": "1000.00"},

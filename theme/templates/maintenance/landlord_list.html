@@ -1,0 +1,53 @@
+{% extends "accounts/dashboard_base.html" %}
+{% block dashboard_content %}
+<h1 class="font-['Playfair_Display'] text-3xl font-bold text-[#1C3829] mb-6">Maintenance reports</h1>
+{% if filtered_tenancy %}
+  <div class="mb-4 flex items-center gap-2 text-sm">
+    <span class="text-[#6B7280]">Showing reports for</span>
+    <span class="font-semibold text-[#1C3829]">{{ filtered_tenancy.rental_property.title }}</span>
+    <a href="{% url 'maintenance:landlord_list' %}" class="text-[#C4622D] hover:underline">— clear filter</a>
+  </div>
+{% endif %}
+
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+  <div class="stat-card p-5">
+    <p class="text-sm text-[#6B7280]">Total</p>
+    <p class="text-2xl font-bold text-[#1C3829]">{{ counts.total }}</p>
+  </div>
+  <div class="stat-card p-5">
+    <p class="text-sm text-[#6B7280]">Awaiting acknowledgement</p>
+    <p class="text-2xl font-bold text-[#92400E]">{{ counts.submitted }}</p>
+  </div>
+  <div class="stat-card p-5">
+    <p class="text-sm text-[#6B7280]">Acknowledged, in hand</p>
+    <p class="text-2xl font-bold text-[#2A5240]">{{ counts.acknowledged }}</p>
+  </div>
+</div>
+
+{% if maintenance_requests %}
+  <div class="space-y-3">
+    {% for mr in maintenance_requests %}
+      <a href="{% url 'maintenance:detail' mr.pk %}"
+         class="page-card p-4 flex items-center justify-between hover:border-[#C4622D] transition block">
+        <div>
+          <p class="font-semibold text-[#1C3829]">{{ mr.title }}</p>
+          <p class="text-sm text-[#6B7280]">{{ mr.tenancy.rental_property.title }} · {{ mr.reported_by.get_full_name|default:mr.reported_by.email }} · {{ mr.created_at|date:"M j, Y" }}</p>
+        </div>
+        {% include "maintenance/_status_badge.html" with status=mr.status %}
+      </a>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="page-card p-12 text-center">
+    <div class="mx-auto mb-4 w-14 h-14 rounded-full bg-[#7A9E7E]/15 flex items-center justify-center">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18v3h3l6.3-6.3a4 4 0 0 0 5.4-5.4l-2.1 2.1-2-2 2.1-2.1Z"
+              stroke="#2A5240" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <p class="text-[#1C3829] font-semibold mb-1">No maintenance reports yet</p>
+    <p class="text-sm text-[#9CA3AF]">Reports from tenants will show up here as soon as they're filed.</p>
+  </div>
+
+{% endif %}
+{% endblock %}

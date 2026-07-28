@@ -11,9 +11,32 @@
     <p class="text-xs font-semibold uppercase tracking-widest mb-1" style="color:#7A9E7E;">
       {% if is_landlord %}Landlord view{% else %}Your tenancy{% endif %}
     </p>
-    <h1 class="font-serif text-3xl font-bold" style="font-family:'Playfair Display',Georgia,serif; color:#1C3829;">
-      {{ tenancy.rental_property.title }}
-    </h1>
+    <div class="flex items-center justify-between flex-wrap gap-3">
+      <h1 class="font-serif text-3xl font-bold" style="font-family:'Playfair Display',Georgia,serif; color:#1C3829;">
+        {{ tenancy.rental_property.title }}
+      </h1>
+      {# Maintenance card #}
+      {% if tenancy.status == 'active' %}
+      <div class="rounded-2xl p-5" style="background:white; border:0.5px solid #E5E0D8; width:200px;">
+        <p class="text-xs font-semibold uppercase tracking-widest mb-3" style="color:#9CA3AF;">Maintenance</p>
+        {% if not is_landlord %}
+        <a href="{% url 'maintenance:report' tenancy.pk %}"
+          class="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg text-sm font-semibold transition-colors"
+          style="background:#C4622D; color:white;" onmouseover="this.style.background='#A94F22'"
+          onmouseout="this.style.background='#C4622D'">
+          Report an Issue →
+        </a>
+        {% else %}
+        <a href="{% url 'maintenance:landlord_list' %}?tenancy={{ tenancy.pk }}"
+          class="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg text-sm font-semibold transition-colors"
+          style="background:#1C3829; color:white;" onmouseover="this.style.background='#2A5240'"
+          onmouseout="this.style.background='#1C3829'">
+          View Maintenance Reports →
+        </a>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
     <p class="text-sm mt-1" style="color:#7A9E7E;">
       {{ tenancy.rental_property.address }}, {{ tenancy.rental_property.city }}
     </p>
@@ -39,39 +62,31 @@
           <div>
             <p class="text-xs font-semibold uppercase tracking-widest mb-1" style="color:#9CA3AF;">Status</p>
             {% if tenancy.status == 'pending_negotiation' %}
-              <span class="inline-block px-3 py-1 rounded-full text-xs font-semibold"
-                    style="background:#EFF6FF; color:#1D4ED8;">🤝 Pending Negotiation</span>
+            <span class="inline-block px-3 py-1 rounded-full text-xs font-semibold"
+              style="background:#EFF6FF; color:#1D4ED8;">🤝 Pending Negotiation</span>
             {% elif tenancy.status == 'pending_agreement' %}
-              <span class="inline-block px-3 py-1 rounded-full text-xs font-semibold"
-                    style="background:#F5F3FF; color:#6D28D9;">✍️ Pending Agreement</span>
+            <span class="inline-block px-3 py-1 rounded-full text-xs font-semibold"
+              style="background:#F5F3FF; color:#6D28D9;">✍️ Pending Agreement</span>
             {% elif tenancy.status == 'pending_payment' %}
-              <span class="inline-block px-3 py-1 rounded-full text-xs font-semibold"
-                    style="background:#FEF9C3; color:#854D0E;">⏳ Pending Payment</span>
+            <span class="inline-block px-3 py-1 rounded-full text-xs font-semibold"
+              style="background:#FEF9C3; color:#854D0E;">⏳ Pending Payment</span>
             {% elif tenancy.status == 'active' %}
-              <span class="inline-block px-3 py-1 rounded-full text-xs font-semibold"
-                    style="background:#DCFCE7; color:#166534;">✓ Active</span>
+            <span class="inline-block px-3 py-1 rounded-full text-xs font-semibold"
+              style="background:#DCFCE7; color:#166534;">✓ Active</span>
             {% elif tenancy.status == 'expiring' %}
-              <span class="inline-block px-3 py-1 rounded-full text-xs font-semibold"
-                    style="background:#FEF3C7; color:#92400E;">⚠ Expiring Soon</span>
+            <span class="inline-block px-3 py-1 rounded-full text-xs font-semibold"
+              style="background:#FEF3C7; color:#92400E;">⚠ Expiring Soon</span>
             {% elif tenancy.status == 'ended' %}
-              <span class="inline-block px-3 py-1 rounded-full text-xs font-semibold"
-                    style="background:#F3F4F6; color:#6B7280;">Ended</span>
+            <span class="inline-block px-3 py-1 rounded-full text-xs font-semibold"
+              style="background:#F3F4F6; color:#6B7280;">Ended</span>
+            {% elif tenancy.status == 'cancelled' %}
+            <span class="inline-block px-3 py-1 rounded-full text-xs font-semibold"
+              style="background:#FEE2E2; color:#991B1B;">Negotiation Unsuccessful</span>
+
             {% endif %}
           </div>
 
-          {# Activate CTA — landlord only, pending_payment only #}
-          {% if is_landlord and tenancy.status == 'pending_payment' %}
-          <form method="post" action="{% url 'tenancies:activate_tenancy' tenancy.pk %}">
-            {% csrf_token %}
-            <button type="submit"
-                    class="text-sm font-semibold px-5 py-2 rounded-lg transition-colors"
-                    style="background:#1C3829; color:white;"
-                    onmouseover="this.style.background='#2A5240'"
-                    onmouseout="this.style.background='#1C3829'">
-              Mark as Active
-            </button>
-          </form>
-          {% endif %}
+
         </div>
 
         {% if tenancy.status == 'pending_negotiation' %}
@@ -120,52 +135,52 @@
       </div>
 
       {# Act 220 compliance badge #}
-      <div class="rounded-2xl p-5 flex items-start gap-4"
-           style="background:#F0FDF4; border:0.5px solid #BBF7D0;">
+      <div class="rounded-2xl p-5 flex items-start gap-4" style="background:#F0FDF4; border:0.5px solid #BBF7D0;">
         <div class="shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
-             style="background:#DCFCE7; color:#166534;">✓</div>
+          style="background:#DCFCE7; color:#166534;">✓</div>
         <div>
           <p class="text-sm font-semibold mb-0.5" style="color:#166534;">Act 220 Compliant</p>
           <p class="text-xs leading-relaxed" style="color:#166534;">
             Advance payment of {{ tenancy.advance_months }} month{{ tenancy.advance_months|pluralize }}
             is within the legal maximum of 6 months (Section 25(5)).
-            Rent Card and Agreement are issued together on dual OTP confirmation (Section 20).
+            The Tenancy Agreement is issued on dual OTP confirmation (Section 20); the Rent Card
+            is issued and updated with every confirmed payment.
           </p>
         </div>
       </div>
 
     </div>{# end left column #}
 
-    
+
     <div class="space-y-5">
-      
-{% if not agreement and current_proposal %}
-<div class="rounded-2xl p-6 mb-6" style="background:white; border:0.5px solid #E5E0D8;">
-  <p class="text-xs font-semibold uppercase tracking-widest mb-2" style="color:#9CA3AF;">Negotiation</p>
 
-  <span class="inline-block px-3 py-1 rounded-full text-xs font-semibold"
-        style="background:#F5F3FF; color:#6D28D9;">{{ current_proposal.get_status_display }}</span>
+      {% if not agreement and current_proposal %}
+      <div class="rounded-2xl p-6 mb-6" style="background:white; border:0.5px solid #E5E0D8;">
+        <p class="text-xs font-semibold uppercase tracking-widest mb-2" style="color:#9CA3AF;">Negotiation</p>
 
-  <p class="text-sm mt-3" style="color:#1C3829;">
-    Latest offer from {{ current_proposal.proposed_by.get_full_name }} —
-    {{ current_proposal.advance_months }} month{{ current_proposal.advance_months|pluralize }} advance,
-    {{ current_proposal.instalment_count }} instalment{{ current_proposal.instalment_count|pluralize }}.
-  </p>
+        <span class="inline-block px-3 py-1 rounded-full text-xs font-semibold"
+          style="background:#F5F3FF; color:#6D28D9;">{{ current_proposal.get_status_display }}</span>
 
-  <a href="{% url 'negotiations:negotiation_detail' tenancy.pk %}"
-     class="inline-block mt-4 text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
-     style="background:#1C3829; color:white;"
-     onmouseover="this.style.background='#2A5240'"
-     onmouseout="this.style.background='#1C3829'">
-    View Negotiation →
-  </a>
-</div>
-{% endif %}
+        <p class="text-sm mt-3" style="color:#1C3829;">
+          Latest offer from {{ current_proposal.proposed_by.get_full_name }} —
+          {{ current_proposal.advance_months }} month{{ current_proposal.advance_months|pluralize }} advance,
+          {{ current_proposal.instalment_count }} instalment{{ current_proposal.instalment_count|pluralize }}.
+        </p>
+
+        <a href="{% url 'negotiations:negotiation_detail' tenancy.pk %}"
+          class="inline-block mt-4 text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
+          style="background:#1C3829; color:white;" onmouseover="this.style.background='#2A5240'"
+          onmouseout="this.style.background='#1C3829'">
+          View Negotiation →
+        </a>
+      </div>
+      {% endif %}
 
       {# Monthly rent stat #}
       <div class="rounded-2xl p-5" style="background:white; border:0.5px solid #E5E0D8;">
         <p class="text-xs font-semibold uppercase tracking-widest" style="color:#9CA3AF;">Monthly Rent</p>
-        <p class="font-serif text-3xl font-bold mt-1" style="font-family:'Playfair Display',Georgia,serif; color:#1C3829;">
+        <p class="font-serif text-3xl font-bold mt-1"
+          style="font-family:'Playfair Display',Georgia,serif; color:#1C3829;">
           GH₵ {{ tenancy.monthly_rent|floatformat:2 }}
         </p>
         <p class="text-xs mt-1" style="color:#9CA3AF;">Frozen at tenancy creation</p>
@@ -174,64 +189,78 @@
       {# Advance payment stat #}
       <div class="rounded-2xl p-5" style="background:white; border:0.5px solid #E5E0D8;">
         <p class="text-xs font-semibold uppercase tracking-widest" style="color:#9CA3AF;">Advance Payment</p>
-        <p class="font-serif text-3xl font-bold mt-1" style="font-family:'Playfair Display',Georgia,serif; color:#C4622D;">
+        <p class="font-serif text-3xl font-bold mt-1"
+          style="font-family:'Playfair Display',Georgia,serif; color:#C4622D;">
           GH₵ {{ tenancy.advance_amount|floatformat:2 }}
         </p>
-        <p class="text-xs mt-1" style="color:#9CA3AF;">{{ tenancy.advance_months }} month{{ tenancy.advance_months|pluralize }} upfront</p>
+        <p class="text-xs mt-1" style="color:#9CA3AF;">{{ tenancy.advance_months }} month{{
+          tenancy.advance_months|pluralize }} upfront</p>
       </div>
 
       {# Total commitment stat #}
       <div class="rounded-2xl p-5" style="background:white; border:0.5px solid #E5E0D8;">
         <p class="text-xs font-semibold uppercase tracking-widest" style="color:#9CA3AF;">Total Rent (Lease)</p>
-        <p class="font-serif text-3xl font-bold mt-1" style="font-family:'Playfair Display',Georgia,serif; color:#1C3829;">
+        <p class="font-serif text-3xl font-bold mt-1"
+          style="font-family:'Playfair Display',Georgia,serif; color:#1C3829;">
           GH₵ {{ tenancy.total_rent|floatformat:2 }}
         </p>
         <p class="text-xs mt-1" style="color:#9CA3AF;">Full lease commitment</p>
       </div>
 
-      {# Agreement panel — replaces the old direct Rent Card download #}
       <div class="rounded-2xl p-5" style="background:white; border:0.5px solid #E5E0D8;">
         <p class="text-xs font-semibold uppercase tracking-widest mb-3" style="color:#9CA3AF;">Agreement</p>
         {% if agreement %}
-          <p class="text-sm font-semibold mb-1" style="color:#1C3829;">{{ agreement.get_status_display }}</p>
-          {% if agreement.is_fully_executed %}
-            {% if documents %}
-              <ul class="mb-3 space-y-1.5">
-                {% for document in documents %}
-                <li>
-                  <a href="{% url 'documents:download' document.id %}"
-                     class="flex items-center justify-between text-xs font-medium px-3 py-2 rounded-lg transition-colors"
-                     style="background:#F9FAFB; color:#1C3829;"
-                     onmouseover="this.style.background='#F0FDF4'"
-                     onmouseout="this.style.background='#F9FAFB'">
-                    <span>📄 {{ document.get_document_type_display }}</span>
-                    <span style="color:#9CA3AF;">↓</span>
-                  </a>
-                </li>
-                {% endfor %}
-              </ul>
-            {% else %}
-              <p class="text-xs mb-3" style="color:#9CA3AF;">
-                Agreement executed — Rent Card is generating, check back shortly.
-              </p>
-            {% endif %}
-          {% else %}
-            <p class="text-xs mb-3" style="color:#9CA3AF;">
-              Awaiting OTP confirmation from
-              {% if not agreement.landlord_confirmed_at %}the landlord{% elif not agreement.tenant_confirmed_at %}the tenant{% endif %}.
-            </p>
+        <p class="text-sm font-semibold mb-1" style="color:#1C3829;">{{ agreement.get_status_display }}</p>
+        {% if agreement.is_fully_executed %}
+        {% if documents or current_rent_card %}
+        <ul class="mb-3 space-y-1.5">
+          {% for document in documents %}
+          {% if document.document_type != 'rent_card' %}
+          <li>
+            <a href="{% url 'documents:download' document.id %}"
+              class="flex items-center justify-between text-xs font-medium px-3 py-2 rounded-lg transition-colors"
+              style="background:#F9FAFB; color:#1C3829;" onmouseover="this.style.background='#F0FDF4'"
+              onmouseout="this.style.background='#F9FAFB'">
+              <span>📄 {{ document.get_document_type_display }}</span>
+              <span style="color:#9CA3AF;">↓</span>
+            </a>
+          </li>
           {% endif %}
-          <a href="{% url 'tenancies:agreement_detail' tenancy.pk %}"
-             class="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg text-sm font-semibold transition-colors"
-             style="background:#1C3829; color:white;"
-             onmouseover="this.style.background='#2A5240'"
-             onmouseout="this.style.background='#1C3829'">
-            View Agreement →
-          </a>
+          {% endfor %}
+          {% if current_rent_card %}
+          <li>
+            <a href="{% url 'documents:download' current_rent_card.id %}"
+              class="flex items-center justify-between text-xs font-medium px-3 py-2 rounded-lg transition-colors"
+              style="background:#F9FAFB; color:#1C3829;" onmouseover="this.style.background='#F0FDF4'"
+              onmouseout="this.style.background='#F9FAFB'">
+              <span>📄 Rent Card (current)</span>
+              <span style="color:#9CA3AF;">↓</span>
+            </a>
+          </li>
+          {% endif %}
+        </ul>
         {% else %}
-          <p class="text-xs text-center py-2" style="color:#9CA3AF;">
-            Not yet drafted — waiting on negotiation to resolve.
-          </p>
+        <p class="text-xs mb-3" style="color:#9CA3AF;">
+          Agreement executed — Rent Card will be generated once the move-in payment is confirmed.
+        </p>
+        {% endif %}
+        {% else %}
+        <p class="text-xs mb-3" style="color:#9CA3AF;">
+          Awaiting OTP confirmation from
+          {% if not agreement.landlord_confirmed_at %}the landlord{% elif not agreement.tenant_confirmed_at %}the
+          tenant{% endif %}.
+        </p>
+        {% endif %}
+        <a href="{% url 'tenancies:agreement_detail' tenancy.pk %}"
+          class="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg text-sm font-semibold transition-colors"
+          style="background:#1C3829; color:white;" onmouseover="this.style.background='#2A5240'"
+          onmouseout="this.style.background='#1C3829'">
+          View Agreement →
+        </a>
+        {% else %}
+        <p class="text-xs text-center py-2" style="color:#9CA3AF;">
+          Not yet drafted — waiting on negotiation to resolve.
+        </p>
         {% endif %}
       </div>
 
@@ -240,50 +269,50 @@
         <p class="text-xs font-semibold uppercase tracking-widest mb-3" style="color:#9CA3AF;">Payments</p>
 
         {% if tenancy.status == 'pending_payment' %}
-          {% if move_in_payment and move_in_payment.is_successful %}
-            <p class="text-sm font-semibold mb-1" style="color:#166534;">✓ Move-in payment received</p>
-            <p class="text-xs" style="color:#9CA3AF;">Awaiting activation.</p>
-          {% else %}
-            <p class="text-sm mb-3" style="color:#1C3829;">
-              GH₵ {{ tenancy.advance_amount|floatformat:2 }} due before this tenancy can go active.
-            </p>
-            {% if not is_landlord %}
-            <a href="{% url 'payments:pay_move_in' pk=tenancy.pk %}"
-               class="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg text-sm font-semibold transition-colors"
-               style="background:#C4622D; color:white;"
-               onmouseover="this.style.background='#A94F22'"
-               onmouseout="this.style.background='#C4622D'">
-              Pay Move-in Advance →
-            </a>
-            {% else %}
-            <p class="text-xs" style="color:#9CA3AF;">Waiting on the tenant to pay.</p>
-            {% endif %}
-          {% endif %}
+        {% if move_in_payment and move_in_payment.is_successful %}
+        <p class="text-sm font-semibold mb-1" style="color:#166534;">✓ Move-in payment received</p>
+        <p class="text-xs" style="color:#9CA3AF;">Awaiting activation.</p>
+        {% else %}
+        <p class="text-sm mb-3" style="color:#1C3829;">
+          GH₵ {{ tenancy.advance_amount|floatformat:2 }} due before this tenancy can go active.
+        </p>
+        {% if not is_landlord %}
+        <a href="{% url 'payments:pay_move_in' pk=tenancy.pk %}"
+          class="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg text-sm font-semibold transition-colors"
+          style="background:#C4622D; color:white;" onmouseover="this.style.background='#A94F22'"
+          onmouseout="this.style.background='#C4622D'">
+          Pay Move-in Advance →
+        </a>
+        {% else %}
+        <p class="text-xs" style="color:#9CA3AF;">Waiting on the tenant to pay.</p>
+        {% endif %}
+        {% endif %}
 
         {% elif tenancy.status == 'active' %}
-          {% if next_due_instalment %}
-            <p class="text-sm mb-1" style="color:#1C3829;">
-              Next instalment: GH₵ {{ next_due_instalment.amount|floatformat:2 }}
-              due {{ next_due_instalment.due_date|date:"d M Y" }}
-            </p>
-            {% if next_due_instalment.status == 'overdue' %}
-              <p class="text-xs font-semibold mb-3" style="color:#B91C1C;">Overdue</p>
-            {% endif %}
-          {% else %}
-            <p class="text-xs mb-3" style="color:#166534;">All instalments up to date.</p>
-          {% endif %}
-          <a href="{% url 'payments:payment_history' pk=tenancy.pk %}"
-             class="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg text-sm font-semibold transition-colors"
-             style="background:#1C3829; color:white;"
-             onmouseover="this.style.background='#2A5240'"
-             onmouseout="this.style.background='#1C3829'">
-            View Payment History →
-          </a>
+        {% if next_due_instalment %}
+        <p class="text-sm mb-1" style="color:#1C3829;">
+          Next instalment: GH₵ {{ next_due_instalment.amount|floatformat:2 }}
+          due {{ next_due_instalment.due_date|date:"d M Y" }}
+        </p>
+        {% if next_due_instalment.status == 'overdue' %}
+        <p class="text-xs font-semibold mb-3" style="color:#B91C1C;">Overdue</p>
+        {% endif %}
+        {% else %}
+        <p class="text-xs mb-3" style="color:#166534;">All instalments up to date.</p>
+        {% endif %}
+        <a href="{% url 'payments:payment_history' pk=tenancy.pk %}"
+          class="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg text-sm font-semibold transition-colors"
+          style="background:#1C3829; color:white;" onmouseover="this.style.background='#2A5240'"
+          onmouseout="this.style.background='#1C3829'">
+          View Payment History →
+        </a>
         {% endif %}
       </div>
       {% endif %}
 
     </div>
+
   </div>
+
 </div>
 {% endblock %}

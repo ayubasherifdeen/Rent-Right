@@ -20,7 +20,7 @@ from django.db import transaction
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 
-from apps.documents.services import _financial_display_context, _get_accepted_proposal
+from apps.documents.services import _financial_display_context, _get_accepted_proposal, generate_rent_card
 
 from .models import Payment, PaymentStatus, PaymentType
 
@@ -362,6 +362,7 @@ def _on_payment_success(payment):
         activate_tenancy(tenancy, landlord=tenancy.landlord)
 
     generate_payment_receipt(payment)
+    generate_rent_card(tenancy)
 
     _notify(
         tenancy.tenant,

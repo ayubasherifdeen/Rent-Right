@@ -26,7 +26,7 @@ urlpatterns = [
     path('negotiations/', include('apps.negotiations.urls', namespace='negotiations')),
     path('payments/',     include('apps.payments.urls',     namespace='payments')),
     path('documents/',    include('apps.documents.urls',    namespace='documents')),
-    # path('maintenance/',  include('apps.maintenance.urls',  namespace='maintenance')),
+    path('maintenance/',  include('apps.maintenance.urls',  namespace='maintenance')),
     # path('analytics/',    include('apps.analytics.urls',    namespace='analytics')),
 ]
 
