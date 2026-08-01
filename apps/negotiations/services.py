@@ -264,33 +264,13 @@ def reject_proposal(proposal, rejected_by) -> None:
 
 
 def get_current_proposal(tenancy):
-    """Return the latest leaf proposal in the tenancy's negotiation history, or None."""
-    current = tenancy.proposals.order_by("-created_at", "-id").first()
-    if current is None:
-        return None
-
-    while True:
-        child = current.countered_by.order_by("-created_at", "-id").first()
-        if child is None:
-            return current
-        current = child
+    """The latest (most recent) Proposal in tenancy's chain, or None."""
+    return tenancy.proposals.order_by("-created_at").first()
 
 
 def get_proposal_chain(tenancy):
-    """Return the active proposal chain for the latest negotiation, oldest first."""
-    latest = get_current_proposal(tenancy)
-    if latest is None:
-        return []
-
-    chain = []
-    current = latest
-    seen_ids = set()
-    while current is not None and current.pk not in seen_ids:
-        chain.append(current)
-        seen_ids.add(current.pk)
-        current = current.previous_proposal
-
-    return list(reversed(chain))
+    """Full chain, oldest first — for negotiation history display."""
+    return tenancy.proposals.order_by("created_at")
 
 
 def proposed_by_id_matches(user_a, user_b) -> bool:

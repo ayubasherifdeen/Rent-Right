@@ -24,14 +24,14 @@
           class="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg text-sm font-semibold transition-colors"
           style="background:#C4622D; color:white;" onmouseover="this.style.background='#A94F22'"
           onmouseout="this.style.background='#C4622D'">
-          Report an Issue →
+          Report an Issue ->      
         </a>
         {% else %}
         <a href="{% url 'maintenance:landlord_list' %}?tenancy={{ tenancy.pk }}"
           class="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg text-sm font-semibold transition-colors"
           style="background:#1C3829; color:white;" onmouseover="this.style.background='#2A5240'"
           onmouseout="this.style.background='#1C3829'">
-          View Maintenance Reports →
+         Maintenance ->
         </a>
         {% endif %}
       </div>

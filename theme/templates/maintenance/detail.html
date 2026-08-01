@@ -67,7 +67,7 @@
       {% endif %}
 
       {% if maintenance_request.status == "submitted" or maintenance_request.status == "acknowledged" %}
-        <form method="post" action="{% url 'maintenance:resolve' maintenance_request.pk %}" enctype="multipart/form-data" class="space-y-3">
+        <form method="post" action="{% url 'maintenance:resolve' maintenance_request.pk %}" enctype="multipart/form-data" class="space-y-4">
           {% csrf_token %}
           <label class="block text-sm font-semibold text-[#1C3829]">Mark resolved</label>
           {{ resolution_form.note }}
@@ -100,7 +100,7 @@
               {% if update.old_status == update.new_status %}
                 filed the report
               {% else %}
-                moved status to <strong>{{ update.get_new_status_display }}</strong>
+                marked as <strong>{{ update.get_new_status_display }}</strong>
               {% endif %}
             </p>
             {% if update.note %}<p class="text-[#6B7280] mt-0.5">{{ update.note }}</p>{% endif %}

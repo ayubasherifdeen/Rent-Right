@@ -1,5 +1,5 @@
 import uuid
-from django.contrib.auth.models import AbstractUser, UserManager
+from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -33,35 +33,6 @@ class Organisation(models.Model):
         return self.name
 
 
-class CustomUserManager(UserManager):
-    def create_user(self, username=None, email=None, password=None, **extra_fields):
-        if not email:
-            raise ValueError("The Email field must be set")
-
-        if not username:
-            username = email.split("@", 1)[0]
-
-        base_username = username
-        suffix = 1
-        while self.model.objects.filter(username=base_username).exists():
-            base_username = f"{username}{suffix}"
-            suffix += 1
-
-        return super().create_user(username=base_username, email=email, password=password, **extra_fields)
-
-    def create_superuser(self, username=None, email=None, password=None, **extra_fields):
-        extra_fields.setdefault("is_staff", True)
-        extra_fields.setdefault("is_superuser", True)
-        extra_fields.setdefault("is_active", True)
-
-        if extra_fields.get("is_staff") is not True:
-            raise ValueError("Superuser must have is_staff=True.")
-        if extra_fields.get("is_superuser") is not True:
-            raise ValueError("Superuser must have is_superuser=True.")
-
-        return self.create_user(username=username, email=email, password=password, **extra_fields)
-
-
 # Custom User with AbstractUser, users are identified by email
 
 class User(AbstractUser):
@@ -71,9 +42,7 @@ class User(AbstractUser):
     is_verified  = models.BooleanField(default=False)  # phone OTP confirmed
 
     USERNAME_FIELD  = 'email'
-    REQUIRED_FIELDS = ['first_name', 'last_name']
-
-    objects = CustomUserManager()
+    REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
 
     class Meta:
         verbose_name = 'User'

@@ -12,11 +12,6 @@ from django.db.models import Q
 from django.http import Http404, request
 from django.shortcuts import get_object_or_404, redirect, render
 
-# ASSUMPTION — verify import path. `can_act_on_property` is described in
-# handoff v15 §4 as "the one source of truth" for landlord/manager access,
-# already used across `listings`/`applications`/`tenancies`. Most likely
-# home is apps.listings.services since it owns the Property model, but
-# confirm before wiring this in.
 from apps.accounts.models import ManagedProperty
 from apps.accounts.services import can_act_on_property
 
@@ -91,10 +86,6 @@ def tenant_maintenance_list(request):
         MaintenanceRequest.objects.filter(reported_by=request.user)
         .select_related("tenancy", "tenancy__rental_property")
     )
-    # Entry point for filing a *new* report: a tenant can only file against
-    # a tenancy that's currently theirs and active (create_maintenance_request()
-    # enforces this too — this is just what lets the template offer the
-    # right button(s) rather than the tenant needing to know a URL).
     active_tenancies = Tenancy.objects.filter(
         tenant=request.user, status=TenancyStatus.ACTIVE
     ).select_related("rental_property")
@@ -110,11 +101,6 @@ def tenant_maintenance_list(request):
 
 @login_required
 def landlord_maintenance_list(request):
-    # ASSUMPTION — verify field names. ManagedProperty is described in
-    # handoff v15 §2 as living in `accounts` (manager delegation). Field
-    # names (`manager`, `property`, `is_active`) are a best guess based on
-    # how it's referenced elsewhere in the handoff — confirm against the
-    # real model before relying on this filter.
     from apps.accounts.models import ManagedProperty
 
     managed_property_ids = ManagedProperty.objects.filter(
@@ -141,10 +127,15 @@ def landlord_maintenance_list(request):
             tenancy__rental_property_id=property_id
         )
 
+    status_filter = request.GET.get("status")
+    if status_filter in MaintenanceStatus.values:
+        maintenance_requests = maintenance_requests.filter(status=status_filter)
+
     counts = {
         "total": maintenance_requests.count(),
         "submitted": maintenance_requests.filter(status=MaintenanceStatus.SUBMITTED).count(),
         "acknowledged": maintenance_requests.filter(status=MaintenanceStatus.ACKNOWLEDGED).count(),
+        "resolved": maintenance_requests.filter(status=MaintenanceStatus.RESOLVED).count(),
     }
     return render(
         request,
@@ -153,6 +144,7 @@ def landlord_maintenance_list(request):
             "maintenance_requests": maintenance_requests,
             "counts": counts,
             "filtered_tenancy": filtered_tenancy,
+            "status_filter": status_filter,
         }
          
     )

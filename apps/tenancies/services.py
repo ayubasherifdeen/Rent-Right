@@ -316,7 +316,6 @@ def _execute_agreement(agreement):
         tenancy.save(update_fields=["status", "updated_at"])
 
         generate_tenancy_agreement(agreement)
-        generate_rent_card(tenancy)
         generate_instalment_addendum(agreement)
 
     return agreement

@@ -1,14 +1,6 @@
 """
-apps/maintenance/services.py
-
-Every status transition goes through exactly one of the functions below,
-each of which writes the MaintenanceRequest row and its MaintenanceUpdate
-trail row inside the same transaction, so the two can never drift apart.
-Views never touch MaintenanceUpdate directly — same rule as
-`negotiations` never lets a view mutate a Proposal directly.
-
 Services raise ValueError on business-rule violations, never Django HTTP
-exceptions (handoff v15 §4) — this keeps them callable from the shell,
+exceptions this keeps them callable from the shell,
 tests, or a future management command without a request/response cycle.
 """
 
@@ -46,9 +38,8 @@ def _media_type_for(uploaded_file):
 def _notify(user, message):
     """
     Uniform notification stub, copied deliberately from the pattern already
-    used across every other app (handoff v15 §4: "every app's `_notify()`
-    is a no-op in dev, wrapped in a bare `except Exception: pass`"). Do not
-    redesign this per-app — when `notifications` gets built, this is the
+    used across every other app is a no-op in dev, wrapped in a bare `except Exception: pass`").
+    Do not redesign this per-app — when `notifications` gets built, this is the
     one function in this file that changes.
     """
     if getattr(settings, "ARKESEL_DRY_RUN", True):
@@ -70,14 +61,14 @@ def _notification_recipients(tenancy):
     should match.
 
     ASSUMPTION — same as views.landlord_maintenance_list: ManagedProperty
-    field names (`manager`, `property`, `is_active`) are a best guess.
+    field names (`manager`, `property`, `status`) are a best guess.
     Confirm against the real accounts model.
     """
     from apps.accounts.models import ManagedProperty
 
     recipients = [tenancy.landlord]
     manager_ids = ManagedProperty.objects.filter(
-        property=tenancy.rental_property, is_active=True
+        property=tenancy.rental_property, status='active'
     ).values_list("manager_id", flat=True)
     if manager_ids:
         from django.contrib.auth import get_user_model

@@ -266,15 +266,17 @@ def initiate_payment(tenancy, payer, payment_type, callback_url, instalment_due_
         raise ValueError(f"Unknown payment_type: {payment_type}")
 
     reference = f"rrgh-{uuid.uuid4().hex}"
-
-    payment = Payment.objects.create(
-        tenancy=tenancy,
-        paid_by=payer,
-        payment_type=payment_type,
-        amount=amount,
-        instalment_due_date=due_date,
-        reference=reference,
-    )
+    with transaction.atomic():
+        payment = Payment.objects.create(
+            tenancy=tenancy,
+            paid_by=payer,
+            payment_type=payment_type,
+            amount=amount,
+            instalment_due_date=due_date,
+            reference=reference,
+        )
+        tenancy.status = TenancyStatus.ACTIVE
+        tenancy.save(update_fields=["status", "updated_at"])
 
     try:
         paystack_data = _paystack_initialize_transaction(
