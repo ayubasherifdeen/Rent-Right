@@ -17,7 +17,8 @@ from django.db import IntegrityError
 
 
 from .models import Application, ApplicationStatus
-
+from apps.notifications.services import notify_user
+from apps.notifications.models import NotificationPurpose
 
 # ── Notification stub ─────────────────────────────────────────────────────────
 # Month 3: replace with a Celery task dispatch to the notifications app.
@@ -93,9 +94,10 @@ def submit_application(tenant, property_obj, move_in_date, message='') -> Applic
         raise ValueError("You already have an active application for this property.")
 
     # Notify landlord
-    _notify(
+    notify_user(
         property_obj.landlord,
-        f"New application from {tenant.get_full_name()} for {property_obj.title} at {property_obj.city}. Please review and respond.",
+                f"New application from {tenant.get_full_name()} for {property_obj.title} at {property_obj.city}. Please review and respond.",
+                purpose=NotificationPurpose.APPLICATION
     )
 
     return application
@@ -129,7 +131,7 @@ def approve_application(application, actor) -> Application:
     application.status = ApplicationStatus.APPROVED
     application.save(update_fields=['status', 'updated_at'])
 
-    _notify(
+    notify_user(
         application.tenant,
         f"Your application for {application.rental_property.title} has been approved! "
         f"Your landlord will set up the tenancy details shortly.",
@@ -137,10 +139,11 @@ def approve_application(application, actor) -> Application:
 
     landlord = application.rental_property.landlord
     if actor != landlord:
-        _notify(
+        notify_user(
             landlord,
             f"{actor.get_full_name()} (your property manager) approved an application "
             f"from {application.tenant.get_full_name()} for {application.rental_property.title}.",
+            purpose=NotificationPurpose.APPLICATION
         )
 
     return application
@@ -174,18 +177,20 @@ def decline_application(application, actor, reason='') -> Application:
     application.save(update_fields=['status', 'updated_at'])
 
     reason_text = f" Reason: {reason}" if reason else ""
-    _notify(
+    notify_user(
         application.tenant,
         f"Your application for {application.rental_property.title} was not successful.{reason_text} "
         f"You are welcome to apply for other properties.",
+        purpose=NotificationPurpose.APPLICATION
     )
 
     landlord = application.rental_property.landlord
     if actor != landlord:
-        _notify(
+        notify_user(
             landlord,
             f"{actor.get_full_name()} (your property manager) declined an application "
             f"from {application.tenant.get_full_name()} for {application.rental_property.title}.{reason_text}",
+            purpose=NotificationPurpose.APPLICATION
         )
 
     return application
@@ -222,5 +227,10 @@ def withdraw_application(application, tenant) -> Application:
 
     application.status = ApplicationStatus.WITHDRAWN
     application.save(update_fields=['status', 'updated_at'])
+    notify_user(
+        application.rental_property.landlord,
+        f"{tenant.get_full_name()} has withdrawn their application for {application.rental_property.title}.",
+        purpose=NotificationPurpose.APPLICATION
+    )
 
     return application

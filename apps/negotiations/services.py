@@ -10,6 +10,8 @@ from apps.accounts.services import send_tenancy_confirmation_otp
 from apps.accounts.services import send_tenancy_confirmation_otp
 from apps.listings.models import ACT_220_MAX_ADVANCE_MONTHS, PaymentCycle
 from apps.negotiations.models import Proposal, ProposalStatus
+from apps.notifications.models import NotificationPurpose
+from apps.notifications.services import notify_user
 
 
 MAX_NEGOTIATION_ROUNDS = 5
@@ -70,6 +72,31 @@ def _default_instalment_count(rental_property, tenancy, advance_months):
     if remaining_months <= 0:
         return 0
     return max(remaining_months // interval_months, 1)
+
+
+def _other_party(tenancy, actor):
+    """The landlord if actor is the tenant, and vice versa. Used to find
+    who should be notified about an action someone just took."""
+    return tenancy.tenant if actor.pk == tenancy.landlord.pk else tenancy.landlord
+
+
+
+def _notify_negotiation_cancelled(tenancy):
+    """Both parties, once a negotiation is cancelled (round cap hit).
+    Deliberately NOT called from inside _cancel_negotiation() itself —
+    _cancel_negotiation() runs inside its callers' transaction.atomic()
+    blocks, and notifications should fire after commit, not from within
+    a transaction that might still roll back. Called explicitly by both
+    call sites instead, right after their atomic block closes."""
+    for party in (tenancy.landlord, tenancy.tenant):
+        notify_user(
+            party,
+            f"Your tenancy negotiation for {tenancy.rental_property.title} has been "
+            f"cancelled after reaching the maximum of {MAX_NEGOTIATION_ROUNDS} rounds "
+            f"without agreement. The property is available for new applications.",
+            purpose=NotificationPurpose.NEGOTIATION,
+        )
+ 
 
 def open_negotiation(tenancy) -> Proposal:
     """
@@ -173,6 +200,13 @@ def counter_proposal(
             instalment_count=instalment_count,
             instalment_schedule=_build_default_instalment_schedule(previous_proposal.tenancy,advance_months, instalment_count),
         )
+        tenancy = previous_proposal.tenancy
+        notify_user(
+            _other_party(tenancy, proposed_by),
+        f"New counter-proposal on your tenancy negotiation for "
+        f"{tenancy.rental_property.title}. Log in to review and respond.",
+        purpose=NotificationPurpose.NEGOTIATION
+        )
     return new_proposal
 
 
@@ -258,6 +292,16 @@ def reject_proposal(proposal, rejected_by) -> None:
         round_count = tenancy.proposals.count()
         if round_count >= MAX_NEGOTIATION_ROUNDS:
             _cancel_negotiation(tenancy)
+
+    notify_user(
+        proposal.proposed_by,
+        f"Your proposal for {tenancy.rental_property.title} was rejected by "
+        f"{rejected_by.get_full_name()}.",
+        purpose=NotificationPurpose.NEGOTIATION,
+    )
+
+    if round_count >= MAX_NEGOTIATION_ROUNDS:
+        _notify_negotiation_cancelled(tenancy)
         
     return proposal
 

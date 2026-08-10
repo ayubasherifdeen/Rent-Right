@@ -21,6 +21,9 @@ from .models import (
     MediaType,
 )
 
+from apps.notifications.services import notify_user
+from apps.notifications.models import NotificationPurpose
+
 logger = logging.getLogger(__name__)
 
 
@@ -117,10 +120,9 @@ def create_maintenance_request(
     )
 
     for recipient in _notification_recipients(tenancy):
-        _notify(
-            recipient,
-            f"New maintenance report: {maintenance_request.get_category_display()} — {maintenance_request.title}",
-        )
+        notify_user(recipient, 
+                    f"New maintenance report: {maintenance_request.get_category_display()} — {maintenance_request.title}",
+                     purpose=NotificationPurpose.MAINTENANCE)
 
     return maintenance_request
 
@@ -142,7 +144,10 @@ def acknowledge_request(maintenance_request, actor):
             note="Acknowledged by landlord/manager.",
         )
 
-    _notify(maintenance_request.reported_by, "Your maintenance report has been acknowledged.")
+    notify_user(
+        maintenance_request.reported_by,
+        "Your maintenance report has been acknowledged.",
+        purpose=NotificationPurpose.MAINTENANCE)
     return maintenance_request
 
 
@@ -179,7 +184,11 @@ def resolve_request(maintenance_request, actor, note="", media=None):
                 stage=MediaStage.RESOLUTION,
             )
 
-    _notify(maintenance_request.reported_by, "Your maintenance report has been marked resolved.")
+    notify_user(
+        maintenance_request.reported_by,
+        "Your maintenance report has been marked resolved.",
+        purpose=NotificationPurpose.MAINTENANCE
+    )
     return maintenance_request
 
 
@@ -202,5 +211,10 @@ def cancel_request(maintenance_request, actor, note=""):
             new_status=maintenance_request.status,
             note=note,
         )
-
+    for recipient in _notification_recipients(maintenance_request.tenancy):
+        notify_user(
+            recipient,
+            f"Maintenance report cancelled: {maintenance_request.get_category_display()} — {maintenance_request.title}",
+            purpose=NotificationPurpose.MAINTENANCE
+        )   
     return maintenance_request

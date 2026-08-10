@@ -2,13 +2,31 @@
 {% block page_title %}My Dashboard{% endblock %}
 {% block page_subtitle %}Welcome back, {{ request.user.first_name }}{% endblock %}
 
+{# View wiring this needs, per tenant_dashboard_data(request.user):
+     has_active_tenancy = active_tenancy is not None  (pass this in, or
+       check Tenancy.objects.filter(tenant=request.user, status=ACTIVE).exists())
+     data = tenant_dashboard_data(request.user)
+     context = {"action_items": data["action_items"], "trends": data["trends"],
+                "has_active_tenancy": has_active_tenancy}
+   Applications and Documents counts are intentionally left at 0 —
+   applications/documents apps' data, out of analytics' scope. #}
 
 {% block dashboard_content %}
   <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:14px; margin-bottom:20px;" class="lg:grid-cols-3">
     <div class="stat-card">
       <p class="stat-label">Active Tenancy</p>
-      <p class="stat-value">—</p>
-      <p class="stat-sub">None yet</p>
+      <p class="stat-value">{% if has_active_tenancy %}Active{% else %}—{% endif %}</p>
+      <p class="stat-sub">
+        {% if not has_active_tenancy %}
+          None yet
+        {% elif action_items.overdue_payment_count %}
+          {{ action_items.overdue_payment_count }} overdue payment{{ action_items.overdue_payment_count|pluralize }}
+        {% elif action_items.next_due_entry %}
+          Next due: GHC {{ action_items.next_due_entry.amount }}
+        {% else %}
+          All caught up
+        {% endif %}
+      </p>
     </div>
     <div class="stat-card">
       <p class="stat-label">Applications</p>
@@ -22,28 +40,67 @@
     </div>
   </div>
 
-  <div class="page-card" style="padding:60px 24px; text-align:center;">
-    <div style="width:60px; height:60px; background:#F7F3EC; border-radius:16px;
-                display:flex; align-items:center; justify-content:center; margin:0 auto 20px;">
-      <svg width="28" height="28" fill="none" stroke="#7A9E7E" stroke-width="1.5" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-      </svg>
+  {% if has_active_tenancy %}
+
+    {# Needs attention — only meaningful once there's a tenancy to report on #}
+    {% if action_items.overdue_payment_count or action_items.own_stale_maintenance or action_items.pending_agreement_step %}
+      <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:24px;">
+
+        {% if action_items.overdue_payment_count %}
+          <div class="page-card" style="padding:16px 20px; background:#FDF0EA; border-color:#C4622D; display:flex; align-items:center; justify-content:space-between;">
+            <p style="font-size:13px; color:#92400E; font-weight:600;">
+              You have {{ action_items.overdue_payment_count }} overdue payment{{ action_items.overdue_payment_count|pluralize }}.
+            </p>
+            <a href="{% url 'payments:tenant_payments' %}" style="font-size:13px; font-weight:700; color:#92400E; text-decoration:underline;">Pay now →</a>
+          </div>
+        {% endif %}
+
+        {% if action_items.pending_agreement_step %}
+          <div class="page-card" style="padding:16px 20px; background:#F7F3EC; border-color:#7A9E7E; display:flex; align-items:center; justify-content:space-between;">
+            <p style="font-size:13px; color:#1C3829; font-weight:600;">
+              Your tenancy agreement is awaiting your confirmation.
+            </p>
+            <a href="{% url 'tenancies:tenant_tenancy_detail' %}" style="font-size:13px; font-weight:700; color:#1C3829; text-decoration:underline;">Confirm →</a>
+          </div>
+        {% endif %}
+
+        {% if action_items.own_stale_maintenance %}
+          <div class="page-card" style="padding:16px 20px; background:#FFFBEB; border-color:#FCD34D; display:flex; align-items:center; justify-content:space-between;">
+            <p style="font-size:13px; color:#92400E; font-weight:600;">
+              {{ action_items.own_stale_maintenance }} of your maintenance request{{ action_items.own_stale_maintenance|pluralize }} still awaiting acknowledgment.
+            </p>
+            <a href="{% url 'maintenance:tenant_requests' %}" style="font-size:13px; font-weight:700; color:#92400E; text-decoration:underline;">View →</a>
+          </div>
+        {% endif %}
+
+      </div>
+    {% endif %}
+
+    <!-- Empty state — unchanged, still correct when there's no active tenancy -->
+    <div class="page-card" style="padding:60px 24px; text-align:center;">
+      <div style="width:60px; height:60px; background:#F7F3EC; border-radius:16px;
+                  display:flex; align-items:center; justify-content:center; margin:0 auto 20px;">
+        <svg width="28" height="28" fill="none" stroke="#7A9E7E" stroke-width="1.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+        </svg>
+      </div>
+      <h3 style="font-family:'Playfair Display',Georgia,serif; font-size:22px; font-weight:700; color:#1C3829; margin-bottom:10px;">
+        Find your next home
+      </h3>
+      <p style="font-size:14px; color:#9CA3AF; max-width:340px; margin:0 auto 28px; line-height:1.7;">
+        Browse Act 220 compliant listings across Accra and Kumasi.
+        Every property has a verified advance rent limit — no surprises.
+      </p>
+      <a href="{% url 'listings:property_list' %}"
+         style="display:inline-flex; align-items:center; gap:8px; padding:14px 28px;
+                border-radius:12px; background:#C4622D; color:white; font-size:14px;
+                font-weight:600; text-decoration:none; letter-spacing:0.02em;">
+        <svg width="16" height="16" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+        </svg>
+        Browse properties
+      </a>
     </div>
-    <h3 style="font-family:'Playfair Display',Georgia,serif; font-size:22px; font-weight:700; color:#1C3829; margin-bottom:10px;">
-      Find your next home
-    </h3>
-    <p style="font-size:14px; color:#9CA3AF; max-width:340px; margin:0 auto 28px; line-height:1.7;">
-      Browse Act 220 compliant listings across Accra and Kumasi.
-      Every property has a verified advance rent limit — no surprises.
-    </p>
-    <a href="{% url 'listings:property_list' %}"
-       style="display:inline-flex; align-items:center; gap:8px; padding:14px 28px;
-              border-radius:12px; background:#C4622D; color:white; font-size:14px;
-              font-weight:600; text-decoration:none; letter-spacing:0.02em;">
-      <svg width="16" height="16" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-      </svg>
-      Browse properties
-    </a>
-  </div>
+
+  {% endif %}
 {% endblock %}

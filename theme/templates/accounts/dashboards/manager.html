@@ -15,7 +15,7 @@
     </div>
     <h3 style="font-family:'Playfair Display',Georgia,serif; font-size:22px; font-weight:700; color:#1C3829; margin-bottom:10px;">No properties assigned yet</h3>
     <p style="font-size:14px; color:#9CA3AF; max-width:340px; margin:0 auto; line-height:1.7;">
-      A landlord needs to link you to their properties. Share your RentRight GH profile with landlords you work with.
+      A landlord needs to link you to their properties. Share your RentRight GH profile(email) with landlords you work with.
     </p>
   </div>
 
@@ -45,6 +45,54 @@
         You have {{ pending_invites_count }} pending invite{{ pending_invites_count|pluralize }}.
       </p>
       <a href="{% url 'accounts:manager_invites' %}" style="font-size:13px; font-weight:700; color:#92400E; text-decoration:underline;">Review →</a>
+    </div>
+  {% endif %}
+
+  {# ── Needs attention (new — from manager_dashboard_data) ────── #}
+  {% if action_items.overdue_payments or action_items.unacknowledged_maintenance or action_items.stuck_negotiations or action_items.pending_otp_confirmations %}
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+      <h2 style="font-family:'Playfair Display',Georgia,serif; font-size:18px; font-weight:700; color:#1C3829;">Needs your attention</h2>
+      <p style="font-size:12px; color:#9CA3AF;">Across properties delegated to you</p>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:24px;">
+
+      {% if action_items.overdue_payments %}
+        <div class="page-card" style="padding:16px 20px; background:#FDF0EA; border-color:#C4622D; display:flex; align-items:center; justify-content:space-between;">
+          <p style="font-size:13px; color:#92400E; font-weight:600;">
+            {{ action_items.overdue_payments }} overdue payment{{ action_items.overdue_payments|pluralize }}.
+          </p>
+          <a href="{% url 'payments:manager_payments' %}" style="font-size:13px; font-weight:700; color:#92400E; text-decoration:underline;">Review →</a>
+        </div>
+      {% endif %}
+
+      {% if action_items.unacknowledged_maintenance %}
+        <div class="page-card" style="padding:16px 20px; background:#FFFBEB; border-color:#FCD34D; display:flex; align-items:center; justify-content:space-between;">
+          <p style="font-size:13px; color:#92400E; font-weight:600;">
+            {{ action_items.unacknowledged_maintenance }} maintenance request{{ action_items.unacknowledged_maintenance|pluralize }} waiting on acknowledgment.
+          </p>
+          <a href="{% url 'maintenance:manager_requests' %}" style="font-size:13px; font-weight:700; color:#92400E; text-decoration:underline;">Review →</a>
+        </div>
+      {% endif %}
+
+      {% if action_items.stuck_negotiations %}
+        <div class="page-card" style="padding:16px 20px; background:#FFFBEB; border-color:#FCD34D; display:flex; align-items:center; justify-content:space-between;">
+          <p style="font-size:13px; color:#92400E; font-weight:600;">
+            {{ action_items.stuck_negotiations }} negotiation{{ action_items.stuck_negotiations|pluralize }} nearing the round limit.
+          </p>
+          <a href="{% url 'negotiations:manager_negotiations' %}" style="font-size:13px; font-weight:700; color:#92400E; text-decoration:underline;">Review →</a>
+        </div>
+      {% endif %}
+
+      {% if action_items.pending_otp_confirmations %}
+        <div class="page-card" style="padding:16px 20px; background:#F7F3EC; border-color:#7A9E7E; display:flex; align-items:center; justify-content:space-between;">
+          <p style="font-size:13px; color:#1C3829; font-weight:600;">
+            {{ action_items.pending_otp_confirmations }} tenancy agreement{{ action_items.pending_otp_confirmations|pluralize }} awaiting confirmation.
+          </p>
+          <a href="{% url 'tenancies:manager_tenancies' %}" style="font-size:13px; font-weight:700; color:#1C3829; text-decoration:underline;">Review →</a>
+        </div>
+      {% endif %}
+
     </div>
   {% endif %}
 
