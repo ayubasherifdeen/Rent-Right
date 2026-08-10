@@ -68,6 +68,9 @@
           {% elif tenancy.status == 'ended' %}
             <span class="inline-block px-3 py-1 rounded-full text-xs font-semibold"
                   style="background:#F3F4F6; color:#6B7280;">Ended</span>
+          {% elif tenancy.status == 'cancelled' %}
+           <span class="inline-block px-3 py-1 rounded-full text-xs font-semibold"
+                  style="background:#FEE2E2; color:#991B1B;">Negotiation Unsuccessful</span>
           {% endif %}
         </div>
 

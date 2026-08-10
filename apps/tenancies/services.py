@@ -213,12 +213,12 @@ def confirm_agreement_landlord(agreement, landlord, otp_code):
     if agreement.status == AgreementStatus.FULLY_EXECUTED:
         raise ValueError("This agreement has already been fully executed.")
 
-    if not verify_otp(landlord, otp_code, purpose="tenancy_confirm"):
+    otp_ref = verify_otp(landlord, otp_code, purpose="tenancy_confirm")
+    if not otp_ref:
         raise ValueError("Invalid or expired OTP.")
 
-
     agreement.landlord_confirmed_at = timezone.now()
-    agreement.landlord_otp_ref = otp_code
+    agreement.landlord_otp_ref = otp_ref
 
     if agreement.tenant_confirmed_at:
         agreement.save(
@@ -257,11 +257,12 @@ def confirm_agreement_tenant(agreement, tenant, otp_code):
     if agreement.status == AgreementStatus.FULLY_EXECUTED:
         raise ValueError("This agreement has already been fully executed.")
 
-    if not verify_otp(tenant, otp_code, purpose="tenancy_confirm"):
+    otp_ref = verify_otp(tenant, otp_code, purpose="tenancy_confirm")
+    if not otp_ref:
         raise ValueError("Invalid or expired OTP")
 
     agreement.tenant_confirmed_at = timezone.now()
-    agreement.tenant_otp_ref = otp_code
+    agreement.tenant_otp_ref = otp_ref
 
     if agreement.landlord_confirmed_at:
         agreement.save(
@@ -315,7 +316,6 @@ def _execute_agreement(agreement):
         tenancy.save(update_fields=["status", "updated_at"])
 
         generate_tenancy_agreement(agreement)
-        generate_rent_card(tenancy)
         generate_instalment_addendum(agreement)
 
     return agreement

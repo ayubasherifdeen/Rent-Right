@@ -15,6 +15,7 @@ NAV_CONFIG = {
         {"url": "applications:received_applications", "label": "Applications", "icon": "applications"},
         {"url": "tenancies:landlord_tenancies", "label": "Tenancies", "icon": "tenancies"},
         {"url": "payments:payments", "label": "Payments", "icon": "payments"},
+        {"url": "maintenance:landlord_list", "label": "Maintenance", "icon": "maintenance"},
         
     ],
     "tenant": [
@@ -22,6 +23,7 @@ NAV_CONFIG = {
         {"url": "listings:property_list", "label": "Find Properties", "icon": "search"},
         {"url": "tenancies:my_tenancies", "label": "My Tenancy", "icon": "tenancies"},
         {"url": "payments:payments", "label": "Payments", "icon": "payments"},
+        {"url": "maintenance:tenant_list", "label": "Maintenance", "icon": "maintenance"},
     ],
     "property_manager": [
         {"url": "accounts:manager_dashboard", "label": "Dashboard", "icon": "dashboard"},
@@ -29,5 +31,6 @@ NAV_CONFIG = {
         {"url": "listings:create_property", "label": "Add Property", "icon": "add"},
         {"url": "applications:received_applications", "label": "Applications", "icon": "applications"},
         {"url": "accounts:manager_invites", "label": "Invites", "icon": "invites", "badge_key": "pending_invites_count"},
+        {"url": "maintenance:landlord_list", "label": "Maintenance", "icon": "maintenance"},
     ],
 }

@@ -20,7 +20,7 @@ from django.db import transaction
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 
-from apps.documents.services import _financial_display_context, _get_accepted_proposal
+from apps.documents.services import _financial_display_context, _get_accepted_proposal, generate_rent_card
 
 from .models import Payment, PaymentStatus, PaymentType
 
@@ -266,15 +266,17 @@ def initiate_payment(tenancy, payer, payment_type, callback_url, instalment_due_
         raise ValueError(f"Unknown payment_type: {payment_type}")
 
     reference = f"rrgh-{uuid.uuid4().hex}"
-
-    payment = Payment.objects.create(
-        tenancy=tenancy,
-        paid_by=payer,
-        payment_type=payment_type,
-        amount=amount,
-        instalment_due_date=due_date,
-        reference=reference,
-    )
+    with transaction.atomic():
+        payment = Payment.objects.create(
+            tenancy=tenancy,
+            paid_by=payer,
+            payment_type=payment_type,
+            amount=amount,
+            instalment_due_date=due_date,
+            reference=reference,
+        )
+        tenancy.status = TenancyStatus.ACTIVE
+        tenancy.save(update_fields=["status", "updated_at"])
 
     try:
         paystack_data = _paystack_initialize_transaction(
@@ -362,6 +364,7 @@ def _on_payment_success(payment):
         activate_tenancy(tenancy, landlord=tenancy.landlord)
 
     generate_payment_receipt(payment)
+    generate_rent_card(tenancy)
 
     _notify(
         tenancy.tenant,

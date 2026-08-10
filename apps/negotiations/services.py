@@ -1,9 +1,10 @@
 import re
+from decimal import Decimal
+from datetime import date
 
 from dateutil.relativedelta import relativedelta
 from django.db import transaction
 from django.utils import timezone
-from datetime import date
 
 from apps.accounts.services import send_tenancy_confirmation_otp
 from apps.accounts.services import send_tenancy_confirmation_otp
@@ -47,12 +48,10 @@ def _build_default_instalment_schedule(tenancy, advance_months, instalment_count
     if instalment_count <= 0 or remaining_months <= 0:
         return []
     
-    remaining_rent = tenancy.monthly_rent * remaining_months
+    remaining_rent = Decimal(str(tenancy.monthly_rent)) * remaining_months
 
     interval_months = max(remaining_months // instalment_count, 1)
-    amount_per_instalment = (remaining_rent / instalment_count).quantize(
-        tenancy.monthly_rent
-    )
+    amount_per_instalment = (remaining_rent / Decimal(instalment_count)).quantize(Decimal("0.01"))
 
 
     schedule = []
@@ -88,9 +87,9 @@ def open_negotiation(tenancy) -> Proposal:
             previous_proposal=None,
             proposed_by=tenancy.landlord,
             status=ProposalStatus.PENDING,
-            advance_months=rental_property.advance_months,
+            advance_months=tenancy.advance_months,
             instalment_count=instalment_count,
-            instalment_schedule=_build_default_instalment_schedule(tenancy, rental_property.advance_months, instalment_count),
+            instalment_schedule=_build_default_instalment_schedule(tenancy, tenancy.advance_months, instalment_count),
         )
     return proposal
 
