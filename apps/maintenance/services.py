@@ -21,6 +21,9 @@ from .models import (
     MediaType,
 )
 
+from apps.notifications.services import notify_user
+from apps.notifications.models import NotificationPurpose
+
 logger = logging.getLogger(__name__)
 
 
@@ -33,23 +36,6 @@ def _media_type_for(uploaded_file):
     """
     content_type = getattr(uploaded_file, "content_type", "") or ""
     return MediaType.VIDEO if content_type.startswith("video/") else MediaType.IMAGE
-
-
-def _notify(user, message):
-    """
-    Uniform notification stub, copied deliberately from the pattern already
-    used across every other app is a no-op in dev, wrapped in a bare `except Exception: pass`").
-    Do not redesign this per-app — when `notifications` gets built, this is the
-    one function in this file that changes.
-    """
-    if getattr(settings, "ARKESEL_DRY_RUN", True):
-        logger.debug(f"[MAINTENANCE][SMS DRY RUN] to={user}: {message}")
-        return
-    try:
-        # TODO: wire to Arkesel once the `notifications` app exists.
-        pass
-    except Exception:
-        pass
 
 
 def _notification_recipients(tenancy):
@@ -117,10 +103,9 @@ def create_maintenance_request(
     )
 
     for recipient in _notification_recipients(tenancy):
-        _notify(
-            recipient,
-            f"New maintenance report: {maintenance_request.get_category_display()} — {maintenance_request.title}",
-        )
+        notify_user(recipient, 
+                    f"New maintenance report: {maintenance_request.get_category_display()} — {maintenance_request.title}",
+                     purpose=NotificationPurpose.MAINTENANCE)
 
     return maintenance_request
 
@@ -142,7 +127,10 @@ def acknowledge_request(maintenance_request, actor):
             note="Acknowledged by landlord/manager.",
         )
 
-    _notify(maintenance_request.reported_by, "Your maintenance report has been acknowledged.")
+    notify_user(
+        maintenance_request.reported_by,
+        "Your maintenance report has been acknowledged.",
+        purpose=NotificationPurpose.MAINTENANCE)
     return maintenance_request
 
 
@@ -179,7 +167,11 @@ def resolve_request(maintenance_request, actor, note="", media=None):
                 stage=MediaStage.RESOLUTION,
             )
 
-    _notify(maintenance_request.reported_by, "Your maintenance report has been marked resolved.")
+    notify_user(
+        maintenance_request.reported_by,
+        "Your maintenance report has been marked resolved.",
+        purpose=NotificationPurpose.MAINTENANCE
+    )
     return maintenance_request
 
 
@@ -202,5 +194,10 @@ def cancel_request(maintenance_request, actor, note=""):
             new_status=maintenance_request.status,
             note=note,
         )
-
+    for recipient in _notification_recipients(maintenance_request.tenancy):
+        notify_user(
+            recipient,
+            f"Maintenance report cancelled: {maintenance_request.get_category_display()} — {maintenance_request.title}",
+            purpose=NotificationPurpose.MAINTENANCE
+        )   
     return maintenance_request

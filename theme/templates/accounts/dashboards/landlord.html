@@ -2,56 +2,119 @@
 {% block page_title %}My Portfolio{% endblock %}
 {% block page_subtitle %}Welcome back, {{ request.user.first_name }}{% endblock %}
 
+{# View wiring this needs, per landlord_dashboard_data(request.user):
+     properties = Property.objects.filter(landlord=request.user)
+     data = landlord_dashboard_data(request.user)
+     context = {"trends": data["trends"], "action_items": data["action_items"],
+                "has_properties": properties.exists()}
+   Applications count is intentionally left at 0 — that's the
+   applications app's data, out of analytics' scope. Wire it up
+   separately when that app's aggregation is ready. #}
 
 {% block dashboard_content %}
 
-  <!-- Stats grid -->
-  <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:14px; margin-bottom:20px;" class="lg:grid-cols-4">
-    <div class="stat-card">
-      <p class="stat-label">Properties</p>
-      <p class="stat-value">0</p>
-      <p class="stat-sub">No listings yet</p>
-    </div>
-    <div class="stat-card">
-      <p class="stat-label">Tenancies</p>
-      <p class="stat-value">0</p>
-      <p class="stat-sub">Occupancy: —</p>
-    </div>
-    <div class="stat-card">
-      <p class="stat-label">Applications</p>
-      <p class="stat-value" style="color:#C4622D;">0</p>
-      <p class="stat-sub">Awaiting review</p>
-    </div>
-    <div class="stat-card">
-      <p class="stat-label">This month</p>
-      <p class="stat-value">GHC 0</p>
-      <p class="stat-sub">Rent collected</p>
-    </div>
-  </div>
+  {% if has_properties %}
 
-  <!-- Empty state -->
-  <div class="page-card" style="padding:60px 24px; text-align:center;">
-    <div style="width:60px; height:60px; background:#F7F3EC; border-radius:16px;
-                display:flex; align-items:center; justify-content:center; margin:0 auto 20px;">
-      <svg width="28" height="28" fill="none" stroke="#7A9E7E" stroke-width="1.5" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
-      </svg>
+    <!-- Stats grid -->
+    <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:14px; margin-bottom:20px;" class="lg:grid-cols-4">
+      <div class="stat-card">
+        <p class="stat-label">Properties</p>
+        <p class="stat-value">{{ trends.total_properties }}</p>
+        <p class="stat-sub">Across your portfolio</p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-label">Tenancies</p>
+        <p class="stat-value">{{ trends.active_tenancies_count }}</p>
+        <p class="stat-sub">
+          Occupancy: {% if trends.occupancy_rate is not None %}{{ trends.occupancy_rate }}%{% else %}—{% endif %}
+        </p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-label">Applications</p>
+        <p class="stat-value" style="color:#C4622D;">0</p>
+        <p class="stat-sub">Awaiting review</p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-label">This month</p>
+        <p class="stat-value">GHC {{ trends.monthly_income }}</p>
+        <p class="stat-sub">Rent collected</p>
+      </div>
     </div>
-    <h3 style="font-family:'Playfair Display',Georgia,serif; font-size:22px; font-weight:700; color:#1C3829; margin-bottom:10px;">
-      List your first property
-    </h3>
-    <p style="font-size:14px; color:#9CA3AF; max-width:340px; margin:0 auto 28px; line-height:1.7;">
-      Add your property to RentRight GH. Every listing is Act 220 compliant by default —
-      tenants see exactly what they're committing to.
-    </p>
-    <a href="{% url 'listings:create_property' %}"
-       style="display:inline-flex; align-items:center; gap:8px; padding:14px 28px;
-              border-radius:12px; background:#1C3829; color:white; font-size:14px;
-              font-weight:600; text-decoration:none; letter-spacing:0.02em;">
-      <svg width="16" height="16" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
-      </svg>
-      Add a property
-    </a>
-  </div>
+
+    <!-- Needs attention -->
+    {% if action_items.overdue_payments or action_items.unacknowledged_maintenance or action_items.stuck_negotiations or action_items.pending_otp_confirmations %}
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+        <h2 style="font-family:'Playfair Display',Georgia,serif; font-size:18px; font-weight:700; color:#1C3829;">Needs your attention</h2>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:24px;">
+
+        {% if action_items.overdue_payments %}
+          <div class="page-card" style="padding:16px 20px; background:#FDF0EA; border-color:#C4622D; display:flex; align-items:center; justify-content:space-between;">
+            <p style="font-size:13px; color:#92400E; font-weight:600;">
+              {{ action_items.overdue_payments }} overdue payment{{ action_items.overdue_payments|pluralize }} across your tenancies.
+            </p>
+            <a href="{% url 'payments:landlord_payments' %}" style="font-size:13px; font-weight:700; color:#92400E; text-decoration:underline;">Review →</a>
+          </div>
+        {% endif %}
+
+        {% if action_items.unacknowledged_maintenance %}
+          <div class="page-card" style="padding:16px 20px; background:#FFFBEB; border-color:#FCD34D; display:flex; align-items:center; justify-content:space-between;">
+            <p style="font-size:13px; color:#92400E; font-weight:600;">
+              {{ action_items.unacknowledged_maintenance }} maintenance request{{ action_items.unacknowledged_maintenance|pluralize }} waiting on acknowledgment.
+            </p>
+            <a href="{% url 'maintenance:landlord_requests' %}" style="font-size:13px; font-weight:700; color:#92400E; text-decoration:underline;">Review →</a>
+          </div>
+        {% endif %}
+
+        {% if action_items.stuck_negotiations %}
+          <div class="page-card" style="padding:16px 20px; background:#FFFBEB; border-color:#FCD34D; display:flex; align-items:center; justify-content:space-between;">
+            <p style="font-size:13px; color:#92400E; font-weight:600;">
+              {{ action_items.stuck_negotiations }} negotiation{{ action_items.stuck_negotiations|pluralize }} nearing the round limit without agreement.
+            </p>
+            <a href="{% url 'negotiations:landlord_negotiations' %}" style="font-size:13px; font-weight:700; color:#92400E; text-decoration:underline;">Review →</a>
+          </div>
+        {% endif %}
+
+        {% if action_items.pending_otp_confirmations %}
+          <div class="page-card" style="padding:16px 20px; background:#F7F3EC; border-color:#7A9E7E; display:flex; align-items:center; justify-content:space-between;">
+            <p style="font-size:13px; color:#1C3829; font-weight:600;">
+              {{ action_items.pending_otp_confirmations }} tenancy agreement{{ action_items.pending_otp_confirmations|pluralize }} awaiting confirmation.
+            </p>
+            <a href="{% url 'tenancies:landlord_tenancies' %}" style="font-size:13px; font-weight:700; color:#1C3829; text-decoration:underline;">Review →</a>
+          </div>
+        {% endif %}
+
+      </div>
+    {% endif %}
+
+
+
+    <!-- Empty state — unchanged, still correct when there are genuinely no properties -->
+    <div class="page-card" style="padding:60px 24px; text-align:center;">
+      <div style="width:60px; height:60px; background:#F7F3EC; border-radius:16px;
+                  display:flex; align-items:center; justify-content:center; margin:0 auto 20px;">
+        <svg width="28" height="28" fill="none" stroke="#7A9E7E" stroke-width="1.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+        </svg>
+      </div>
+      <h3 style="font-family:'Playfair Display',Georgia,serif; font-size:22px; font-weight:700; color:#1C3829; margin-bottom:10px;">
+        List your first property
+      </h3>
+      <p style="font-size:14px; color:#9CA3AF; max-width:340px; margin:0 auto 28px; line-height:1.7;">
+        Add your property to RentRight GH. Every listing is Act 220 compliant by default; 
+        tenants see exactly what they're committing to.
+      </p>
+      <a href="{% url 'listings:create_property' %}"
+         style="display:inline-flex; align-items:center; gap:8px; padding:14px 28px;
+                border-radius:12px; background:#1C3829; color:white; font-size:14px;
+                font-weight:600; text-decoration:none; letter-spacing:0.02em;">
+        <svg width="16" height="16" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+        </svg>
+        Add a property
+      </a>
+    </div>
+
+  {% endif %}
 {% endblock %}

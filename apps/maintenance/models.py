@@ -112,7 +112,7 @@ class MaintenanceRequestMedia(models.Model):
     from "here's it fixed," which is exactly the distinction that matters
     if this ever gets pulled into a dispute.
     """
-    d = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     request = models.ForeignKey(
         MaintenanceRequest, on_delete=models.CASCADE, related_name="media"
     )

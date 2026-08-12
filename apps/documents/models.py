@@ -11,7 +11,8 @@ class DocumentType(models.TextChoices):
     TENANCY_AGREEMENT = "tenancy_agreement", "Tenancy Agreement"
     INSTALMENT_ADDENDUM = "instalment_addendum", "Instalment Addendum"
     PAYMENT_RECEIPT     = "payment_receipt",      "Payment Receipt"
-
+    DISPUTE_PACKET = "dispute_packet", "Dispute Packet"
+    
 class Document(models.Model):
     """
     Generic PDF vault. Generic-FK'd to whatever generated it (Tenancy,

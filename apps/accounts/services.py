@@ -15,6 +15,8 @@ from django.utils import timezone
 
 from .models import OTP, Role, User, UserProfile, ManagedProperty
 from apps.listings.models import Property
+from apps.notifications.models import NotificationPurpose, NotificationStatus
+from apps.notifications.services import notify_user
 
 import logging
 
@@ -127,6 +129,10 @@ def send_phone_verification_otp(user: User) -> OTP:
     Returns the OTP so the caller can trigger the SMS task.
     """
     otp =  create_otp(user, purpose='phone_verify')
+    notify_user(user=user,
+                message=f"Your RentRightGh phone verification code is: {otp.code}."
+                        f"It expires in {OTP_EXPIRY_MINUTES} minutes.",
+                purpose=NotificationPurpose.OTP)
     logger.debug(f"[DEV] Phone verify OTP for {user.phone_number}: {otp.code}")
     return otp
 
@@ -156,7 +162,10 @@ def send_password_reset_otp(phone_number):
         return  # silent, never reveald if account exists
 
     otp = create_otp(user, purpose='password_reset')
-    # TODO: send via Arkesel — notifications app 
+    notify_user(user=user,
+                    message=f"Your RentRightGh password reset code is: {otp.code}."
+                            f"It expires in {OTP_EXPIRY_MINUTES} minutes.",
+                    purpose=NotificationPurpose.OTP)
     logger.debug(f"[DEV] Password reset OTP for {phone_number}: {otp.code}") 
     return otp
 
@@ -182,6 +191,10 @@ def send_tenancy_confirmation_otp(user: User) -> OTP:
     trigger the SMS task.
     """
     otp = create_otp(user, purpose='tenancy_confirm')
+    notify_user(user=user,
+                    message=f"Your RentRightGh tenancy agreement confirmation code is: {otp.code}."
+                            f"It expires in {OTP_EXPIRY_MINUTES} minutes.",
+                    purpose=NotificationPurpose.TENANCY)
     logger.debug(f"[DEV] Tenancy confirm OTP for {user.phone_number}: {otp.code}")
     return otp
 

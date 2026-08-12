@@ -11,6 +11,8 @@ from django.shortcuts import redirect, render
 from django.views.decorators.http import require_http_methods, require_POST
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.shortcuts import get_object_or_404, redirect, render
+
+from apps.tenancies.models import Tenancy, TenancyStatus
 from .decorators import phone_verified_required, property_manager_required
 from apps.accounts.models import ManagedProperty, User
 from apps.listings.models import Property
@@ -36,6 +38,11 @@ from .services import (
     get_pending_invites_count
 )
 
+from apps.analytics.services import (
+    landlord_dashboard_data,
+    manager_dashboard_data,
+    tenant_dashboard_data,
+)
 
 # Registration 
 
@@ -213,31 +220,50 @@ def dashboard(request):
 
 @login_required
 def landlord_dashboard(request):
-    return render(request, 'accounts/dashboards/landlord.html', {
-        'user': request.user,
-    })
-
+    properties = Property.objects.filter(landlord=request.user)
+    data = landlord_dashboard_data(request.user)
+    return render(request, "accounts/dashboards/landlord.html", {
+        "has_properties": properties.exists(),
+        "action_items": data["action_items"],
+        "trends": data["trends"],
+       })
 
 @login_required
 def tenant_dashboard(request):
-    return render(request, 'accounts/dashboards/tenant.html', {
-        'user': request.user,
-    })
+    active_tenancy = Tenancy.objects.filter(
+            tenant=request.user, status=TenancyStatus.ACTIVE
+    ).exists()
+    data = tenant_dashboard_data(request.user)
+    return render(request, "accounts/dashboards/tenant.html", {
+            "has_active_tenancy": active_tenancy,
+            "action_items": data["action_items"],
+            "trends": data["trends"],
+        })
 
 
 @login_required
 def manager_dashboard(request):
-    managed_qs = properties_managed_by(request.user)
-    pending_invites_count = ManagedProperty.objects.filter(
-        manager=request.user, status=ManagedProperty.Status.PENDING,
-    ).count()
-    return render(request, 'accounts/dashboards/manager.html', {
-        'user': request.user,
-        'managed_count': managed_qs.count(),
-        'recent_managed_properties': managed_qs.select_related('landlord')[:5],
-        'pending_invites_count': pending_invites_count,
-        'landlord_count': get_pending_invites_count(request.user),
-    })
+    managed = ManagedProperty.objects.filter(manager=request.user, status=ManagedProperty.Status.ACTIVE)
+    managed_properties = Property.objects.filter(
+            id__in=managed.values_list("property_id", flat=True)
+        )
+    try:
+        from apps.accounts.services import get_pending_invites_count
+        pending_invites_count = get_pending_invites_count(request.user)
+    except ImportError:
+        pending_invites_count = 0  # fallback so this at least doesn't crash
+    
+    data = manager_dashboard_data(request.user)
+    
+    return render(request, "accounts/dashboards/manager.html", {
+        "managed_count": managed_properties.count(),
+        "landlord_count": data["trends"]["landlord_count"],
+        "pending_invites_count": pending_invites_count,
+        "recent_managed_properties": managed_properties.order_by("-id")[:4],
+        "action_items": data["action_items"],
+        "trends": data["trends"],
+        })
+    
 
 
 @login_required

@@ -39,5 +39,10 @@ urlpatterns = [
         views.confirm_agreement_view,
         name="confirm_agreement",
     ),
+    path(
+        "<uuid:tenancy_id>/dispute-packet/",
+        views.generate_dispute_packet_view,
+        name="generate_dispute_packet",
+    ),
     
 ]

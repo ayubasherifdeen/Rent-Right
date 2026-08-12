@@ -27,7 +27,7 @@ urlpatterns = [
     path('payments/',     include('apps.payments.urls',     namespace='payments')),
     path('documents/',    include('apps.documents.urls',    namespace='documents')),
     path('maintenance/',  include('apps.maintenance.urls',  namespace='maintenance')),
-    # path('analytics/',    include('apps.analytics.urls',    namespace='analytics')),
+    #path('analytics/',    include('apps.analytics.urls',    namespace='analytics')),
 ]
 
 # Serve media files in development only

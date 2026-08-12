@@ -154,3 +154,86 @@ def get_documents_for(obj):
     """Return all Documents generic-FK'd to a given object (Tenancy, Agreement, ...)."""
     ct = ContentType.objects.get_for_model(obj)
     return Document.objects.filter(content_type=ct, object_id=obj.pk)
+
+
+def generate_dispute_packet(tenancy, generated_by=None, dispute_summary=""):
+    """
+    Renders documents/dispute_packet_template.html into a PDF — a formal
+    evidence packet covering the WHOLE tenancy (every maintenance
+    request on it, plus the full negotiation history), suitable for
+    submission to rent control or a court.
+ 
+    Scoped to the tenancy, not a single MaintenanceRequest — a dispute
+    is rarely about one isolated incident in isolation from the
+    relationship's history, and a packet that silently omitted other
+    requests on the same tenancy would look like selective evidence.
+ 
+    Read-only: pulls straight from the existing append-only trail
+    (MaintenanceUpdate) and stage-tagged media (MaintenanceRequestMedia)
+    for every request on the tenancy, plus the tenancy's negotiation
+    history (Proposal chain, oldest first). Nothing here creates or
+    mutates maintenance/negotiation records.
+ 
+    generated_by is whoever requested the packet (landlord or tenant) —
+    stored on Document like every other generated document here.
+ 
+    dispute_summary is free text supplied by whoever is generating the
+    packet — what's actually being disputed and what resolution is
+    being sought. Nothing in the data model captures this, so it's a
+    parameter, not stored anywhere else. Optional.
+ 
+    NOTE: MaintenanceRequestMedia's primary key field is named `d`, not
+    `id` (confirmed against the real model). Nothing here or in the
+    template references `.id` on a media instance; use `.pk`.
+    """
+    from apps.maintenance.models import MediaStage
+    from apps.negotiations.services import get_proposal_chain
+ 
+    # MaintenanceRequest.Meta.ordering = ["-created_at"] (newest first) —
+    # override for the packet, which reads better oldest first.
+    maintenance_requests = tenancy.maintenance_requests.order_by("created_at")
+ 
+    issues = []
+    for index, maintenance_request in enumerate(maintenance_requests, start=1):
+        issues.append({
+            "index": index,
+            "request": maintenance_request,
+            # MaintenanceUpdate.Meta.ordering = ["created_at"] — already oldest first.
+            "updates": maintenance_request.updates.all(),
+            # MaintenanceRequestMedia.Meta.ordering = ["created_at"] — already oldest first.
+            "reported_media": maintenance_request.media.filter(stage=MediaStage.REPORTED),
+            "resolution_media": maintenance_request.media.filter(stage=MediaStage.RESOLUTION),
+        })
+ 
+    # Full negotiation history for the tenancy, oldest first.
+    proposal_chain = get_proposal_chain(tenancy)
+ 
+    # Human-readable reference for citing this packet in correspondence —
+    # generated here since the Document row (and its own pk) doesn't
+    # exist yet at render time.
+    packet_reference = f"DP-{str(tenancy.pk)[:8].upper()}-{timezone.now():%Y%m%d}"
+ 
+    context = {
+        "tenancy": tenancy,
+        "issues": issues,
+        "proposal_chain": proposal_chain,
+        "generated_at": timezone.now(),
+        "generated_by": generated_by,
+        "dispute_summary": dispute_summary,
+        "packet_reference": packet_reference,
+        **_financial_display_context(tenancy),
+    }
+    pdf_bytes = _render_pdf("documents/dispute_packet_template.html", context)
+ 
+    document = Document.objects.create(
+        document_type=DocumentType.DISPUTE_PACKET,
+        content_type=ContentType.objects.get_for_model(tenancy),
+        object_id=tenancy.pk,
+        generated_by=generated_by,
+    )
+    document.file.save(
+        f"dispute_packet_{tenancy.pk}_{timezone.now():%Y-%m-%d_%H-%M-%S}.pdf",
+        ContentFile(pdf_bytes),
+        save=True,
+    )
+    return document

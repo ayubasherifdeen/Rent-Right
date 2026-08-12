@@ -52,7 +52,9 @@ LOCAL_APPS = [
     'apps.negotiations',
     'apps.payments',
     'apps.maintenance',
-    #  apps.applications, etc. added as we build them
+    'apps.analytics',
+    'apps.notifications',
+    #  apps.notifications, etc. added as we build them
 ]
 
 
@@ -154,7 +156,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 PAYSTACK_SECRET_KEY  = config('PAYSTACK_SECRET_KEY',  default='')
 PAYSTACK_PUBLIC_KEY  = config('PAYSTACK_PUBLIC_KEY',  default='')
 ARKESEL_API_KEY      = config('ARKESEL_API_KEY',       default='')
-ARKESEL_SENDER_NAME  = config('ARKESEL_SENDER_NAME',   default='RentRightGH')
+ARKESEL_SENDER_NAME  = config('ARKESEL_SENDER_NAME',   default='RentRight')
+ARKESEL_SENDER_ID  = config('ARKESEL_SENDER_ID',   default='RentRight')
 CLOUDINARY_URL       = config('CLOUDINARY_URL',        default='')
 ANTHROPIC_API_KEY = config("ANTHROPIC_API_KEY", default=None)
 
