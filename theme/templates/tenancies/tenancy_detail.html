@@ -310,6 +310,45 @@
       </div>
       {% endif %}
 
+      {% if agreement %}
+      {# Dispute Packet card #}
+      <div class="rounded-2xl p-5" style="background:white; border:0.5px solid #E5E0D8;">
+        <p class="text-xs font-semibold uppercase tracking-widest mb-2" style="color:#9CA3AF;">Dispute Packet</p>
+        <p class="text-xs mb-3 leading-relaxed" style="color:#9CA3AF;">
+          Generate a PDF record of this tenancy — maintenance history, evidence, and
+          negotiation terms — suitable for rent control or court submission.
+        </p>
+        <form method="post" action="{% url 'tenancies:generate_dispute_packet' tenancy.pk %}">
+          {% csrf_token %}
+          <div id="dispute-summary-field" style="display:none;" class="mb-3">
+            <textarea
+              name="dispute_summary"
+              rows="3"
+              maxlength="2000"
+              placeholder="Optional: describe what's being disputed and what resolution you're seeking..."
+              class="w-full text-xs rounded-lg p-2.5"
+              style="border:0.5px solid #E5E0D8; color:#1C3829; resize:vertical;"
+            ></textarea>
+          </div>
+          <button type="button" id="dispute-open-btn"
+            onclick="document.getElementById('dispute-summary-field').style.display='block';
+                     document.getElementById('dispute-open-btn').style.display='none';
+                     document.getElementById('dispute-submit-btn').style.display='flex';"
+            class="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg text-sm font-semibold transition-colors"
+            style="background:#1C3829; color:white;" onmouseover="this.style.background='#2A5240'"
+            onmouseout="this.style.background='#1C3829'">
+            Generate Dispute Packet →
+          </button>
+          <button type="submit" id="dispute-submit-btn" style="display:none;"
+            class="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg text-sm font-semibold transition-colors"
+            style="background:#1C3829; color:white;" onmouseover="this.style.background='#2A5240'"
+            onmouseout="this.style.background='#1C3829'">
+            Confirm &amp; Generate →
+          </button>
+        </form>
+      </div>
+{% endif %}
+
     </div>
 
   </div>

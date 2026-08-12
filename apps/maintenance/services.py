@@ -38,23 +38,6 @@ def _media_type_for(uploaded_file):
     return MediaType.VIDEO if content_type.startswith("video/") else MediaType.IMAGE
 
 
-def _notify(user, message):
-    """
-    Uniform notification stub, copied deliberately from the pattern already
-    used across every other app is a no-op in dev, wrapped in a bare `except Exception: pass`").
-    Do not redesign this per-app — when `notifications` gets built, this is the
-    one function in this file that changes.
-    """
-    if getattr(settings, "ARKESEL_DRY_RUN", True):
-        logger.debug(f"[MAINTENANCE][SMS DRY RUN] to={user}: {message}")
-        return
-    try:
-        # TODO: wire to Arkesel once the `notifications` app exists.
-        pass
-    except Exception:
-        pass
-
-
 def _notification_recipients(tenancy):
     """
     Landlord plus any currently-active delegated manager(s) for the

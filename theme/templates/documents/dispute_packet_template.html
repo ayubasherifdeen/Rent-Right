@@ -1,0 +1,185 @@
+<!-- apps/documents/templates/documents/dispute_packet_template.html -->
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+    @page {
+        size: A4;
+        margin: 2.2cm 1.8cm 2.6cm 1.8cm;
+        @bottom-right {
+            content: "Page " counter(page) " of " counter(pages);
+            font-size: 8pt;
+            color: #888;
+        }
+        @bottom-left {
+            content: "{{ packet_reference }}";
+            font-size: 8pt;
+            color: #888;
+        }
+    }
+    body { font-family: "Helvetica Neue", Arial, sans-serif; font-size: 10.5pt; color: #1a1a1a; }
+    h1 { font-size: 16pt; margin-bottom: 2px; }
+    h2 { font-size: 12.5pt; margin-top: 22px; margin-bottom: 6px; border-bottom: 1px solid #ccc; padding-bottom: 3px; }
+    h3 { font-size: 11pt; margin-top: 18px; margin-bottom: 4px; color: #222; }
+    h4 { font-size: 9.5pt; margin-top: 10px; margin-bottom: 3px; color: #555; text-transform: uppercase; letter-spacing: 0.03em; }
+    .subtitle { color: #555; font-size: 9.5pt; margin-bottom: 4px; }
+    .reference { color: #555; font-size: 9.5pt; margin-bottom: 18px; }
+    .meta-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+    .meta-table td { padding: 3px 6px; vertical-align: top; }
+    .meta-table td.label { color: #666; width: 32%; }
+    .status-badge { display: inline-block; padding: 2px 8px; border: 1px solid #999; border-radius: 3px; font-size: 9pt; }
+    table.trail { width: 100%; border-collapse: collapse; margin-top: 6px; }
+    table.trail th, table.trail td { border: 1px solid #ddd; padding: 5px 7px; font-size: 9.5pt; text-align: left; vertical-align: top; }
+    table.trail th { background: #f2f2f2; }
+    .media-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
+    .media-item { width: 30%; }
+    .media-item img { width: 100%; border: 1px solid #ccc; }
+    .exhibit-label { font-weight: bold; font-size: 9pt; margin-top: 4px; }
+    .media-caption { font-size: 8pt; color: #666; }
+    .video-link { font-size: 9.5pt; margin: 3px 0; }
+    .empty-note { color: #888; font-style: italic; font-size: 9.5pt; }
+    .summary-box { border: 1px solid #ccc; background: #fafafa; padding: 10px 12px; font-size: 10.5pt; white-space: pre-wrap; }
+    .issue-block { margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px dashed #ccc; }
+    .footer-note { margin-top: 26px; padding-top: 10px; border-top: 1px solid #ccc; font-size: 8.5pt; color: #777; }
+    .cert-block { margin-top: 30px; }
+    .sig-line { margin-top: 40px; width: 60%; border-top: 1px solid #444; padding-top: 4px; font-size: 9pt; color: #555; }
+</style>
+</head>
+<body>
+
+    <h1>Tenancy Dispute Evidence Packet</h1>
+    <div class="subtitle">Generated {{ generated_at|date:"j F Y, H:i" }} — RentRight GH{% if generated_by %} — Requested by {{ generated_by.get_full_name }}{% endif %}</div>
+    <div class="reference">Reference: {{ packet_reference }}</div>
+
+    <h2>1. Statement of Dispute</h2>
+    {% if dispute_summary %}
+    <div class="summary-box">{{ dispute_summary }}</div>
+    {% else %}
+    <p class="empty-note">No summary was provided at the time this packet was generated. The factual record below stands on its own.</p>
+    {% endif %}
+
+    <h2>2. Parties &amp; Tenancy</h2>
+    <table class="meta-table">
+        <tr><td class="label">Property</td><td>{{ tenancy.rental_property.title }}</td></tr>
+        <tr><td class="label">Address</td><td>{{ tenancy.rental_property.address }}, {{ tenancy.rental_property.city }}</td></tr>
+        <tr><td class="label">Landlord</td><td>{{ tenancy.landlord.get_full_name }}{% if tenancy.landlord.phone_number %} — {{ tenancy.landlord.phone_number }}{% endif %}</td></tr>
+        <tr><td class="label">Tenant</td><td>{{ tenancy.tenant.get_full_name }}{% if tenancy.tenant.phone_number %} — {{ tenancy.tenant.phone_number }}{% endif %}</td></tr>
+        <tr><td class="label">Tenancy period</td><td>{{ tenancy.start_date }} – {{ tenancy.end_date }}</td></tr>
+        <tr><td class="label">Monthly rent</td><td>GHS {{ tenancy.monthly_rent }}</td></tr>
+        <tr><td class="label">Advance paid</td><td>{{ display_advance_months }} month(s) — GHS {{ display_advance_amount }}</td></tr>
+    </table>
+
+    <h2>3. Maintenance Issues</h2>
+    {% if issues %}
+        {% for issue in issues %}
+        <div class="issue-block">
+            <h3>Issue {{ issue.index }}: {{ issue.request.title }}</h3>
+            <table class="meta-table">
+                <tr><td class="label">Category</td><td>{{ issue.request.get_category_display }}</td></tr>
+                <tr><td class="label">Description</td><td>{{ issue.request.description }}</td></tr>
+                <tr><td class="label">Reported by</td><td>{{ issue.request.reported_by.get_full_name }}</td></tr>
+                <tr><td class="label">Reported on</td><td>{{ issue.request.created_at|date:"j F Y, H:i" }}</td></tr>
+                <tr><td class="label">Current status</td><td><span class="status-badge">{{ issue.request.get_status_display }}</span></td></tr>
+                {% if issue.request.resolved_at %}
+                <tr><td class="label">Resolved on</td><td>{{ issue.request.resolved_at|date:"j F Y, H:i" }}</td></tr>
+                {% endif %}
+            </table>
+
+            <h4>Chronological Record</h4>
+            {% if issue.updates %}
+            <table class="trail">
+                <thead><tr><th>Date</th><th>Actor</th><th>Status change</th><th>Note</th></tr></thead>
+                <tbody>
+                    {% for update in issue.updates %}
+                    <tr>
+                        <td>{{ update.created_at|date:"j M Y, H:i" }}</td>
+                        <td>{{ update.actor.get_full_name }}</td>
+                        <td>{{ update.get_old_status_display }} &rarr; {{ update.get_new_status_display }}</td>
+                        <td>{{ update.note|default:"—" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="empty-note">No status updates recorded.</p>
+            {% endif %}
+
+            <h4>Evidence — Reported</h4>
+            {% if issue.reported_media %}
+            <div class="media-grid">
+                {% for item in issue.reported_media %}
+                <div class="media-item">
+                    {% if item.media_type == "image" %}
+                    <img src="{{ item.file.url }}" alt="Reported evidence">
+                    {% else %}
+                    <p class="video-link">Video evidence: {{ item.file.url }}</p>
+                    {% endif %}
+                    <div class="exhibit-label">Exhibit {{ issue.index }}-R{{ forloop.counter }}</div>
+                    <div class="media-caption">{{ item.uploaded_by.get_full_name }} — {{ item.created_at|date:"j M Y" }}</div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="empty-note">No evidence attached at time of reporting.</p>
+            {% endif %}
+
+            <h4>Evidence — Resolution</h4>
+            {% if issue.resolution_media %}
+            <div class="media-grid">
+                {% for item in issue.resolution_media %}
+                <div class="media-item">
+                    {% if item.media_type == "image" %}
+                    <img src="{{ item.file.url }}" alt="Resolution evidence">
+                    {% else %}
+                    <p class="video-link">Video evidence: {{ item.file.url }}</p>
+                    {% endif %}
+                    <div class="exhibit-label">Exhibit {{ issue.index }}-F{{ forloop.counter }}</div>
+                    <div class="media-caption">{{ item.uploaded_by.get_full_name }} — {{ item.created_at|date:"j M Y" }}</div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="empty-note">No resolution evidence attached.</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+    {% else %}
+    <p class="empty-note">No maintenance requests recorded for this tenancy.</p>
+    {% endif %}
+
+    <h2>4. Tenancy Terms &amp; Negotiation History</h2>
+    {% if proposal_chain %}
+    <table class="trail">
+        <thead><tr><th>Date</th><th>Proposed by</th><th>Status</th><th>Advance (months)</th><th>Instalments</th></tr></thead>
+        <tbody>
+            {% for proposal in proposal_chain %}
+            <tr>
+                <td>{{ proposal.created_at|date:"j M Y" }}</td>
+                <td>{{ proposal.proposed_by.get_full_name }}</td>
+                <td>{{ proposal.get_status_display }}</td>
+                <td>{{ proposal.advance_months }}</td>
+                <td>{{ proposal.instalment_count }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="empty-note">No negotiation history for this tenancy.</p>
+    {% endif %}
+
+    <div class="cert-block">
+        <h2>5. Certification</h2>
+        <p>I certify that the information contained in this packet has been compiled directly from RentRight GH's system records and is an accurate reflection of those records as of the generation date above.</p>
+        <div class="sig-line">
+            Signature — {{ generated_by.get_full_name|default:"_______________________" }}, {{ generated_at|date:"j F Y" }}
+        </div>
+    </div>
+
+    <div class="footer-note">
+        This packet is a factual system record and does not constitute legal advice or a determination of fault.
+        Reference {{ packet_reference }}.
+    </div>
+
+</body>
+</html>

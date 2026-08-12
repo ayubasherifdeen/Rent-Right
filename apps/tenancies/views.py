@@ -11,6 +11,8 @@ from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
+from django.http import HttpResponseForbidden, HttpResponseNotAllowed
+
 from apps.accounts.decorators import landlord_required, tenant_required
 from apps.accounts.services import send_tenancy_confirmation_otp
 from apps.applications.models import Application
@@ -276,3 +278,26 @@ def agreement_detail(request, pk):
         "documents": documents,
     }
     return render(request, "tenancies/agreement_detail.html", context)
+
+
+@login_required
+def generate_dispute_packet_view(request, tenancy_id):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+ 
+    tenancy = get_object_or_404(Tenancy, pk=tenancy_id)
+ 
+    if request.user.pk not in (tenancy.landlord_id, tenancy.tenant_id):
+        return HttpResponseForbidden(
+            "Only the landlord or tenant on this tenancy can generate a dispute packet."
+        )
+ 
+    from apps.documents.services import generate_dispute_packet
+ 
+    document = generate_dispute_packet(
+        tenancy,
+        generated_by=request.user,
+        dispute_summary=request.POST.get("dispute_summary", "").strip(),
+    )
+    messages.success(request, "Dispute packet generated.")
+    return redirect("documents:download", document.id)
