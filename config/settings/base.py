@@ -168,3 +168,4 @@ cloudinary.config(
     secure = True,
 )
 
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
