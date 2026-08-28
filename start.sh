@@ -1,0 +1,17 @@
+#!/bin/bash
+set -e
+
+
+# Run Django migrations
+python manage.py migrate --noinput
+#create superuser
+DJANGO_SUPERUSER_USERNAME=$DJANGO_SUPERUSER_USERNAME \
+DJANGO_SUPERUSER_EMAIL=$DJANGO_SUPERUSER_EMAIL \
+DJANGO_SUPERUSER_PASSWORD=$DJANGO_SUPERUSER_PASSWORD \
+python manage.py createsuperuser --noinput   
+
+# Collect static files
+python manage.py collectstatic --noinput
+
+# Start gunicorn
+gunicorn Rent Management.wsgi --bind 0.0.0.0:${PORT:-8000}
