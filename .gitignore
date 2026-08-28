@@ -29,6 +29,7 @@ staticfiles/
 .env.local
 .env.*.local
 .env.example
+.env.staging
 
 # ─── IDE ──────────────────────────────────────────────────────────────────────
 .vscode/
