@@ -1,6 +1,7 @@
 import json
 
 from django.contrib.auth.decorators import login_required
+from django.core.checks import messages
 from django.http import (
     Http404,
     HttpResponse,
@@ -189,6 +190,71 @@ def payments_dashboard_view(request):
         request,
         "payments/payments_dashboard.html",
         {"tenant_rows": tenant_rows, "landlord_rows": landlord_rows},
+    )
+
+@login_required
+def payout_setup_view(request):
+    """
+    Phone-number-based, MoMo-only. Network auto-guessed from the
+    landlord's registered phone_number prefix and silently resolved
+    against Paystack; the landlord just sees one confirm button in the
+    common case. Falls back to a 3-button manual network picker
+    (?network=MTN etc.) only if the guess doesn't resolve.
+    """
+    existing = getattr(request.user, "payout_account", None)
+    phone_number = request.user.phone_number
+ 
+    if request.method == "POST" and request.POST.get("confirmed"):
+        try:
+            services.save_landlord_payout_account(
+                landlord=request.user,
+                bank_code=request.POST["bank_code"],
+                bank_name=request.POST["bank_name"],
+                account_number=phone_number,
+                account_name=request.POST["account_name"],
+            )
+        except services.PaystackError as exc:
+            return render(request, "payments/payout_setup.html", {"error": str(exc), "existing": existing})
+        messages.success(request, "Payout account saved — future payments will route here.")
+        return redirect("payments:payout_setup")
+ 
+    network = request.GET.get("network") or services.guess_momo_network(phone_number)
+ 
+    if not network:
+        return render(
+            request,
+            "payments/payout_setup.html",
+            {"existing": existing, "phone_number": phone_number, "need_manual_network": True},
+        )
+ 
+    try:
+        bank_code, bank_name = services._bank_code_for_network(network)
+        resolved = services.resolve_account_number(phone_number, bank_code)
+    except services.PaystackError as exc:
+        return render(
+            request,
+            "payments/payout_setup.html",
+            {
+                "existing": existing,
+                "phone_number": phone_number,
+                "need_manual_network": True,
+                "error": str(exc) if request.GET.get("network") else None,
+            },
+        )
+ 
+    return render(
+        request,
+        "payments/payout_setup.html",
+        {
+            "existing": existing,
+            "phone_number": phone_number,
+            "pending_confirmation": {
+                "network": network,
+                "bank_code": bank_code,
+                "bank_name": bank_name,
+                "account_name": resolved["account_name"],
+            },
+        },
     )
 
 

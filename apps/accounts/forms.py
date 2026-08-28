@@ -23,7 +23,7 @@ class RegistrationForm(forms.Form):
         max_length=20,
         label='Phone number',
         validators=phone_validator,
-        help_text='We will send your verification code here.',
+        help_text='We will send your verification and code and payment notifications here.',
     )
     role = forms.ChoiceField(
         choices=[

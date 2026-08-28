@@ -1,0 +1,86 @@
+{% extends "accounts/dashboard_base.html" %}
+
+{% block dashboard_content %}
+<div class="max-w-xl mx-auto px-4 py-8">
+
+  <div class="mb-6">
+    <p class="text-xs font-semibold uppercase tracking-widest mb-1" style="color:#7A9E7E;">Landlord settings</p>
+    <h1 class="font-serif text-2xl font-bold" style="font-family:'Playfair Display',Georgia,serif; color:#1C3829;">
+      Payout account
+    </h1>
+    <p class="text-sm mt-1" style="color:#9CA3AF;">
+      Your share of tenant payments is sent here automatically, via Mobile Money.
+    </p>
+  </div>
+
+  {% if error %}
+  <div class="mb-4 px-4 py-3 rounded-lg text-sm font-medium" style="background:#FEE2E2; color:#B91C1C; border:0.5px solid #FCA5A5;">
+    {{ error }}
+  </div>
+  {% endif %}
+
+  {% if existing and existing.is_ready and not pending_confirmation and not need_manual_network %}
+    <div class="rounded-2xl p-5" style="background:{% if existing.is_stale %}#FEF9C3{% else %}#F0FDF4{% endif %}; border:0.5px solid {% if existing.is_stale %}#FDE68A{% else %}#BBF7D0{% endif %};">
+      {% if existing.is_stale %}
+        <p class="text-sm font-semibold mb-1" style="color:#854D0E;">Your phone number has changed</p>
+        <p class="text-xs mb-4" style="color:#854D0E;">
+          Payouts are still set up for {{ existing.account_number }}. Re-verify to update it to {{ phone_number }}.
+        </p>
+      {% else %}
+        <p class="text-xs font-semibold uppercase tracking-widest mb-1" style="color:#166534;">Active</p>
+        <p class="text-sm font-semibold" style="color:#1C3829;">{{ existing.bank_name }} — {{ existing.account_number }}</p>
+        <p class="text-sm mb-4" style="color:#1C3829;">{{ existing.account_name }}</p>
+      {% endif %}
+      <a href="?network={% if existing.bank_name == 'MTN Mobile Money' %}MTN{% elif existing.bank_name == 'AirtelTigo Money' %}AirtelTigo{% else %}Telecel{% endif %}"
+         class="text-sm font-semibold" style="color:#1C3829;">
+        Re-verify →
+      </a>
+    </div>
+
+  {% elif need_manual_network %}
+    {# Fallback — only shown if the prefix guess didn't resolve #}
+    <div class="rounded-2xl p-6" style="background:white; border:0.5px solid #E5E0D8;">
+      <p class="text-sm mb-4" style="color:#1C3829;">
+        Couldn't automatically match <span class="font-semibold">{{ phone_number }}</span> to a network.
+        Which one is it on?
+      </p>
+      <div class="flex gap-3">
+        <a href="?network=MTN" class="flex-1 py-2.5 rounded-lg text-sm font-semibold text-center transition-colors" style="background:#F3F4F6; color:#1C3829;">MTN</a>
+        <a href="?network=Telecel" class="flex-1 py-2.5 rounded-lg text-sm font-semibold text-center transition-colors" style="background:#F3F4F6; color:#1C3829;">Telecel</a>
+        <a href="?network=AirtelTigo" class="flex-1 py-2.5 rounded-lg text-sm font-semibold text-center transition-colors" style="background:#F3F4F6; color:#1C3829;">AirtelTigo</a>
+      </div>
+    </div>
+
+  {% elif pending_confirmation %}
+    {# One-click confirm — this is the flow almost everyone sees #}
+    <div class="rounded-2xl p-6" style="background:white; border:0.5px solid #E5E0D8;">
+      <p class="text-xs font-semibold uppercase tracking-widest mb-3" style="color:#9CA3AF;">Confirm this is you</p>
+      <div class="rounded-lg p-4 mb-5" style="background:#FEF9C3; border:0.5px solid #FDE68A;">
+        <p class="text-xs mb-1" style="color:#854D0E;">{{ pending_confirmation.bank_name }} — {{ phone_number }}</p>
+        <p class="font-serif text-xl font-bold" style="font-family:'Playfair Display',Georgia,serif; color:#1C3829;">
+          {{ pending_confirmation.account_name }}
+        </p>
+      </div>
+      <p class="text-sm mb-5" style="color:#7A9E7E;">
+        Paystack resolved this Mobile Money number to the name above.
+        If that's not you, <a href="?network=MTN" style="color:#1C3829; text-decoration:underline;">pick a different network</a>.
+      </p>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="confirmed" value="1">
+        <input type="hidden" name="bank_code" value="{{ pending_confirmation.bank_code }}">
+        <input type="hidden" name="bank_name" value="{{ pending_confirmation.bank_name }}">
+        <input type="hidden" name="account_name" value="{{ pending_confirmation.account_name }}">
+        <button type="submit"
+                class="w-full py-2.5 rounded-lg text-sm font-semibold transition-colors"
+                style="background:#1C3829; color:white;"
+                onmouseover="this.style.background='#2A5240'"
+                onmouseout="this.style.background='#1C3829'">
+          Yes, this is me — activate payouts
+        </button>
+      </form>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

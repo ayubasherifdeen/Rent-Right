@@ -22,6 +22,64 @@ class PaymentStatus(models.TextChoices):
     FAILED    = "failed",    "Failed"
     ABANDONED = "abandoned", "Abandoned"
 
+class PayoutMethod(models.TextChoices):
+    BANK          = "bank",          "Bank Account"
+    MOBILE_MONEY  = "mobile_money",  "Mobile Money"
+
+
+class LandlordPayoutAccount(models.Model):
+    """
+    Where a landlord's share of tenant payments actually settles — one
+    per landlord
+    """
+ 
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    landlord = models.OneToOneField(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="payout_account"
+    )
+ 
+    method = models.CharField(max_length=16, choices=PayoutMethod.choices)
+    bank_code = models.CharField(max_length=20)     # Paystack settlement_bank code
+    bank_name = models.CharField(max_length=100)    # display only, e.g. "MTN Mobile Money"
+    account_number = models.CharField(max_length=20)  # bank account number OR MoMo phone number
+ 
+    # Resolved from Paystack's Resolve Account Number endpoint, shown to
+    # the landlord for confirmation BEFORE this row (or a subaccount) is
+    # created — see services.resolve_account_number()'s docstring for why.
+    account_name = models.CharField(max_length=150)
+ 
+    paystack_subaccount_code = models.CharField(max_length=100, blank=True)
+ 
+    # Platform's cut of every split transaction. Set from
+    # settings.PLATFORM_FEE_PERCENTAGE at creation time, NOT landlord-
+    # editable — this is a business decision, not something a payout
+    # form should let someone type into.
+    percentage_charge = models.DecimalField(max_digits=5, decimal_places=2)
+ 
+    verified_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+ 
+    class Meta:
+        verbose_name = "Landlord Payout Account"
+ 
+    def __str__(self):
+        return f"{self.landlord} — {self.get_method_display()} ({self.account_name})"
+ 
+    @property
+    def is_ready(self):
+        return bool(self.paystack_subaccount_code)
+ 
+    @property
+    def is_stale(self):
+        """
+        Paystack subaccounts
+        don't update themselves when a User row changes elsewhere, so
+        this is what the dashboard checks to prompt a re-verify instead
+        of silently paying out to a number the landlord no longer uses.
+        """
+        return self.is_ready and self.account_number != self.landlord.phone_number
+ 
 
 class Payment(models.Model):
     """

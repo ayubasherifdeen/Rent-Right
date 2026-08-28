@@ -8,6 +8,7 @@ signature contract, but flag this whole file for a real test pass with
 test keys before relying on it. See handoff v12 §open items.
 """
 
+from decimal import Decimal
 import hashlib
 import hmac
 import json
@@ -24,9 +25,16 @@ from apps.documents.services import _financial_display_context, _get_accepted_pr
 from apps.notifications.models import NotificationPurpose
 from apps.notifications.services import notify_user
 
-from .models import Payment, PaymentStatus, PaymentType
+from .models import Payment, PaymentStatus, PaymentType, PayoutMethod, LandlordPayoutAccount
 
 PAYSTACK_BASE_URL = "https://api.paystack.co"
+
+
+GHANA_MOMO_PREFIXES = {
+    "024": "MTN", "025": "MTN", "053": "MTN", "054": "MTN", "055": "MTN", "059": "MTN",
+    "020": "Telecel", "050": "Telecel",
+    "026": "AirtelTigo", "027": "AirtelTigo", "056": "AirtelTigo", "057": "AirtelTigo",
+}
 
 
 class PaystackError(Exception):
@@ -50,7 +58,7 @@ def _paystack_headers():
     }
 
 
-def _paystack_initialize_transaction(*, email, amount, reference, callback_url):
+def _paystack_initialize_transaction(*, email, amount, reference, callback_url, subaccount=None):
     """
     POST /transaction/initialize. `amount` is in GHS (Decimal/float);
     Paystack wants the smallest currency unit (pesewas), so the *100
@@ -63,10 +71,10 @@ def _paystack_initialize_transaction(*, email, amount, reference, callback_url):
         "reference": reference,
         "callback_url": callback_url,
         "currency": "GHS",
-        # Not restricting 'channels' to mobile_money only — v7 §17 says
-        # "MoMo + card"; letting Paystack present both and the payer
-        # choose. Revisit if product wants MoMo-only.
+        "channels": ["mobile_money"],
     }
+    if subaccount:
+        payload["subaccount"] = subaccount
     try:
         resp = requests.post(
             f"{PAYSTACK_BASE_URL}/transaction/initialize",
@@ -83,6 +91,208 @@ def _paystack_initialize_transaction(*, email, amount, reference, callback_url):
 
     return data["data"]  # {"authorization_url", "access_code", "reference"}
 
+
+def list_ghana_momo_networks():
+    """
+    GET /bank?country=ghana&type=... — used to populate the payout-setup
+    form's dropdown. 'ghipss' returns real Ghanaian banks; 'mobile_money'
+    returns MTN Mobile Money / Telecel Cash / AirtelTigo Money, each
+    with their own settlement_bank code, same shape as a real bank code.
+    """
+    try:
+        resp = requests.get(
+            f"{PAYSTACK_BASE_URL}/bank",
+            params={"country": "ghana", "type": "mobile_money"},
+            headers=_paystack_headers(),
+            timeout=15,
+        )
+        data = resp.json()
+    except (requests.RequestException, ValueError) as exc:
+        raise PaystackError(f"Could not reach Paystack: {exc}") from exc
+    if not resp.ok or not data.get("status"):
+        raise PaystackError(data.get("message", "Could not fetch bank/network list."))
+    return [{"name": b["name"], "code": b["code"]} for b in data["data"]]
+ 
+ 
+
+ 
+ 
+def _paystack_create_subaccount(*, business_name, settlement_bank, account_number, percentage_charge):
+    payload = {
+        "business_name": business_name,
+        "settlement_bank": settlement_bank,
+        "account_number": account_number,
+        "percentage_charge": percentage_charge,
+    }
+    try:
+        resp = requests.post(
+            f"{PAYSTACK_BASE_URL}/subaccount", json=payload, headers=_paystack_headers(), timeout=15
+        )
+        data = resp.json()
+    except (requests.RequestException, ValueError) as exc:
+        raise PaystackError(f"Could not reach Paystack: {exc}") from exc
+    if not resp.ok or not data.get("status"):
+        raise PaystackError(data.get("message", "Could not create payout subaccount."))
+    return data["data"]
+ 
+ 
+def _paystack_update_subaccount(subaccount_code, **fields):
+    try:
+        resp = requests.put(
+            f"{PAYSTACK_BASE_URL}/subaccount/{subaccount_code}",
+            json=fields,
+            headers=_paystack_headers(),
+            timeout=15,
+        )
+        data = resp.json()
+    except (requests.RequestException, ValueError) as exc:
+        raise PaystackError(f"Could not reach Paystack: {exc}") from exc
+    if not resp.ok or not data.get("status"):
+        raise PaystackError(data.get("message", "Could not update payout subaccount."))
+    return data["data"]
+ 
+ 
+ 
+def guess_momo_network(phone_number):
+    """
+    Best-effort network guess from a Ghanaian phone number's prefix.
+    """
+    digits = "".join(ch for ch in str(phone_number) if ch.isdigit())
+    if digits.startswith("233"):
+        digits = "0" + digits[3:]
+    elif not digits.startswith("0"):
+        digits = "0" + digits
+    return GHANA_MOMO_PREFIXES.get(digits[:3])
+ 
+ 
+def _bank_code_for_network(network_label):
+    """
+    Matches a guessed/chosen network name ('MTN', 'Telecel', 'AirtelTigo')
+    against Paystack's live GET /bank?type=mobile_money list by substring,
+    """
+    options = list_ghana_momo_networks()
+    match = next((o for o in options if network_label.lower() in o["name"].lower()), None)
+    if not match:
+        raise PaystackError(f"Couldn't find '{network_label}' in Paystack's Ghana MoMo network list.")
+    return match["code"], match["name"]
+ 
+
+def resolve_account_number(account_number, bank_code):
+    """
+    GET /bank/resolve — confirms an account number/bank_code pair
+    actually belongs to someone, and returns their name, BEFORE any
+    subaccount is created.
+    """
+    try:
+        resp = requests.get(
+            f"{PAYSTACK_BASE_URL}/bank/resolve",
+            params={"account_number": account_number, "bank_code": bank_code},
+            headers=_paystack_headers(),
+            timeout=15,
+        )
+        data = resp.json()
+    except (requests.RequestException, ValueError) as exc:
+        raise PaystackError(f"Could not reach Paystack: {exc}") from exc
+    if not resp.ok or not data.get("status"):
+        raise PaystackError(
+            data.get("message", "Could not verify that account — check the number and try again.")
+        )
+    return data["data"]  # {"account_number", "account_name", "bank_id"}
+ 
+
+def save_landlord_payout_account(landlord, bank_code, bank_name, account_number, account_name):
+    """
+    Always Mobile Money. Creates the Paystack subaccount on first save;
+    updates the SAME subaccount via PUT on any later change — the
+    OneToOne on the model means one landlord, one subaccount_code, ever.
+    """
+    percentage_charge = getattr(settings, "PLATFORM_FEE_PERCENTAGE", Decimal("0.0"))
+ 
+    account, created = LandlordPayoutAccount.objects.get_or_create(
+        landlord=landlord,
+        defaults=dict(
+            bank_code=bank_code,
+            bank_name=bank_name,
+            account_number=account_number,
+            account_name=account_name,
+            percentage_charge=percentage_charge,
+        ),
+    )
+ 
+    if created:
+        data = _paystack_create_subaccount(
+            business_name=account_name,
+            settlement_bank=bank_code,
+            account_number=account_number,
+            percentage_charge=float(percentage_charge),
+        )
+        account.paystack_subaccount_code = data["subaccount_code"]
+    else:
+        account.bank_code = bank_code
+        account.bank_name = bank_name
+        account.account_number = account_number
+        account.account_name = account_name
+        _paystack_update_subaccount(
+            account.paystack_subaccount_code,
+            settlement_bank=bank_code,
+            account_number=account_number,
+        )
+ 
+    account.verified_at = timezone.now()
+    account.save()
+    return account
+ 
+
+def ensure_landlord_payout_account(landlord):
+    """
+    Silent, automatic payout setup — no page visit, no click, in the
+    common case. This replaces the old "landlord must go visit a setup
+    page" flow per your call: the safety check (Paystack confirming the
+    guessed number+network resolves to a real name) still happens, it
+    just happens invisibly in the background instead of gating on a
+    human looking at a confirm screen first.
+ 
+    Returns the LandlordPayoutAccount if one now exists and is ready
+    (whether it already did, or was just silently created). Returns
+    None if it genuinely can't be resolved automatically — landlord's
+    number doesn't match a recognized network, or Paystack couldn't
+    verify it (e.g. the registered number isn't actually MoMo-registered
+    at all). A None here is the ONLY case that should surface anything
+    to the landlord — everything else stays invisible.
+ 
+    Deliberately swallows PaystackError rather than raising — this gets
+    called from places (like tenancies._execute_agreement()) that
+    shouldn't fail just because Paystack is briefly unreachable; a
+    payout account can always be resolved later, either automatically
+    on the next call or via the manual fallback.
+ 
+    Note: if a landlord's number genuinely can't auto-resolve, this
+    re-attempts the same failing lookup every time it's called (e.g.
+    every initiate_payment()) rather than caching the failure — fine at
+    this scale, but worth a TTL/backoff if Paystack call volume ever
+    becomes a real cost.
+    """
+    existing = getattr(landlord, "payout_account", None)
+    if existing and existing.is_ready and not existing.is_stale:
+        return existing
+ 
+    phone_number = landlord.phone_number
+    network = guess_momo_network(phone_number)
+    if not network:
+        return None  # ambiguous/unrecognized prefix — needs a human to pick
+ 
+    try:
+        bank_code, bank_name = _bank_code_for_network(network)
+        resolved = resolve_account_number(phone_number, bank_code)
+        return save_landlord_payout_account(
+            landlord=landlord,
+            bank_code=bank_code,
+            bank_name=bank_name,
+            account_number=phone_number,
+            account_name=resolved["account_name"],
+        )
+    except PaystackError:
+        return None  # wrong network guess, Paystack down, or unresolvable — needs a human
 
 def _paystack_verify_transaction(reference):
     """GET /transaction/verify/:reference."""

@@ -46,7 +46,7 @@
              placeholder="0241234567"
              style="width:100%; padding:14px 16px; border-radius:12px; border:1.5px solid {% if form.phone_number.errors %}#FCA5A5{% else %}#E5E0D8{% endif %};
                     background:white; font-size:14px; color:#1f2937; outline:none;"/>
-      <p class="text-xs mt-1.5" style="color:#9CA3AF;">We'll send your verification code here</p>
+      <p class="text-xs mt-1.5" style="color:#9CA3AF;">We'll send your verification code and payment notifications here</p>
       {% for e in form.phone_number.errors %}<p class="text-xs mt-1" style="color:#EF4444;">{{ e }}</p>{% endfor %}
     </div>
 

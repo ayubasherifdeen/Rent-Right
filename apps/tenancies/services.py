@@ -39,10 +39,6 @@ def create_tenancy(application, landlord):
       1. landlord owns the property
       2. application is APPROVED
       3. no Tenancy already exists for this application
-
-    TODO (negotiations app): once built, this should also call
-    negotiations.services.open_negotiation(tenancy) inside the atomic
-    block below, per handoff §16.
     """
     from apps.applications.models import ApplicationStatus
 
@@ -318,7 +314,14 @@ def _execute_agreement(agreement):
         generate_tenancy_agreement(agreement)
         generate_instalment_addendum(agreement)
 
+    try:
+        from apps.payments.services import ensure_landlord_payout_account
+        ensure_landlord_payout_account(tenancy.landlord)
+    except Exception:
+        pass
+
     return agreement
+
 
 
 

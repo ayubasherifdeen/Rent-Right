@@ -1,6 +1,5 @@
 {% extends "accounts/dashboard_base.html" %}
 
-
 {% block dashboard_content %}
 <div class="max-w-5xl mx-auto px-4 py-8">
 
@@ -60,9 +59,42 @@
   {% endif %}
 
   {# ── Landlord section — what's been received ── #}
-  {% if landlord_rows %}
+  {% if landlord_rows or not request.user.payout_account.is_ready or request.user.payout_account.is_stale %}
   <div>
     <h2 class="text-sm font-semibold uppercase tracking-widest mb-4" style="color:#9CA3AF;">Your properties</h2>
+
+    {% if not request.user.payout_account.is_ready %}
+    <div class="rounded-2xl p-5 mb-4 flex items-center justify-between flex-wrap gap-3"
+         style="background:#FEF9C3; border:0.5px solid #FDE68A;">
+      <div>
+        <p class="text-sm font-semibold" style="color:#854D0E;">Couldn't confirm your Mobile Money account</p>
+        <p class="text-xs mt-0.5" style="color:#854D0E;">We tried to set this up automatically from your number and couldn't — pick your network to finish.</p>
+      </div>
+      <a href="{% url 'payments:payout_setup' %}"
+         class="text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
+         style="background:#1C3829; color:white;"
+         onmouseover="this.style.background='#2A5240'"
+         onmouseout="this.style.background='#1C3829'">
+        Pick network
+      </a>
+    </div>
+    {% elif request.user.payout_account.is_stale %}
+    <div class="rounded-2xl p-5 mb-4 flex items-center justify-between flex-wrap gap-3"
+         style="background:#FEF9C3; border:0.5px solid #FDE68A;">
+      <div>
+        <p class="text-sm font-semibold" style="color:#854D0E;">Your phone number changed</p>
+        <p class="text-xs mt-0.5" style="color:#854D0E;">Payouts are still going to your old number — re-verify to update it.</p>
+      </div>
+      <a href="{% url 'payments:payout_setup' %}"
+         class="text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
+         style="background:#1C3829; color:white;"
+         onmouseover="this.style.background='#2A5240'"
+         onmouseout="this.style.background='#1C3829'">
+        Re-verify
+      </a>
+    </div>
+    {% endif %}
+
     <div class="space-y-4">
       {% for row in landlord_rows %}
       <div class="rounded-2xl p-5 flex items-center justify-between flex-wrap gap-4"
@@ -99,34 +131,9 @@
   {% endif %}
 
   {% if not tenant_rows and not landlord_rows %}
-  <div class="rounded-2xl bg-white p-10 text-center shadow-sm" style="background:white; border:0.5px solid #E5E0D8;">
-
-    <!-- Empty State Illustration -->
-    <div class="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-[#F8F5EF]">
-        <svg xmlns="http://www.w3.org/2000/svg"
-             class="h-12 w-12 text-[#B08968]"
-             fill="none"
-             viewBox="0 0 24 24"
-             stroke="currentColor"
-             stroke-width="1.8">
-            <path stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="M17 9V7a5 5 0 10-10 0v2M5 9h14l-1 10H6L5 9zm4 4h6" />
-        </svg>
-    </div>
-
-    <!-- Heading -->
-    <h3 class="mt-6 text-xl font-semibold text-gray-800">
-        No Payments Yet
-    </h3>
-
-    <!-- Description -->
-    <p class="mx-auto mt-3 max-w-md text-sm leading-6 text-gray-500">
-        Payment records will appear here once rent payments have been
-        received or recorded. Keeping payments up to date helps you
-        monitor tenant balances and rental income.
-    </p>
-</div>
+  <div class="rounded-2xl p-8 text-center" style="background:white; border:0.5px solid #E5E0D8;">
+    <p class="text-sm" style="color:#9CA3AF;">No payments to show yet.</p>
+  </div>
   {% endif %}
 
 </div>
