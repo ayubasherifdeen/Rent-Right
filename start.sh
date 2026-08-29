@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+cd requirements
+pip install -r production.txt
 
 # Run Django migrations
 python manage.py migrate --noinput
@@ -14,4 +16,4 @@ python manage.py createsuperuser --noinput || true
 python manage.py collectstatic --noinput
 
 # Start gunicorn
-gunicorn Rent Management.wsgi --bind 0.0.0.0:${PORT:-8000}
+gunicorn rent_management.wsgi --bind 0.0.0.0:${PORT:-8000}
