@@ -1,16 +1,17 @@
 #!/bin/bash
 set -e
 
-# Run Django migrations
+echo "Running migrations..."
 python manage.py migrate --noinput
-#create superuser
-DJANGO_SUPERUSER_USERNAME=$DJANGO_SUPERUSER_USERNAME \
-DJANGO_SUPERUSER_EMAIL=$DJANGO_SUPERUSER_EMAIL \
-DJANGO_SUPERUSER_PASSWORD=$DJANGO_SUPERUSER_PASSWORD \
-python manage.py createsuperuser --noinput || true  
 
-# Collect static files
+echo "Creating superuser if needed..."
+DJANGO_SUPERUSER_USERNAME="$DJANGO_SUPERUSER_USERNAME" \
+DJANGO_SUPERUSER_EMAIL="$DJANGO_SUPERUSER_EMAIL" \
+DJANGO_SUPERUSER_PASSWORD="$DJANGO_SUPERUSER_PASSWORD" \
+python manage.py createsuperuser --noinput || true
+
+echo "Collecting static files..."
 python manage.py collectstatic --noinput
 
-# Start gunicorn
-gunicorn rent_management.wsgi --bind 0.0.0.0:${PORT:-8000}
+echo "Starting Gunicorn..."
+exec gunicorn config.wsgi:application --bind 0.0.0.0:${PORT:-8000}
