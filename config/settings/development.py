@@ -13,7 +13,7 @@ from .base import *  # noqa
 # ─── Core ─────────────────────────────────────────────────────────────────────
 
 DEBUG = True
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0',"endurance-rhyme-flaxseed.ngrok-free.dev", "*"]
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0',"endurance-rhyme-flaxseed.ngrok-free.dev", "*", "https://rentrigh-gh-staging.up.railway.app/"]
 
 
 # ─── Database — SQLite for local speed ───────────────────────────────────────
