@@ -22,7 +22,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 # ─── Security ─────────────────────────────────────────────────────────────────
 
-SECRET_KEY = config('SECRET_KEY')
+SECRET_KEY = config('SECRET_KEY', default='django-insecure-!@#4$%&*()_+secret-key-for-dev-only')
 AUTH_USER_MODEL = 'accounts.User'
 
 
