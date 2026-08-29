@@ -1,12 +1,17 @@
+providers = ["...", "python"]
+
 [phases.setup]
-nixPkgs = ["python312", "gcc", "pkg-config", "gobject-introspection", "glib", "cairo", "pango", "libffi"]
+aptPkgs = [
+    "...",
+    "libpango-1.0-0",
+    "libpangocairo-1.0-0",
+    "libgdk-pixbuf-2.0-0",
+    "libcairo2",
+    "libffi-dev",
+    "shared-mime-info",
+    "fonts-liberation"
+]
 
-[phases.install]
-cmds = ["pip install --upgrade pip", "pip install -r requirements.txt"]
-
-[phases.build]
-cmds = []
-
-[start]
-cmd = "bash start.sh"
-
+[variables]
+NIXPACKS_PYTHON_VERSION = "3.12"
+NIXPACKS_PYTHON_PACKAGE_MANAGER = "requirements"
