@@ -1,24 +1,17 @@
-# nixpacks.toml — repo root
-#
-# WeasyPrint (used for Rent Card / Tenancy Agreement / Receipt PDF
-# generation) depends on system-level libraries — Pango, Cairo,
-# GDK-Pixbuf — that pip cannot install. Railway's default Nixpacks
-# builder only installs what your requirements.txt declares, so without
-# this file, `pip install weasyprint` succeeds during build but every
-# real PDF-generation call fails at runtime with a missing-library error
-# that's easy to misread as an application bug instead of a deploy config gap.
-#
-# This is the single most likely first deploy failure on Railway for
-# this specific app — worth getting right before troubleshooting
-# anything else.
+providers = ["...", "python"]
 
 [phases.setup]
 aptPkgs = [
+    "...",
     "libpango-1.0-0",
     "libpangocairo-1.0-0",
-    "libgdk-pixbuf2.0-0",
+    "libgdk-pixbuf-2.0-0",
     "libcairo2",
     "libffi-dev",
     "shared-mime-info",
-    "fonts-liberation",
+    "fonts-liberation"
 ]
+
+[variables]
+NIXPACKS_PYTHON_VERSION = "3.12"
+NIXPACKS_PYTHON_PACKAGE_MANAGER = "requirements"

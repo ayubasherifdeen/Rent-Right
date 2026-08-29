@@ -1,6 +1,0 @@
--r base.txt
-
-gunicorn
-dj-database-url
-cloudinary
-django-cloudinary-storage
