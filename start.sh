@@ -1,9 +1,6 @@
 #!/bin/bash
 set -e
 
-cd requirements
-pip install -r production.txt
-
 # Run Django migrations
 python manage.py migrate --noinput
 #create superuser
