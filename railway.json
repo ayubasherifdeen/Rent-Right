@@ -4,7 +4,7 @@
     "builder": "RAILPACK"
   },
   "deploy": {
-    "startCommand": "bash start.sh",
+    "startCommand":"pwd && ls -la && find . -maxdepth 2 -name start.sh -print",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 3
   }
