@@ -67,7 +67,7 @@ DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
 
 # ─── SMS — skip real API calls in dev, log to console instead ─────────────────
 
-ARKESEL_DRY_RUN = True   # checked in apps/notifications/arkesel.py
+ARKESEL_DRY_RUN = False   # checked in apps/notifications/arkesel.py
 
 
 # ─── Logging — show SQL queries and app logs in terminal ──────────────────────
