@@ -48,13 +48,11 @@ DATABASES = {
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 
-# ─── Django Debug Toolbar ─────────────────────────────────────────────────────
-# Install with: pip install django-debug-toolbar
-# Uncomment when installed.
+#
 
-# INSTALLED_APPS += ['debug_toolbar']
-# MIDDLEWARE.insert(0, 'debug_toolbar.middleware.DebugToolbarMiddleware')
-# INTERNAL_IPS = ['127.0.0.1']
+INSTALLED_APPS += ['debug_toolbar']
+MIDDLEWARE.insert(0, 'debug_toolbar.middleware.DebugToolbarMiddleware')
+INTERNAL_IPS = ['127.0.0.1']
 
 
 # ─── Static files — served directly by Django runserver ───────────────────────
