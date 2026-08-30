@@ -10,6 +10,9 @@ DJANGO_SUPERUSER_EMAIL="$DJANGO_SUPERUSER_EMAIL" \
 DJANGO_SUPERUSER_PASSWORD="$DJANGO_SUPERUSER_PASSWORD" \
 python manage.py createsuperuser --noinput || true
 
+echo "Building Tailwind CSS..."
+python manage.py tailwind build
+
 echo "Collecting static files..."
 python manage.py collectstatic --noinput
 
