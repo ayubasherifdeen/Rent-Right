@@ -15,4 +15,5 @@ urlpatterns = [
     path("callback/", views.payment_callback_view, name="payment_callback"),
     path("webhook/", views.paystack_webhook_view, name="paystack_webhook"),
     path("<uuid:pk>/history/", views.payment_history_view, name="payment_history"),
+    path("payout_setup", views.payout_setup_view, name="payout_setup"),
 ]
