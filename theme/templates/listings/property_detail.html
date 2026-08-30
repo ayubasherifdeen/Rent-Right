@@ -305,14 +305,15 @@
         Listed by</p>
       <div style="display:flex; align-items:center; gap:12px;">
         <div
-          style="width:40px; height:40px; border-radius:50%; background:#1C3829; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+          style="width:40px; height:40px; border-radius:50%; background:#1C3829; display:flex; align-items:center; justify-content:center; flex-shrink:0; overflow:hidden;">
+          {% if property.landlord.profile_photo %}
+          <img src="{{ property.landlord.profile_photo.url }}" alt="{{ property.landlord.full_name }}"
+            style="width:100%; height:100%; object-fit:cover; display:block;">
+          {% else %}
           <span style="color:white; font-weight:700; font-size:1rem;">
-            {% if property.landlord.profile_photo %}
-            {{ property.landlord.profile_photo }}
-            {% else %}
             {{ property.landlord.first_name|first|upper }}{{ property.landlord.last_name|first|upper }}
-            {% endif %}
           </span>
+          {% endif %}
         </div>
         <div>
           <p style="font-weight:600; color:#1C3829; margin:0; font-size:0.9375rem;">{{ property.landlord.full_name }}
@@ -340,9 +341,8 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
   (function () {
-    const lat = {{ property.latitude }
-  };
-  const lng = {{ property.longitude }};
+    const lat = {{ property.latitude }};
+    const lng = {{ property.longitude }};
   console.log(lat, lng);
 
   const map = L.map('detail-map', { zoomControl: true, scrollWheelZoom: false })
