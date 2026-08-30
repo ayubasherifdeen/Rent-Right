@@ -7,8 +7,10 @@ Usage:
     export DJANGO_SETTINGS_MODULE=config.settings.development
     python manage.py runserver
 """
-from .base import *  # noqa
+from django.core.checks import database
 
+from .base import * 
+import dj_database_url  # noqa — install: pip install dj-database-url psycopg2-binary
 
 # ─── Core ─────────────────────────────────────────────────────────────────────
 
@@ -22,10 +24,10 @@ ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0',"endurance-rhyme-flaxseed.n
 #   then comment out SQLite block and uncomment Postgres block below.
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': dj_database_url.config(
+        default=config('DATABASE_URL'),
+        conn_max_age=600,
+    )
 }
 
 # Postgres local (optional — uncomment when ready)
