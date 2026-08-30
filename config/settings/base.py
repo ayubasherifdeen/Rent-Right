@@ -144,7 +144,7 @@ LOGOUT_REDIRECT_URL = '/accounts/login/'
 
 SESSION_COOKIE_AGE     = 60 * 60 * 24 * 14    # 2 weeks
 SESSION_COOKIE_HTTPONLY = True
-
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # ─── Default primary key ──────────────────────────────────────────────────────
 

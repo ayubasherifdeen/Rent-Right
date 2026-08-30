@@ -49,7 +49,7 @@ SECURE_CONTENT_TYPE_NOSNIFF     = True
 X_FRAME_OPTIONS                 = 'DENY'
 SESSION_COOKIE_SECURE           = True
 CSRF_COOKIE_SECURE              = True
-
+CSRF_TRUSTED_ORIGINS = ['https://rentrigh-gh-staging.up.railway.app']
 
 # ─── Static files — WhiteNoise (already in base MIDDLEWARE) ───────────────────
 # collectstatic → staticfiles/ → served by WhiteNoise with compression + caching
