@@ -1,12 +1,5 @@
 """
-config/settings/production.py
-
-Production environment — Railway.app / DigitalOcean.
-
-All secrets come from environment variables. Nothing is hardcoded.
-
-Usage:
-    export DJANGO_SETTINGS_MODULE=config.settings.production
+Usage: export DJANGO_SETTINGS_MODULE=config.settings.production
 """
 from faulthandler import disable
 
@@ -24,7 +17,7 @@ ALLOWED_HOSTS = config('ALLOWED_HOSTS', cast=Csv())
 # Railway.app injects DATABASE_URL automatically.
 # DigitalOcean App Platform does the same.
 
-import dj_database_url  # noqa — install: pip install dj-database-url psycopg2-binary
+import dj_database_url
 
 DATABASES = {
     'default': dj_database_url.config(

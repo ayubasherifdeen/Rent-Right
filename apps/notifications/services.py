@@ -52,7 +52,14 @@ def notify_user(user, message, purpose=NotificationPurpose.GENERAL):
         logger.warning(f"[NOTIFICATIONS] No phone number for user {user.id}, purpose={purpose}")
         return log
 
-    phone = _normalize_phone(phone)
+    try:
+        phone = _normalize_phone(phone)
+    except ValueError as e:
+        log.status = NotificationStatus.FAILED
+        log.error = str(e)[:500]
+        log.save(update_fields=["status", "error"])
+        logger.warning(f"[NOTIFICATIONS] {e} (user={user.id}, purpose={purpose})")
+        return log
 
     if getattr(settings, "ARKESEL_DRY_RUN", True):
         logger.debug(f"[NOTIFICATIONS][SMS DRY RUN] to={user} ({phone}): {message}")
