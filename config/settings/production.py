@@ -8,6 +8,8 @@ All secrets come from environment variables. Nothing is hardcoded.
 Usage:
     export DJANGO_SETTINGS_MODULE=config.settings.production
 """
+from faulthandler import disable
+
 from .base import *  # noqa
 from decouple import config, Csv
 
@@ -29,7 +31,10 @@ DATABASES = {
         default=config('DATABASE_URL'),
         conn_max_age=600,
         ssl_require=True,
-    )
+    ),
+    'options': {
+        'sslmode': 'disable',
+      }  # Disable SSL verification for self-signed certificates
 }
 
 
