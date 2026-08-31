@@ -206,8 +206,6 @@ def request_agreement_otp_view(request, pk):
     get_object_or_404(Agreement, tenancy=tenancy)
 
     send_tenancy_confirmation_otp(request.user)
-    # TODO: Call notifications.tasks.send_sms.delay(...) — same stub gap
-    # as resend_verification_otp, not new to this change.
     messages.info(request, "A confirmation code has been sent to your phone.")
     return redirect("tenancies:agreement_detail", pk=pk)
 # Shared: OTP confirmation for either party

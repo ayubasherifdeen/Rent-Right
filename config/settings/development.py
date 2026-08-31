@@ -23,12 +23,21 @@ ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0',"endurance-rhyme-flaxseed.n
 #   brew install postgresql && createdb rentright_dev
 #   then comment out SQLite block and uncomment Postgres block below.
 
-DATABASES = {
-    'default': dj_database_url.config(
-        default=config('DATABASE_URL'),
-        conn_max_age=600,
-    )
-}
+db_url = config('DATABASE_URL', default='')
+if db_url and 'localhost' not in db_url and '127.0.0.1' not in db_url:
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=db_url,
+            conn_max_age=600,
+        )
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 # Postgres local (optional — uncomment when ready)
 # DATABASES = {
