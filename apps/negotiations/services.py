@@ -257,9 +257,6 @@ def accept_proposal(proposal, accepted_by):
     send_tenancy_confirmation_otp(tenancy.landlord)
     send_tenancy_confirmation_otp(tenancy.tenant)
 
-    # TODO: Call notifications.tasks.send_sms.delay(...) for both — same
-    # stub gap as everywhere else OTPs are sent; codes currently only
-    # reach logger.debug() until the notifications app exists.
 
     return agreement
 

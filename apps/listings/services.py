@@ -88,6 +88,10 @@ def update_listing(property_obj, form_data, photo_formset=None):
             
         if photo_formset:
             photos = photo_formset.save(commit=False)
+            photos = [
+                p for p in photos
+                if p.pk or p.image   # keep existing DB records OR new ones with an image
+            ]
             for photo in photos:
                 photo.property = property_obj
                 photo.save()
@@ -168,13 +172,22 @@ def increment_view_count(property_obj):
 def upload_property_video(video_file, property_id):
     """
     Upload a video file to Cloudinary and return the secure URL.
+
+    If the provider does not return a usable URL, raise a clear ValueError so the
+    calling view can stop the request and avoid rendering a broken empty video tag.
     """
     import cloudinary.uploader
+
     result = cloudinary.uploader.upload(
         video_file,
-        resource_type='video',          # video
+        resource_type='video',
         folder=f'listings/{property_id}/videos',
         allowed_formats=['mp4', 'mov', 'avi', 'webm'],
-        max_bytes=150 * 1024 * 1024,    # 150MB hard cap
+        max_bytes=150 * 1024 * 1024,
     )
-    return result['secure_url']
+
+    secure_url = result.get('secure_url') if isinstance(result, dict) else None
+    if not secure_url:
+        raise ValueError('Cloudinary did not return a valid video URL for this upload.')
+
+    return secure_url

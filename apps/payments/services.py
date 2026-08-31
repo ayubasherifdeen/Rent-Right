@@ -597,8 +597,6 @@ def initiate_payment(tenancy, payer, payment_type, callback_url, instalment_due_
             instalment_due_date=due_date,
             reference=reference,
         )
-        tenancy.status = TenancyStatus.ACTIVE
-        tenancy.save(update_fields=["status", "updated_at"])
 
     try:
         paystack_data = _paystack_initialize_transaction(

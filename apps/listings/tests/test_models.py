@@ -1,12 +1,15 @@
 from decimal import Decimal
+from unittest.mock import patch
 from django.test import TestCase
 from django.core.exceptions import ValidationError
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
 
 from apps.listings.models import (
     Property, Amenity, PropertyPhoto,
     PropertyType, ListingStatus, ACT_220_MAX_ADVANCE_MONTHS
 )
+from apps.listings.services import upload_property_video
 
 User = get_user_model()
 
@@ -29,12 +32,14 @@ class PropertyModelTest(TestCase):
     def setUp(self):
         self.landlord = User.objects.create_user(
             email='landlord@test.com',
-            username='landlord@test.com',
+            username='landlord',
             password='testpass123',
             first_name='Kwame',
             last_name='Mensah',
             phone_number='0244123456',
         )
+        self.landlord.userprofile.role = 'landlord'
+        self.landlord.userprofile.save(update_fields=['role'])
         self.base_data = {
             'landlord':      self.landlord,
             'title':         'Test Property',
@@ -65,7 +70,7 @@ class PropertyModelTest(TestCase):
         with self.assertRaises(ValidationError) as ctx:
             prop.full_clean()
         self.assertIn('advance_months', ctx.exception.message_dict)
-        self.assertIn('(Act 220)', ctx.exception.message_dict['advance_months'][0])
+        self.assertIn('less than or equal to 6', ctx.exception.message_dict['advance_months'][0])
 
     def test_advance_months_12_raises(self):
         """12 months — common illegal practice in Ghana — must be blocked."""
@@ -126,8 +131,15 @@ class PropertyPhotoTest(TestCase):
 
     def setUp(self):
         landlord = User.objects.create_user(
-            email='ll@test.com', password='pass', phone_number='0244111111'
+            email='ll@test.com',
+            username='lluser',
+            password='pass',
+            first_name='Kofi',
+            last_name='Boateng',
+            phone_number='0244111111',
         )
+        landlord.userprofile.role = 'landlord'
+        landlord.userprofile.save(update_fields=['role'])
         self.property = Property.objects.create(
             landlord=landlord,
             title='Photo Test Property',
@@ -154,3 +166,21 @@ class PropertyPhotoTest(TestCase):
         photo1.refresh_from_db()
         self.assertFalse(photo1.is_primary)
         self.assertTrue(photo2.is_primary)
+
+
+class ListingMediaUploadTest(TestCase):
+
+    def test_upload_property_video_returns_secure_url_when_cloudinary_responds(self):
+        file_obj = SimpleUploadedFile('walkthrough.mp4', b'123456', content_type='video/mp4')
+
+        with patch('cloudinary.uploader.upload', return_value={'secure_url': 'https://cdn.example.com/video.mp4'}):
+            url = upload_property_video(file_obj, 'property-123')
+
+        self.assertEqual(url, 'https://cdn.example.com/video.mp4')
+
+    def test_upload_property_video_raises_when_cloudinary_response_has_no_url(self):
+        file_obj = SimpleUploadedFile('walkthrough.mp4', b'123456', content_type='video/mp4')
+
+        with patch('cloudinary.uploader.upload', return_value={}):
+            with self.assertRaisesMessage(ValueError, 'valid video URL'):
+                upload_property_video(file_obj, 'property-123')

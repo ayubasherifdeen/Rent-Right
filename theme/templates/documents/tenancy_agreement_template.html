@@ -69,7 +69,7 @@
     <strong>{{ tenancy.tenant.get_full_name|default:tenancy.tenant }}</strong>
     (hereinafter referred to as the "Tenant"), of the other part. WHEREAS the
     Landlord is the lawful owner (or authorised agent) of the property described
-    below and has agreed to let the same to the Tenant on the terms and
+    below and has agreed to let the property to the Tenant on the terms and
     conditions contained herein.
 </p>
 
@@ -78,11 +78,13 @@
         <h3>Landlord</h3>
         <p>{{ tenancy.landlord.get_full_name|default:tenancy.landlord }}</p>
         <p class="sub">{{ tenancy.landlord.phone_number }}</p>
+        <p class="sub">{{ tenancy.landlord.email }}</p>
     </div>
     <div class="party">
         <h3>Tenant</h3>
         <p>{{ tenancy.tenant.get_full_name|default:tenancy.tenant }}</p>
         <p class="sub">{{ tenancy.tenant.phone_number }}</p>
+        <p class="sub">{{ tenancy.tenant.email }}</p>
     </div>
 </div>
 
@@ -119,9 +121,8 @@
     {% endif %}
     <table class="terms">
         <tr><td>Monthly Rent</td><td>GH₵ {{ tenancy.monthly_rent|floatformat:2 }}</td></tr>
-        <tr><td>Advance Paid</td><td>{{ display_advance_months }} month{{ display_advance_months|pluralize }} (GH₵ {{ display_advance_amount|floatformat:2 }})</td></tr>
+        <tr><td>Advance Payment</td><td>{{ display_advance_months }} month{{ display_advance_months|pluralize }} (GH₵ {{ display_advance_amount|floatformat:2 }})</td></tr>
         <tr><td>Payment Cycle</td><td>{{ tenancy.rental_property.get_payment_cycle_display }}</td></tr>
-        <tr><td>Security Deposit</td><td>{% if tenancy.rental_property.security_deposit %}GH₵ {{ tenancy.rental_property.security_deposit|floatformat:2 }}, refundable at the end of the tenancy subject to Clause 9 (Inspection) and the condition of the Premises{% else %}None{% endif %}</td></tr>
     </table>
     <p>
         The advance payment stated above does not exceed six (6) months, in
@@ -239,15 +240,19 @@
 <div class="signatures">
     <div class="sig-row">
         <div class="sig-block">
+            Otp reference: {{ tenancy.landlord_otp_ref }}
             <div class="sig-line">
                 <div class="role-label">Landlord</div>
-                {{ tenancy.landlord.get_full_name|default:tenancy.landlord }} · Date: ……………………
+                {{ tenancy.landlord.get_full_name|default:tenancy.landlord }} · 
+                Date: ………………………………
             </div>
         </div>
         <div class="sig-block">
+            Otp reference: {{ tenancy.tenant_otp_ref }}
             <div class="sig-line">
                 <div class="role-label">Tenant</div>
-                {{ tenancy.tenant.get_full_name|default:tenancy.tenant }} · Date: ……………………
+                {{ tenancy.tenant.get_full_name|default:tenancy.tenant }} · 
+                Date: ………………………………
             </div>
         </div>
     </div>
@@ -255,13 +260,17 @@
         <div class="sig-block">
             <div class="sig-line">
                 <div class="role-label">Witness</div>
-                Name: …………………………………… · Date: ……………………
+                Name: …………………………………………………………………… · 
+
+                Date: ………………………………
             </div>
         </div>
         <div class="sig-block">
             <div class="sig-line">
                 <div class="role-label">Witness</div>
-                Name: …………………………………… · Date: ……………………
+                Name: …………………………………………………………………… · 
+                
+                Date: ………………………………
             </div>
         </div>
     </div>

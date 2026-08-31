@@ -108,6 +108,10 @@ class PropertyForm(forms.ModelForm):
             'available_from': 'Available From',
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+
     def clean(self):
         """
         Cross-field validation + lease term resolution.
