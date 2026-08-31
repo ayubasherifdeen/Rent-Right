@@ -7,15 +7,14 @@ from .base import *  # noqa
 from decouple import config, Csv
 
 
-# ─── Core ─────────────────────────────────────────────────────────────────────
+#Core
 
 DEBUG = False
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', cast=Csv())
 
 
-# ─── Database — PostgreSQL ────────────────────────────────────────────────────
+#Database — PostgreSQL 
 # Railway.app injects DATABASE_URL automatically.
-# DigitalOcean App Platform does the same.
 
 import dj_database_url
 
@@ -54,7 +53,7 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 # Cloudinary stores property photos and profile pictures.
 # CLOUDINARY_URL is set in base.py from .env
 
-import cloudinary                # noqa — install: pip install cloudinary django-cloudinary-storage
+import cloudinary          
 import cloudinary.uploader
 import cloudinary.api
 
@@ -62,7 +61,7 @@ DEFAULT_FILE_STORAGE    = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 INSTALLED_APPS_EXTRA    = ['cloudinary_storage', 'cloudinary']
 
 # Append without mutating the base list
-INSTALLED_APPS = INSTALLED_APPS + INSTALLED_APPS_EXTRA  # noqa
+INSTALLED_APPS = INSTALLED_APPS + INSTALLED_APPS_EXTRA
 
 
 # ─── Email — SendGrid / SMTP ──────────────────────────────────────────────────
@@ -116,8 +115,6 @@ LOGGING = {
     },
 }
 
-
-# ─── SMS — live Arkesel calls ─────────────────────────────────────────────────
 
 ARKESEL_DRY_RUN = False
 

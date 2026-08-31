@@ -1,15 +1,138 @@
 {% load humanize %}
 
-<div style="background:white; border:1px solid #E5E0D8; border-radius:12px; padding:16px 20px;
-            display:flex; align-items:center; gap:16px;">
+<style>
+  /* Scoped to .property-row so this partial is safe to re-include anywhere */
+  .property-row {
+    background: white;
+    border: 1px solid #E5E0D8;
+    border-radius: 12px;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .property-row__media {
+    width: 80px;
+    height: 64px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #F0EBE3;
+    flex-shrink: 0;
+  }
+  .property-row__media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .property-row__placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .property-row__body {
+    flex: 1;
+    min-width: 0;
+  }
+  .property-row__title-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 2px;
+  }
+  .property-row__title {
+    font-weight: 700;
+    color: #1C3829;
+    margin: 0;
+    font-size: 1rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .property-row__meta {
+    font-size: 0.8125rem;
+    color: #6B7280;
+    margin: 0;
+  }
+  .property-row__price {
+    text-align: right;
+    flex-shrink: 0;
+  }
+  .property-row__amount {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #1C3829;
+    margin: 0;
+  }
+  .property-row__period {
+    font-size: 0.75rem;
+    color: #9CA3AF;
+    margin: 2px 0 0;
+  }
+  .property-row__actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  /* Mobile: media + body share a line, then price, then actions each take
+     the full row width — no cropped titles, no illegible squeezed columns. */
+  @media (max-width: 640px) {
+    .property-row {
+      align-items: flex-start;
+      padding: 14px 16px;
+      gap: 12px;
+    }
+    .property-row__media {
+      width: 64px;
+      height: 56px;
+    }
+    .property-row__body {
+      flex-basis: calc(100% - 64px - 12px);
+    }
+    .property-row__price {
+      flex-basis: 100%;
+      text-align: left;
+      padding-left: 76px; /* lines up under the title, past the thumbnail */
+    }
+    .property-row__actions {
+      flex-basis: 100%;
+      justify-content: flex-start;
+    }
+  }
+
+  /* Small phones: let action buttons fill the row as a tidy 2-up grid
+     instead of trailing off into a ragged wrap. */
+  @media (max-width: 420px) {
+    .property-row__actions form,
+    .property-row__actions > a {
+      flex: 1 1 calc(50% - 4px);
+    }
+    .property-row__actions form button {
+      width: 100%;
+    }
+    .property-row__actions > a {
+      text-align: center;
+    }
+  }
+</style>
+
+<div class="property-row">
 
   {# Thumbnail #}
-  <div style="width:80px; height:64px; border-radius:8px; overflow:hidden; background:#F0EBE3; flex-shrink:0;">
+  <div class="property-row__media">
     {% with photo=property.primary_photo %}
       {% if photo %}
-        <img src="{{ photo.image.url }}" alt="" style="width:100%; height:100%; object-fit:cover;">
+        <img src="{{ photo.image.url }}" alt="">
       {% else %}
-        <div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;">
+        <div class="property-row__placeholder">
           <svg width="24" height="24" fill="none" stroke="#C4B8A8" stroke-width="1.5" viewBox="0 0 24 24">
             <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21,15 16,10 5,21"/>
           </svg>
@@ -19,9 +142,9 @@
   </div>
 
   {# Info #}
-  <div style="flex:1; min-width:0;">
-    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:2px;">
-      <h3 style="font-weight:700; color:#1C3829; margin:0; font-size:1rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+  <div class="property-row__body">
+    <div class="property-row__title-line">
+      <h3 class="property-row__title">
         {{ property.title }}
       </h3>
       {# Status badge #}
@@ -51,22 +174,22 @@
         </div>
       {% endif %}
     </div>
-    <p style="font-size:0.8125rem; color:#6B7280; margin:0;">
+    <p class="property-row__meta">
       {{ property.address }} · {{ property.get_property_type_display }} · {{ property.bedrooms }} bed
       {% if show_landlord %} · Landlord: {{ property.landlord.full_name }}{% endif %}
     </p>
   </div>
 
   {# Price #}
-  <div style="text-align:right; flex-shrink:0;">
-    <p style="font-family:'Playfair Display',serif; font-size:1.1rem; font-weight:700; color:#1C3829; margin:0;">
+  <div class="property-row__price">
+    <p class="property-row__amount">
       GHC {{ property.monthly_rent|intcomma }}
     </p>
-    <p style="font-size:0.75rem; color:#9CA3AF; margin:2px 0 0;">per month</p>
+    <p class="property-row__period">per month</p>
   </div>
 
-
-  <div style="display:flex; gap:8px; flex-shrink:0; flex-wrap:wrap; justify-content:flex-end;">
+  {# Actions #}
+  <div class="property-row__actions">
     {% if property.status == 'draft' %}
     <form method="post" action="{% url 'listings:publish_prompt' pk=property.pk %}">
       {% csrf_token %}
@@ -99,7 +222,7 @@
 
     {% if property.status == 'draft' or property.status == 'live' or property.status == 'paused' %}
     <a href="{% url 'listings:edit_property' pk=property.pk %}"
-       style="display:inline-flex; align-items:center; border:1px solid #E5E0D8; border-radius:7px; padding:7px 14px; font-size:0.8125rem; color:#374151; text-decoration:none; font-weight:500;">
+       style="display:inline-flex; align-items:center; justify-content:center; border:1px solid #E5E0D8; border-radius:7px; padding:7px 14px; font-size:0.8125rem; color:#374151; text-decoration:none; font-weight:500;">
       Edit
     </a>
     <form method="post" action="{% url 'listings:update_listing_status' pk=property.pk %}"
@@ -114,7 +237,7 @@
     {% endif %}
 
     <a href="{{ property.get_absolute_url }}"
-       style="display:inline-flex; align-items:center; border:1px solid #E5E0D8; border-radius:7px; padding:7px 14px; font-size:0.8125rem; color:#374151; text-decoration:none; font-weight:500;">
+       style="display:inline-flex; align-items:center; justify-content:center; border:1px solid #E5E0D8; border-radius:7px; padding:7px 14px; font-size:0.8125rem; color:#374151; text-decoration:none; font-weight:500;">
       View
     </a>
   </div>
