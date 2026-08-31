@@ -10,7 +10,7 @@ Usage:
 from django.core.checks import database
 
 from .base import * 
-import dj_database_url  # noqa — install: pip install dj-database-url psycopg2-binary
+import dj_database_url 
 
 # ─── Core ─────────────────────────────────────────────────────────────────────
 
@@ -65,9 +65,7 @@ STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
 
 
-# ─── SMS — skip real API calls in dev, log to console instead ─────────────────
-
-ARKESEL_DRY_RUN = False   # checked in apps/notifications/arkesel.py
+ARKESEL_DRY_RUN = True   # checked in apps/notifications/arkesel.py
 
 
 # ─── Logging — show SQL queries and app logs in terminal ──────────────────────

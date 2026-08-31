@@ -70,7 +70,7 @@
     </p>
 
     {# Specs row #}
-    <div style="display:flex; gap:12px; margin-bottom:12px;">
+    <div style="display:flex; flex-wrap:wrap; gap:6px 12px; margin-bottom:12px;">
       <span style="font-size:0.8125rem; color:#374151; display:flex; align-items:center; gap:4px;">
         <svg width="14" height="14" fill="none" stroke="#7A9E7E" stroke-width="2" viewBox="0 0 24 24">
           <path d="M3 22V8l9-6 9 6v14M3 22h18M12 22V12"/>
@@ -92,14 +92,14 @@
     <div style="height:1px; background:#F0EBE3; margin-bottom:12px;"></div>
 
     {# Price + advance #}
-    <div style="display:flex; align-items:flex-end; justify-content:space-between;">
+    <div style="display:flex; align-items:flex-end; flex-wrap:wrap; gap:8px 12px;">
       <div>
         <p style="font-family:'Playfair Display',Georgia,serif; font-size:1.25rem; font-weight:700; color:#1C3829; margin:0; line-height:1;">
           GHC {{ property.monthly_rent|floatformat:0|intcomma }}
         </p>
         <p style="font-size:0.75rem; color:#6B7280; margin:2px 0 0;">per month</p>
       </div>
-      <div style="text-align:right;">
+      <div style="text-align:right; margin-left:auto;">
         <p style="font-size:0.75rem; color:#6B7280; margin:0;">Move-in advance</p>
         <p style="font-size:0.875rem; font-weight:700; color:#C4622D; margin:2px 0 0;">
           GHC {{ property.advance_amount|floatformat:0|intcomma }}
