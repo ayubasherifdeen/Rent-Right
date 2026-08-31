@@ -4,13 +4,13 @@ Usage: export DJANGO_SETTINGS_MODULE=config.settings.production
 from faulthandler import disable
 
 from .base import *  # noqa
-from decouple import config, Csv
+from decouple import Csv, config
 
 
 #Core
 
 DEBUG = False
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', cast=Csv())
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='rentrigh-gh-staging.up.railway.app', cast=Csv())
 
 
 #Database — PostgreSQL 
