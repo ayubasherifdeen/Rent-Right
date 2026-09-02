@@ -91,7 +91,7 @@ class PropertyForm(forms.ModelForm):
             'title', 'description', 'property_type', 'furnishing_status',
             'bedrooms', 'bathrooms',
             'address', 'neighbourhood', 'city', 'region', 'latitude', 'longitude',
-            'monthly_rent', 'payment_cycle', 'advance_months', 'security_deposit','lease_term_months',
+            'monthly_rent', 'payment_cycle', 'advance_months','lease_term_months',
             'amenities', 'available_from','video_file',
         ]
         widgets = {
@@ -104,13 +104,12 @@ class PropertyForm(forms.ModelForm):
         }
         labels = {
             'monthly_rent': 'Monthly Rent (GHC)',
-            'security_deposit': 'Security Deposit (GHC)',
             'available_from': 'Available From',
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        
+
 
     def clean(self):
         """
@@ -199,11 +198,10 @@ class PropertyPhotoForm(forms.ModelForm):
     """Simple photo upload form. Used in formset for multi-photo upload."""
     image = forms.ImageField(required=False)
     is_primary = forms.BooleanField(required=False)
-    display_order = forms.IntegerField(required=False)
 
     class Meta:
         model  = PropertyPhoto
-        fields = ['image', 'caption', 'is_primary', 'display_order']
+        fields = ['image', 'caption', 'is_primary']
         widgets = {
             'caption': forms.TextInput(attrs={'placeholder': 'e.g. Living room, Master bedroom...'}),
             'is_primary': forms.RadioSelect(),
@@ -225,7 +223,7 @@ PropertyPhotoFormSet = forms.inlineformset_factory(
     parent_model=Property,
     model=PropertyPhoto,
     form=PropertyPhotoForm,
-    fields=['image', 'caption', 'is_primary', 'display_order'],
+    fields=['image', 'caption', 'is_primary'],
     extra=3,           # 3 empty upload slots shown by default
     max_num=10,        # hard cap
     can_delete=True,   # X button on each existing photo

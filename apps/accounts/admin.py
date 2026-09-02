@@ -14,6 +14,7 @@ class OrganisationAdmin(admin.ModelAdmin):
 class UserProfileInline(admin.StackedInline):
     model      = UserProfile
     can_delete = False
+    extra      = 0
     verbose_name_plural = 'Profile'
     fields = ['role', 'organisation', 'national_id', 'profile_photo', 'is_id_verified', 'bio']
 
@@ -25,7 +26,7 @@ class UserAdmin(BaseUserAdmin):
     list_filter     = ['is_active', 'is_verified', 'userprofile__role']
     search_fields   = ['email', 'first_name', 'last_name', 'phone_number']
     ordering        = ['-date_joined']
-
+    readonly_fields = ['id', 'date_joined', 'last_login']
     fieldsets = (
         (None,               {'fields': ('email', 'password')}),
         (_('Personal info'), {'fields': ('first_name', 'last_name', 'phone_number', 'is_verified')}),

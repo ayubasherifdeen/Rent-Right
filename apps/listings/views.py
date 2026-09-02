@@ -86,7 +86,7 @@ class PropertyDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         prop = self.object
-        context['photos']      = prop.photos.order_by('-is_primary', 'display_order')
+        context['photos']      = prop.photos.order_by('-is_primary')
         context['amenities']   = prop.amenities.all()
         context['video']       = prop.video_url
         context['can_apply']   = (

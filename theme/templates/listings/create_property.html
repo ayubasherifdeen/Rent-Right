@@ -214,7 +214,7 @@
         </div>
       </div>
 
-      {% include "listings/_form_field.html" with field=form.security_deposit label="Security Deposit (GHC)" hint="Refundable deposit. Enter 0 if none." %}
+
     </div>
 
     {# ─── Section 4: Amenities ─────────────────────────────────── #}
@@ -285,11 +285,10 @@
               </div>
 
               <div class="photo-meta-fields">
-                {{ photo_form.is_primary.label_tag }}
-                {{ photo_form.is_primary }}
-                <div class="field-divider"></div>
-                {{ photo_form.display_order.label_tag }}
-                {{ photo_form.display_order }}
+                <div class="photo-meta-fields__group">
+                  {{ photo_form.is_primary.label_tag }}
+                  {{ photo_form.is_primary }}
+                </div>
               </div>
             </div>
 
@@ -331,14 +330,11 @@
               </div>
 
               <div class="photo-meta-fields">
-                <label for="id_photos-__prefix__-is_primary">Primary photo</label>
-                <input type="checkbox" name="photos-__prefix__-is_primary"
-                       id="id_photos-__prefix__-is_primary">
-                <div class="field-divider"></div>
-                <label for="id_photos-__prefix__-display_order">Order</label>
-                <input type="number" name="photos-__prefix__-display_order"
-                       id="id_photos-__prefix__-display_order"
-                       value="0" min="0">
+                <div class="photo-meta-fields__group">
+                  <label for="id_photos-__prefix__-is_primary">Primary photo</label>
+                  <input type="checkbox" name="photos-__prefix__-is_primary"
+                         id="id_photos-__prefix__-is_primary">
+                </div>
               </div>
             </div>
 
@@ -433,46 +429,30 @@
     color: #6B7280;
   }
 
-  /* ── Photo meta fields row (Primary + Order) ────────────────── */
+  /* ── Photo meta fields row (currently just "Primary photo") ──── */
   .photo-meta-fields {
     display: flex;
-    align-items: flex-end;
-    gap: 20px;
+    align-items: center;
     margin-top: 12px;
+  }
+  .photo-meta-fields__group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
   .photo-meta-fields label {
     display: block;
     font-size: 0.8125rem;
     font-weight: 600;
     color: #374151;
-    margin-bottom: 6px;
+    margin-bottom: 0;
     text-transform: none;
     letter-spacing: normal;
   }
-  /* Order number input — constrained width, doesn't stretch full-width */
-  #listing-form .photo-meta-fields input[type="number"] {
-    width: 110px !important;
-    height: 38px;
-    padding: 0 10px;
-  }
-  #listing-form .photo-meta-fields input[type="number"]:focus {
-    border-color: #1C3829;
-    box-shadow: 0 0 0 3px rgba(28, 56, 41, 0.12);
-    background: white;
-  }
-  /* Checkbox in photo-meta-fields — align to input baseline */
   #listing-form .photo-meta-fields input[type="checkbox"] {
     width: 17px;
     height: 17px;
     accent-color: #1C3829;
-    margin-top: 10px;
-  }
-  .field-divider {
-    width: 1px;
-    height: 38px;
-    background: #E5E0D8;
-    flex-shrink: 0;
-    margin-bottom: 4px;
   }
 
   /* ── Add photo button hover ─────────────────────────────────── */

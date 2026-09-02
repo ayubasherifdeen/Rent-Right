@@ -283,17 +283,11 @@
           <span style="font-size:0.875rem; color:#374151;">Advance ({{ property.advance_months }} months)</span>
           <span style="font-size:0.875rem; font-weight:700; color:#1C3829;">GHC {{ property.advance_amount|intcomma }}</span>
         </div>
-        {% if property.security_deposit > 0 %}
-        <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
-          <span style="font-size:0.875rem; color:#374151;">Security deposit</span>
-          <span style="font-size:0.875rem; font-weight:700; color:#1C3829;">GHC {{ property.security_deposit|intcomma }}</span>
-        </div>
-        {% endif %}
         <div style="height:1px; background:#E5E0D8; margin:10px 0;"></div>
         <div style="display:flex; justify-content:space-between;">
           <span style="font-size:0.875rem; font-weight:700; color:#374151;">Total due at move-in</span>
           <span style="font-size:0.9375rem; font-weight:700; color:#C4622D;">
-            GHC {{ property.advance_amount|add:property.security_deposit|intcomma }}
+            GHC {{ property.advance_amount|intcomma }}
           </span>
         </div>
       </div>

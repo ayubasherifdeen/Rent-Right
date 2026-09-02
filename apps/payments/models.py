@@ -50,12 +50,6 @@ class LandlordPayoutAccount(models.Model):
  
     paystack_subaccount_code = models.CharField(max_length=100, blank=True)
  
-    # Platform's cut of every split transaction. Set from
-    # settings.PLATFORM_FEE_PERCENTAGE at creation time, NOT landlord-
-    # editable — this is a business decision, not something a payout
-    # form should let someone type into.
-    percentage_charge = models.DecimalField(max_digits=5, decimal_places=2)
- 
     verified_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

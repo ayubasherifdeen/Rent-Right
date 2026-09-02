@@ -197,12 +197,6 @@ class Property(models.Model):
             f"Maximum {ACT_220_MAX_ADVANCE_MONTHS} months per Section 25(5) of Act 220."
         )
     )
-    security_deposit = models.DecimalField(
-        max_digits=10, decimal_places=2,
-        default=0,
-        validators=[MinValueValidator(0)],
-        help_text="Refundable security deposit in GHC. 0 if none."
-    )
     lease_term_months =models.PositiveSmallIntegerField(
         default = 12,
         validators=[MinValueValidator(0),
@@ -381,14 +375,13 @@ class PropertyPhoto(models.Model):
     image       = models.ImageField(upload_to=_property_photo_path)
     caption     = models.CharField(max_length=200, blank=True)
     is_primary  = models.BooleanField(default=False)
-    display_order = models.PositiveSmallIntegerField(default=0, blank=True, null=True, help_text="Lower numbers appear first in the gallery")
     uploaded_at   = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ['-is_primary', 'display_order']
+        ordering = ['-is_primary']
 
     def __str__(self):
-        label = "Primary" if self.is_primary else f"Photo {self.display_order}"
+        label = "Primary" if self.is_primary else "Photo"
         return f"{self.property.title} — {label}"
 
     def save(self, *args, **kwargs):
