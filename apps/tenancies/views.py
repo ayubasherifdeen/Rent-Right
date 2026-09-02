@@ -13,8 +13,8 @@ from django.views.decorators.http import require_POST
 
 from django.http import HttpResponseForbidden, HttpResponseNotAllowed
 
-from apps.accounts.decorators import landlord_required, tenant_required
-from apps.accounts.services import send_tenancy_confirmation_otp
+from apps.accounts.decorators import landlord_or_manager_required, landlord_required, tenant_required
+from apps.accounts.services import can_act_on_property, send_tenancy_confirmation_otp
 from apps.applications.models import Application
 from apps.documents.models import DocumentType
 from apps.documents.services import get_documents_for, get_latest_document
@@ -105,8 +105,11 @@ def tenancy_detail(request, pk):
         next_due_instalment = next((row for row in schedule if row["status"] != "paid"), None)
 
 
-    # Only the landlord or tenant party to this specific tenancy may view it.
-    if request.user not in (tenancy.landlord, tenancy.tenant):
+    # Managers may view tenancies for properties they actively manage.
+    if (
+        request.user not in (tenancy.landlord, tenancy.tenant)
+        and not can_act_on_property(request.user, tenancy.rental_property)
+    ):
         raise Http404
 
     context = {
@@ -134,13 +137,16 @@ def my_tenancies(request):
 
 
 # Landlord: list all tenancies across owned properties
-@landlord_required
+@landlord_or_manager_required
 def landlord_tenancies(request):
-    tenancies = (
-        Tenancy.objects.filter(landlord=request.user)
-        .select_related("rental_property", "tenant")
-        .order_by("-created_at")
-    )
+    if request.user.is_landlord():
+        tenancies = Tenancy.objects.filter(landlord=request.user)
+    else:
+        tenancies = Tenancy.objects.filter(
+            rental_property__manager_links__manager=request.user,
+            rental_property__manager_links__status="active",
+        )
+    tenancies = tenancies.select_related("rental_property", "tenant").distinct().order_by("-created_at")
     counts = tenancies.aggregate(
         total=Count("id"),
         active=Count("id", filter=Q(status=TenancyStatus.ACTIVE)),

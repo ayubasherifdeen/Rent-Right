@@ -13,7 +13,13 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.shortcuts import get_object_or_404, redirect, render
 
 from apps.tenancies.models import Tenancy, TenancyStatus
-from .decorators import phone_verified_required, property_manager_required
+from .decorators import (
+    admin_required,
+    landlord_required,
+    phone_verified_required,
+    property_manager_required,
+    tenant_required,
+)
 from apps.accounts.models import ManagedProperty, User
 from apps.listings.models import Property
 from .forms import (
@@ -218,7 +224,7 @@ def dashboard(request):
     return render(request, 'accounts/dashboard.html')
 
 
-@login_required
+@landlord_required
 def landlord_dashboard(request):
     properties = Property.objects.filter(landlord=request.user)
     data = landlord_dashboard_data(request.user)
@@ -228,7 +234,7 @@ def landlord_dashboard(request):
         "trends": data["trends"],
        })
 
-@login_required
+@tenant_required
 def tenant_dashboard(request):
     active_tenancy = Tenancy.objects.filter(
             tenant=request.user, status=TenancyStatus.ACTIVE
@@ -241,7 +247,7 @@ def tenant_dashboard(request):
         })
 
 
-@login_required
+@property_manager_required
 def manager_dashboard(request):
     managed = ManagedProperty.objects.filter(manager=request.user, status=ManagedProperty.Status.ACTIVE)
     managed_properties = Property.objects.filter(
@@ -266,7 +272,7 @@ def manager_dashboard(request):
     
 
 
-@login_required
+@admin_required
 def admin_dashboard(request):
     return render(request, 'accounts/dashboards/admin.html', {
         'user': request.user,

@@ -17,6 +17,7 @@ from unittest.mock import MagicMock, patch
 from django.test import Client, TestCase
 from django.urls import reverse
 
+from apps.accounts.models import ManagedProperty, User
 from apps.tenancies.models import AgreementStatus
 from apps.tenancies.tests.helpers import (
     make_agreement,
@@ -128,6 +129,39 @@ class MyTenanciesIsolationTest(TestCase):
         tenancies_in_ctx = list(response.context["tenancies"])
         self.assertEqual(len(tenancies_in_ctx), 1)
         self.assertEqual(tenancies_in_ctx[0].tenant, tenancy_a.tenant)
+
+
+class ManagerTenanciesAccessTest(TestCase):
+    def setUp(self):
+        self.tenancy = make_tenancy()
+        self.manager = User.objects.create_user(
+            email="manager@test.com",
+            username="manager@test.com",
+            password="testpass123",
+        )
+        self.manager.userprofile.role = "property_manager"
+        self.manager.userprofile.save(update_fields=["role"])
+        ManagedProperty.objects.create(
+            property=self.tenancy.rental_property,
+            manager=self.manager,
+            landlord=self.tenancy.landlord,
+            status=ManagedProperty.Status.ACTIVE,
+        )
+
+    def test_manager_sees_delegated_tenancies(self):
+        self.client.force_login(self.manager)
+        response = self.client.get(reverse("tenancies:landlord_tenancies"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(list(response.context["tenancies"]), [self.tenancy])
+
+    def test_manager_can_view_delegated_tenancy_detail(self):
+        self.client.force_login(self.manager)
+        response = self.client.get(
+            reverse("tenancies:tenancy_detail", kwargs={"pk": self.tenancy.pk})
+        )
+
+        self.assertEqual(response.status_code, 200)
 
 
 # ---------------------------------------------------------------------------
