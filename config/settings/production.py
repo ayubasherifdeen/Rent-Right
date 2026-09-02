@@ -9,7 +9,7 @@ from decouple import Csv, config
 
 #Core
 
-DEBUG = False
+DEBUG = True 
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='rentrigh-gh-staging.up.railway.app', cast=Csv())
 
 
