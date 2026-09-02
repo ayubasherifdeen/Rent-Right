@@ -57,7 +57,7 @@ class PropertyAdmin(admin.ModelAdmin):
         ('Financials — Act 220', {
             'fields': (
                 'monthly_rent', 'payment_cycle', 'advance_months',
-                'advance_amount_display', 'security_deposit', 'has_instalment_plan'
+                'advance_amount_display', 'has_instalment_plan'
             ),
             'description': (
                 '⚠️ Section 25(5) of Act 220 caps advance rent at 6 months. '
