@@ -30,6 +30,7 @@ NAV_CONFIG = {
         {"url": "accounts:managed_properties", "label": "Managed Properties", "icon": "managed"},
         {"url": "listings:create_property", "label": "Add Property", "icon": "add"},
         {"url": "applications:received_applications", "label": "Applications", "icon": "applications"},
+        {"url": "tenancies:landlord_tenancies", "label": "Tenancies", "icon": "tenancies"},
         {"url": "accounts:manager_invites", "label": "Invites", "icon": "invites", "badge_key": "pending_invites_count"},
         {"url": "maintenance:landlord_list", "label": "Maintenance", "icon": "maintenance"},
     ],

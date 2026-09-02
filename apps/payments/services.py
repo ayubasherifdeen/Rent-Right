@@ -8,7 +8,6 @@ signature contract, but flag this whole file for a real test pass with
 test keys before relying on it. See handoff v12 §open items.
 """
 
-from decimal import Decimal
 import hashlib
 import hmac
 import json
@@ -117,12 +116,12 @@ def list_ghana_momo_networks():
 
  
  
-def _paystack_create_subaccount(*, business_name, settlement_bank, account_number, percentage_charge):
+def _paystack_create_subaccount(*, business_name, settlement_bank, account_number):
     payload = {
         "business_name": business_name,
         "settlement_bank": settlement_bank,
         "account_number": account_number,
-        "percentage_charge": percentage_charge,
+        "percentage_charge": 0,
     }
     try:
         resp = requests.post(
@@ -206,8 +205,6 @@ def save_landlord_payout_account(landlord, bank_code, bank_name, account_number,
     updates the SAME subaccount via PUT on any later change — the
     OneToOne on the model means one landlord, one subaccount_code, ever.
     """
-    percentage_charge = getattr(settings, "PLATFORM_FEE_PERCENTAGE", Decimal("0.0"))
- 
     account, created = LandlordPayoutAccount.objects.get_or_create(
         landlord=landlord,
         defaults=dict(
@@ -215,7 +212,6 @@ def save_landlord_payout_account(landlord, bank_code, bank_name, account_number,
             bank_name=bank_name,
             account_number=account_number,
             account_name=account_name,
-            percentage_charge=percentage_charge,
         ),
     )
  
@@ -224,7 +220,6 @@ def save_landlord_payout_account(landlord, bank_code, bank_name, account_number,
             business_name=account_name,
             settlement_bank=bank_code,
             account_number=account_number,
-            percentage_charge=float(percentage_charge),
         )
         account.paystack_subaccount_code = data["subaccount_code"]
     else:

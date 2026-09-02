@@ -58,8 +58,8 @@
   </div>
   {% endif %}
 
-  {# ── Landlord section — what's been received ── #}
-  {% if landlord_rows or not request.user.payout_account.is_ready or request.user.payout_account.is_stale %}
+  {# ── Landlord section — what I am owed ── #}
+  {% if landlord_rows %}
   <div>
     <h2 class="text-sm font-semibold uppercase tracking-widest mb-4" style="color:#9CA3AF;">Your properties</h2>
 
