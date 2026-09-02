@@ -54,7 +54,7 @@
             <p style="font-size:13px; color:#92400E; font-weight:600;">
               {{ action_items.overdue_payments }} overdue payment{{ action_items.overdue_payments|pluralize }} across your tenancies.
             </p>
-            <a href="{% url 'payments:landlord_payments' %}" style="font-size:13px; font-weight:700; color:#92400E; text-decoration:underline;">Review →</a>
+            <a href="{% url 'payments:payments' %}" style="font-size:13px; font-weight:700; color:#92400E; text-decoration:underline;">Review →</a>
           </div>
         {% endif %}
 
@@ -63,7 +63,7 @@
             <p style="font-size:13px; color:#92400E; font-weight:600;">
               {{ action_items.unacknowledged_maintenance }} maintenance request{{ action_items.unacknowledged_maintenance|pluralize }} waiting on acknowledgment.
             </p>
-            <a href="{% url 'maintenance:landlord_requests' %}" style="font-size:13px; font-weight:700; color:#92400E; text-decoration:underline;">Review →</a>
+            <a href="{% url 'maintenance:landlord_list' %}" style="font-size:13px; font-weight:700; color:#92400E; text-decoration:underline;">Review →</a>
           </div>
         {% endif %}
 
