@@ -206,17 +206,15 @@ class PropertyForm(forms.ModelForm):
 class PropertyPhotoForm(forms.ModelForm):
     """Simple photo upload form. Used in formset for multi-photo upload."""
     image = forms.ImageField(required=False)
-    is_primary = forms.BooleanField(required=False)
+    is_primary = forms.BooleanField(
+        required=False, label='Primary photo',
+        )
 
     class Meta:
         model  = PropertyPhoto
         fields = ['image', 'caption', 'is_primary']
         widgets = {
             'caption': forms.TextInput(attrs={'placeholder': 'e.g. Living room, Master bedroom...'}),
-            'is_primary': forms.RadioSelect(),
-        }
-        labels = {
-            'is_primary': 'Primary photo',
         }
 
 
@@ -226,9 +224,10 @@ PropertyPhotoFormSet = forms.inlineformset_factory(
     model=PropertyPhoto,
     form=PropertyPhotoForm,
     fields=['image', 'caption', 'is_primary'],
-    extra=3,           # 3 empty upload slots shown by default
+    extra=0,           # 3 empty upload slots shown by default
     min_num=3,
     validate_min=True,  # require at least 3 photos
     max_num=10,        # hard cap
     can_delete=True,   # X button on each existing photo
+    
 )
