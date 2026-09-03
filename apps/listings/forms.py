@@ -92,7 +92,7 @@ class PropertyForm(forms.ModelForm):
             'bedrooms', 'bathrooms',
             'address', 'neighbourhood', 'city', 'region', 'latitude', 'longitude',
             'monthly_rent', 'payment_cycle', 'advance_months','lease_term_months',
-            'amenities', 'available_from','video_file',
+            'amenities', 'available_from',
         ]
         widgets = {
             'description': forms.Textarea(attrs={'rows': 4, 'placeholder': 'Describe the property...'}),
@@ -109,6 +109,15 @@ class PropertyForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        if self.instance and self.instance.pk:
+            current = self.instance.lease_term_months
+            preset_values = [c[0] for c in LEASE_TERM_CHOICES if c[0] != 0]
+ 
+            if current in preset_values:
+                self.fields['lease_term_preset'].initial = str(current)
+            else:
+                self.fields['lease_term_preset'].initial          = '0'
+                self.fields['lease_term_months_custom'].initial   = current
 
 
     def clean(self):
@@ -206,17 +215,10 @@ class PropertyPhotoForm(forms.ModelForm):
             'caption': forms.TextInput(attrs={'placeholder': 'e.g. Living room, Master bedroom...'}),
             'is_primary': forms.RadioSelect(),
         }
+        labels = {
+            'is_primary': 'Primary photo',
+        }
 
-    def clean_photos(self):
-        """
-        Ensure that at least one photo is marked as primary.
-        This is called automatically by Django during formset.is_valid().
-        """
-        images = self.cleaned_data.get('image', [])
-        primary_count = sum(1 for image in images if image.get('is_primary'))
-        if primary_count == 0:
-            raise ValidationError("Please mark one photo as the primary image.")
-        return images
 
 # Formset: up to 10 photos per property, at least 0 required
 PropertyPhotoFormSet = forms.inlineformset_factory(
@@ -225,6 +227,8 @@ PropertyPhotoFormSet = forms.inlineformset_factory(
     form=PropertyPhotoForm,
     fields=['image', 'caption', 'is_primary'],
     extra=3,           # 3 empty upload slots shown by default
+    min_num=3,
+    validate_min=True,  # require at least 3 photos
     max_num=10,        # hard cap
     can_delete=True,   # X button on each existing photo
 )

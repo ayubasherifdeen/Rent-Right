@@ -25,7 +25,7 @@
         <p style="color:#6B7280; margin:0; font-size:0.875rem;">
           {{ property.title }}
           <span style="display:inline-block; margin-left:8px;
-            {% if property.status == 'active' %}color:#065F46; background:#ECFDF5;
+            {% if property.status == 'live' %}color:#065F46; background:#ECFDF5;
             {% elif property.status == 'draft' %}color:#92400E; background:#FEF3C7;
             {% elif property.status == 'rented' %}color:#1D4ED8; background:#EFF6FF;
             {% elif property.status == 'paused' %}color:#6B7280; background:#F3F4F6;

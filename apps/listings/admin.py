@@ -18,7 +18,7 @@ class PropertyPhotoInline(admin.TabularInline):
     """
     model       = PropertyPhoto
     extra       = 1         # show 1 empty form by default
-    fields      = ('image', 'caption', 'is_primary', 'display_order')
+    fields      = ('image', 'caption', 'is_primary')
     readonly_fields = ('thumbnail_preview',)
 
     def thumbnail_preview(self, obj):
