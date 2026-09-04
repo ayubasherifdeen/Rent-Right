@@ -13,6 +13,7 @@ import hmac
 import json
 import uuid
 from datetime import date
+import logging
 
 import requests
 from django.conf import settings
@@ -28,7 +29,7 @@ from .models import Payment, PaymentStatus, PaymentType, PayoutMethod, LandlordP
 
 PAYSTACK_BASE_URL = "https://api.paystack.co"
 
-
+logger = logging.getLogger(__name__)
 GHANA_MOMO_PREFIXES = {
     "024": "MTN", "025": "MTN", "053": "MTN", "054": "MTN", "055": "MTN", "059": "MTN",
     "020": "Telecel", "050": "Telecel",
@@ -394,7 +395,6 @@ def check_overdue_instalments():
     return results
 
 
-
 def get_instalments_due_soon(tenancy, days_ahead=3):
     """
     Instalments due within the next `days_ahead` days, inclusive of
@@ -421,7 +421,7 @@ def get_recently_overdue_instalments(tenancy, grace_days=3):
         for row in get_instalment_schedule_with_status(tenancy)
         if row["status"] == "overdue" and 1 <= (today - row["due_date"]).days <= grace_days
     ]
- 
+
  
 def get_reminder_grace_expired_instalments(tenancy, grace_days=3):
     """
@@ -592,6 +592,8 @@ def initiate_payment(tenancy, payer, payment_type, callback_url, instalment_due_
             instalment_due_date=due_date,
             reference=reference,
         )
+    payout_account = ensure_landlord_payout_account(tenancy.landlord)
+    subaccount_code = payout_account.paystack_subaccount_code if payout_account else None
 
     try:
         paystack_data = _paystack_initialize_transaction(
@@ -599,6 +601,7 @@ def initiate_payment(tenancy, payer, payment_type, callback_url, instalment_due_
             amount=amount,
             reference=reference,
             callback_url=callback_url,
+            subaccount=subaccount_code
         )
     except PaystackError:
         payment.status = PaymentStatus.FAILED
@@ -681,15 +684,30 @@ def _on_payment_success(payment):
     generate_payment_receipt(payment)
     generate_rent_card(tenancy)
 
-    notify_user(
-        tenancy.tenant,
-        f"Payment of GHS {payment.amount} received. Your receipt is ready.",
-        purpose=NotificationPurpose.PAYMENT
-    )
-    notify_user(
-        tenancy.landlord,
-        f"Payment of GHS {payment.amount} received from your tenant for "
-        f"{tenancy.rental_property.title}.",
-        purpose=NotificationPurpose.PAYMENT
-    )
+    try:
+                      
+         notify_user(
+            tenancy.tenant,
+            f"Payment of GHS {payment.amount} received. Your receipt is ready.",
+            purpose=NotificationPurpose.PAYMENT
+        )
+    except Exception:
+        logger.exception(
+            "notify_user (tenant) failed for payment %s — payment itself remains SUCCESS",
+            payment.pk,
+        )
+
+    try:
+        notify_user(
+            tenancy.landlord,
+            f"Payment of GHS {payment.amount} received from your tenant for "
+            f"{tenancy.rental_property.title}.",
+            purpose=NotificationPurpose.PAYMENT
+        )
+    except Exception:
+        logger.exception(
+            "notify_user (landlord) failed for payment %s — payment itself remains SUCCESS",
+            payment.pk,
+        )   
+
 
