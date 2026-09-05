@@ -160,6 +160,8 @@
         <span style="background:#92400E; color:#F9E076; font-size:0.6875rem; font-weight:700; padding:2px 8px; border-radius:12px;">Pending Payment</span>
       {% elif property.status == 'archived' %}
         <span style="background:#F3F4F6; color:#374151; font-size:0.6875rem; font-weight:700; padding:2px 8px; border-radius:12px;">Archived</span>
+              {% elif property.status == 'lease_ended' %}
+        <span style="background:#FFF7ED; color:#C2410C; font-size:0.6875rem; font-weight:700; padding:2px 8px; border-radius:12px;">Lease Ended</span>
       {% endif %}
       {% if property.created_by and property.created_by_id != property.landlord_id and not show_landlord and not property.landlord_reviewed_at %}
         <div class="inline-flex items-center gap-2 rounded-full bg-blue-50 border border-blue-200 pl-3 pr-1.5 py-1">
@@ -218,13 +220,25 @@
         Resume
       </button>
     </form>
+        {% elif property.status == 'lease_ended' %}
+    <form method="post" action="{% url 'listings:update_listing_status' pk=property.pk %}">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="relist">
+      <button type="submit"
+              style="background:#1C3829; color:white; border:none; border-radius:7px; padding:7px 14px; font-size:0.8125rem; font-weight:600; cursor:pointer;">
+        Relist
+      </button>
+    </form>
     {% endif %}
 
-    {% if property.status == 'draft' or property.status == 'live' or property.status == 'paused' %}
+       {% if property.status == 'draft' or property.status == 'live' or property.status == 'paused' or property.status == 'lease_ended' %}
     <a href="{% url 'listings:edit_property' pk=property.pk %}"
        style="display:inline-flex; align-items:center; justify-content:center; border:1px solid #E5E0D8; border-radius:7px; padding:7px 14px; font-size:0.8125rem; color:#374151; text-decoration:none; font-weight:500;">
       Edit
     </a>
+    {% endif %}
+
+    {% if property.status == 'draft' or property.status == 'live' or property.status == 'paused' %}
     <form method="post" action="{% url 'listings:update_listing_status' pk=property.pk %}"
           onsubmit="return confirm('Archive this listing? It will come off the market permanently.');">
       {% csrf_token %}

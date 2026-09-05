@@ -22,7 +22,8 @@ from .services import (create_listing,
                        pause_listing,
                        resume_listing,
                        archive_listing,
-                       update_listing
+                       update_listing,
+                       relist_after_lease_end
 )
 from apps.accounts.models import ManagedProperty
 from apps.accounts.services import (
@@ -298,6 +299,7 @@ def update_listing_status(request, pk):
         'pause':   pause_listing,
         'resume':  resume_listing,
         'archive': archive_listing,
+        'relist':relist_after_lease_end,
     }
     handler = action_map.get(request.POST.get('action'))
     if handler is None:
