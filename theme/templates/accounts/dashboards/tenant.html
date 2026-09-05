@@ -51,7 +51,7 @@
             <p style="font-size:13px; color:#92400E; font-weight:600;">
               You have {{ action_items.overdue_payment_count }} overdue payment{{ action_items.overdue_payment_count|pluralize }}.
             </p>
-            <a href="{% url 'payments:tenant_payments' %}" style="font-size:13px; font-weight:700; color:#92400E; text-decoration:underline;">Pay now →</a>
+            <a href="{% url 'payments:payments' %}" style="font-size:13px; font-weight:700; color:#92400E; text-decoration:underline;">Pay now →</a>
           </div>
         {% endif %}
 
@@ -60,7 +60,7 @@
             <p style="font-size:13px; color:#1C3829; font-weight:600;">
               Your tenancy agreement is awaiting your confirmation.
             </p>
-            <a href="{% url 'tenancies:tenant_tenancy_detail' %}" style="font-size:13px; font-weight:700; color:#1C3829; text-decoration:underline;">Confirm →</a>
+            <a href="{% url 'tenancies:tenancy_detail' pk=action_items.pending_agreement_tenancy.pk %}" style="font-size:13px; font-weight:700; color:#1C3829; text-decoration:underline;">Confirm →</a>
           </div>
         {% endif %}
 
@@ -69,7 +69,7 @@
             <p style="font-size:13px; color:#92400E; font-weight:600;">
               {{ action_items.own_stale_maintenance }} of your maintenance request{{ action_items.own_stale_maintenance|pluralize }} still awaiting acknowledgment.
             </p>
-            <a href="{% url 'maintenance:tenant_requests' %}" style="font-size:13px; font-weight:700; color:#92400E; text-decoration:underline;">View →</a>
+            <a href="{% url 'maintenance:tenant_list' %}" style="font-size:13px; font-weight:700; color:#92400E; text-decoration:underline;">View →</a>
           </div>
         {% endif %}
 
