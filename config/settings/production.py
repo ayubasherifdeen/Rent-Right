@@ -9,7 +9,7 @@ from decouple import Csv, config
 
 #Core
 
-DEBUG = True 
+DEBUG = False
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='rentright-gh-staging.up.railway.app', cast=Csv())
 
 
@@ -62,6 +62,15 @@ INSTALLED_APPS_EXTRA    = ['cloudinary_storage', 'cloudinary']
 
 # Append without mutating the base list
 INSTALLED_APPS = INSTALLED_APPS + INSTALLED_APPS_EXTRA
+
+STORAGES = {
+    'default': {
+        'BACKEND': 'cloudinary_storage.storage.MediaCloudinaryStorage',
+    },
+    'staticfiles': {
+        'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
+    },
+}
 
 
 # ─── Email — SendGrid / SMTP ──────────────────────────────────────────────────

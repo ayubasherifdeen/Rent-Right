@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Default Notice — {{ tenancy.id }}</title>
+  <style>
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', Arial, Helvetica, sans-serif;
+      font-size: 11pt;
+      color: #1a1a1a;
+      background: #ffffff;
+      padding: 40px 50px;
+    }
+
+    .header {
+      border-bottom: 2px solid #1C3829;
+      padding-bottom: 20px;
+      margin-bottom: 28px;
+    }
+
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .brand {
+      font-size: 20pt;
+      font-weight: 700;
+      color: #1C3829;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-sub {
+      font-size: 8pt;
+      color: #7A9E7E;
+      margin-top: 2px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .doc-label {
+      text-align: right;
+    }
+
+    .doc-label h1 {
+      font-size: 15pt;
+      font-weight: 700;
+      color: #1C3829;
+    }
+
+    .doc-label p {
+      font-size: 8pt;
+      color: #9CA3AF;
+      margin-top: 3px;
+    }
+
+    .notice-badge {
+      display: inline-block;
+      background: #F0EBE3;
+      border: 1px solid #E5E0D8;
+      color: #C4622D;
+      font-size: 8pt;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 12px;
+      margin-top: 8px;
+    }
+
+    .section {
+      margin-bottom: 24px;
+    }
+
+    .section-title {
+      font-size: 8pt;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #7A9E7E;
+      margin-bottom: 10px;
+      padding-bottom: 4px;
+      border-bottom: 0.5px solid #E5E0D8;
+    }
+
+    .field-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px 24px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 8pt;
+      font-weight: 600;
+      color: #9CA3AF;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 3px;
+    }
+
+    .field p {
+      font-size: 10.5pt;
+      color: #1C3829;
+      font-weight: 500;
+    }
+
+    .financial-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 0.5px solid #F0EBE3;
+    }
+
+    .financial-row:last-child {
+      border-bottom: none;
+    }
+
+    .financial-row .label {
+      font-size: 9.5pt;
+      color: #4B5563;
+    }
+
+    .financial-row .value {
+      font-size: 10.5pt;
+      font-weight: 700;
+      color: #1C3829;
+    }
+
+    .financial-row.total .label {
+      font-size: 10pt;
+      font-weight: 700;
+      color: #1C3829;
+    }
+
+    .financial-row.total .value {
+      font-size: 13pt;
+      color: #C4622D;
+    }
+
+    .cure-box {
+      background: #F0EBE3;
+      border: 1px solid #E5E0D8;
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+    }
+
+    .cure-box h3 {
+      font-size: 9pt;
+      font-weight: 700;
+      color: #C4622D;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .cure-box p {
+      font-size: 9pt;
+      color: #4B5563;
+      line-height: 1.5;
+    }
+
+    .cure-box .deadline {
+      font-size: 13pt;
+      font-weight: 700;
+      color: #1C3829;
+      margin-top: 6px;
+    }
+
+    .compliance-box {
+      background: #F0FDF4;
+      border: 1px solid #BBF7D0;
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+    }
+
+    .compliance-box h3 {
+      font-size: 9pt;
+      font-weight: 700;
+      color: #166534;
+      margin-bottom: 6px;
+    }
+
+    .compliance-box p {
+      font-size: 8.5pt;
+      color: #166534;
+      line-height: 1.5;
+    }
+
+    .disclaimer {
+      font-size: 7.5pt;
+      color: #9CA3AF;
+      line-height: 1.5;
+      margin-bottom: 24px;
+    }
+
+    .signature-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      margin-top: 8px;
+    }
+
+    .sig-block {
+      border-top: 1px solid #1C3829;
+      padding-top: 6px;
+    }
+
+    .sig-block .name {
+      font-size: 9pt;
+      font-weight: 600;
+      color: #1C3829;
+    }
+
+    .sig-block .role {
+      font-size: 8pt;
+      color: #9CA3AF;
+      margin-top: 2px;
+    }
+
+    .footer {
+      margin-top: 36px;
+      padding-top: 14px;
+      border-top: 0.5px solid #E5E0D8;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .footer p {
+      font-size: 7.5pt;
+      color: #9CA3AF;
+    }
+
+    .footer .doc-id {
+      font-family: 'Courier New', monospace;
+      font-size: 7pt;
+      color: #D1D5DB;
+    }
+  </style>
+</head>
+<body>
+
+  {# ── Header ── #}
+  <div class="header">
+    <div class="header-top">
+      <div>
+        <div class="brand">RentRight GH</div>
+        <div class="brand-sub">Rental Lifecycle Management</div>
+      </div>
+      <div class="doc-label">
+        <h1>Default Notice</h1>
+        <p>Issued: {{ issued_at|date:"d F Y" }}</p>
+        <p>Ref: {{ tenancy.id }}</p>
+        <span class="notice-badge">Notice of Rent Arrears — Act 220</span>
+      </div>
+    </div>
+  </div>
+
+  {# ── Property ── #}
+  <div class="section">
+    <div class="section-title">Property</div>
+    <div class="field-grid">
+      <div class="field">
+        <label>Property Title</label>
+        <p>{{ tenancy.rental_property.title }}</p>
+      </div>
+      <div class="field">
+        <label>Address</label>
+        <p>{{ tenancy.rental_property.address }}, {{ tenancy.rental_property.city }}</p>
+      </div>
+    </div>
+  </div>
+
+  {# ── Parties ── #}
+  <div class="section">
+    <div class="section-title">Parties</div>
+    <div class="field-grid">
+      <div class="field">
+        <label>Landlord</label>
+        <p>{{ tenancy.landlord.get_full_name }}</p>
+        <p style="font-size:8.5pt; color:#9CA3AF; margin-top:2px;">{{ tenancy.landlord.phone_number }}</p>
+      </div>
+      <div class="field">
+        <label>Tenant</label>
+        <p>{{ tenancy.tenant.get_full_name }}</p>
+        <p style="font-size:8.5pt; color:#9CA3AF; margin-top:2px;">{{ tenancy.tenant.phone_number }}</p>
+      </div>
+    </div>
+  </div>
+
+  {# ── Arrears Summary ── #}
+  <div class="section">
+    <div class="section-title">Rent Arrears — Amount Owed</div>
+    {% for row in overdue_instalments %}
+    <div class="financial-row">
+      <span class="label">Instalment due {{ row.due_date|date:"d F Y" }}</span>
+      <span class="value">GH₵ {{ row.amount|floatformat:2 }}</span>
+    </div>
+    {% endfor %}
+    <div class="financial-row total">
+      <span class="label">Total Owed as of {{ issued_at|date:"d F Y" }}</span>
+      <span class="value">GH₵ {{ total_owed|floatformat:2 }}</span>
+    </div>
+  </div>
+
+  {# ── Cure Period ── #}
+  <div class="cure-box">
+    <h3>Action Required</h3>
+    <p>
+      You are required to pay the full amount owed above, or otherwise
+      resolve this arrears with your landlord, within
+      {{ cure_period_months }} month{{ cure_period_months|pluralize }}
+      of the date this notice was issued.
+    </p>
+    <div class="deadline">Cure deadline: {{ cure_deadline|date:"d F Y" }}</div>
+    <p style="margin-top:8px;">
+      If the arrears remain unresolved after this date, your landlord
+      may refer this matter to the Rent Control Department
+      (rentcontrol.mwh.gov.gh) for further action.
+    </p>
+  </div>
+
+  {# ── Section 17 Compliance Declaration ── #}
+  <div class="compliance-box">
+    <h3>Ghana Rent Act (Act 220) — Section 17 Disclosure</h3>
+    <p>
+      Section 17 of the Rent Act, 1963 (Act 220) makes it a criminal
+      offence for a landlord to remove a tenant, change locks, remove
+      belongings, cut utilities, or otherwise force a tenant out
+      without a lawful order. <strong>This notice does not, by itself,
+      authorise your landlord to remove you or re-enter the property.</strong>
+      Only a Rent Magistrate or court can order recovery of the
+      property, following a referral to the Rent Control Department.
+    </p>
+  </div>
+
+  {# ── Disclaimer ── #}
+  <p class="disclaimer">
+    This document is generated by RentRight GH to assist landlords and
+    tenants in following the lawful process under Act 220. It is not
+    legal advice and has not been reviewed by a lawyer. Either party is
+    encouraged to seek independent legal advice or contact the Rent
+    Control Department for guidance specific to this tenancy.
+  </p>
+
+  {# ── Issuance ── #}
+  <div class="section">
+    <div class="section-title">Issued By</div>
+    <div class="signature-grid">
+      <div class="sig-block">
+        <div class="name">{{ tenancy.landlord.get_full_name }}</div>
+        <div class="role">Landlord</div>
+      </div>
+    </div>
+  </div>
+
+  {# ── Footer ── #}
+  <div class="footer">
+    <p>Generated by RentRight GH · rentright.gh</p>
+    <p class="doc-id">{{ tenancy.id }}</p>
+  </div>
+
+</body>
+</html>

@@ -16,4 +16,5 @@ urlpatterns = [
     path("webhook/", views.paystack_webhook_view, name="paystack_webhook"),
     path("<uuid:pk>/history/", views.payment_history_view, name="payment_history"),
     path("payout_setup", views.payout_setup_view, name="payout_setup"),
+    path("tenancies/<uuid:pk>/default-notice/", views.generate_default_notice_view, name="generate_default_notice"),
 ]

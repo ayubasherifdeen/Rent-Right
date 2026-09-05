@@ -158,8 +158,16 @@
       <div class="rounded-2xl p-6 mb-6" style="background:white; border:0.5px solid #E5E0D8;">
         <p class="text-xs font-semibold uppercase tracking-widest mb-2" style="color:#9CA3AF;">Negotiation</p>
 
-        <span class="inline-block px-3 py-1 rounded-full text-xs font-semibold"
-          style="background:#F5F3FF; color:#6D28D9;">{{ current_proposal.get_status_display }}</span>
+        {% if current_proposal and not tenancy.status == 'cancelled' %}
+        <span class="inline-block px-3 py-1 rounded-full text-xs font-semibold" style="background:#F5F3FF; color:#6D28D9;">
+          {{ current_proposal.get_status_display }}
+        </span>
+        {% endif %}
+        {% if current_proposal.status == 'pending' and tenancy.status == 'cancelled' %}
+        <span style=" background:#FEF3C7; color:#92400E;" class="inline-block px-3 py-1 rounded-full text-xs font-semibold">
+          {{ tenancy.status }}
+        </span>
+        {% endif %}
 
         <p class="text-sm mt-3" style="color:#1C3829;">
           Latest offer from {{ current_proposal.proposed_by.get_full_name }} —
