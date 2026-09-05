@@ -437,7 +437,25 @@ def get_reminder_grace_expired_instalments(tenancy, grace_days=3):
         for row in get_instalment_schedule_with_status(tenancy)
         if row["status"] == "overdue" and (today - row["due_date"]).days == grace_days + 1
     ]
- 
+
+
+def get_default_notice_eligible_instalments(tenancy, grace_days=3):
+    """
+    Instalments that have exceeded the grace_days reminder window AND
+    remain unpaid .
+
+    different from get_reminder_grace_expired_instalments():
+    that one is a single-day event (day == grace_days + 1 exactly), used
+    to fire the one-time SMS. This one stays true indefinitely for as
+    long as the instalment is unpaid
+    """
+    today = date.today()
+    return [
+        row
+        for row in get_instalment_schedule_with_status(tenancy)
+        if row["status"] == "overdue" and (today - row["due_date"]).days > grace_days
+    ]
+
  
 def send_instalment_reminders(days_ahead=3, grace_days=3):
     """
@@ -515,26 +533,7 @@ def send_instalment_reminders(days_ahead=3, grace_days=3):
 def initiate_payment(tenancy, payer, payment_type, callback_url, instalment_due_date=None):
     """
     Creates a PENDING Payment row and calls Paystack's initialize
-    endpoint. Returns (payment, authorization_url) — the view redirects
-    the payer's browser to authorization_url.
-
-    Guards:
-      - payer is the tenant on this tenancy (landlords don't pay)
-      - MOVE_IN: tenancy must be PENDING_PAYMENT; no existing SUCCESS
-        move-in payment already recorded (no double-charging on a
-        retried/duplicate click)
-      - INSTALMENT: tenancy must be ACTIVE (an instalment on a tenancy
-        that never went active makes no sense — move-in comes first);
-        instalment_due_date must match an entry in the accepted
-        Proposal's schedule; that entry must not already have a SUCCESS
-        payment against it
-
-    The Payment row is created and saved BEFORE the Paystack call, and
-    deliberately not inside the same atomic block as that network call
-    — the row needs to durably exist (status=PENDING) even if Paystack
-    is unreachable, so there's a record of the attempt. If the Paystack
-    call then fails, this marks that same row FAILED and re-raises,
-    rather than leaving it silently PENDING forever.
+    endpoint. 
     """
     if payer != tenancy.tenant:
         raise ValueError("Only the tenant on this tenancy can make a payment.")
@@ -621,11 +620,6 @@ def verify_and_record_payment(reference):
     webhook payload or callback query string claims, per Paystack's own
     integration guidance. A hand-edited callback URL can't fake a
     successful payment this way.
-
-    Idempotent: if this Payment is already SUCCESS, returns it unchanged
-    without re-running side effects — both the webhook and the callback
-    can legitimately call this for the same reference, and activation /
-    receipt generation must only happen once.
     """
     try:
         payment = Payment.objects.select_related("tenancy").get(reference=reference)
@@ -660,18 +654,8 @@ def verify_and_record_payment(reference):
 
 def _on_payment_success(payment):
     """
-    Side effects once a payment is confirmed successful:
-      - MOVE_IN: activates the tenancy — this is the "Paystack webhook
-        → activate_tenancy()" link from v7 §17, replacing the manual
-        landlord button. tenancy.landlord is passed straight through;
-        activate_tenancy()'s "landlord owns the property" guard is
-        trivially satisfied since that's exactly where it came from —
-        same "no delegation model exists yet" caveat noted in the
-        listings handoff (v11 §5.2).
-      - Both types: generates a Payment Receipt PDF (Act 220 §33) into
-        the documents vault.
-      - SMS: stubbed, same pattern as everywhere else pending the
-        notifications app (Month 3) — see _notify() below.
+   when a payment is confirmed successul, receipt and rent card and generated
+   user is notified 
     """
     from apps.documents.services import generate_payment_receipt
     from apps.tenancies.services import activate_tenancy

@@ -11,6 +11,7 @@ from django.template.loader import render_to_string
 from weasyprint import HTML
 
 from .models import Document, DocumentType
+from apps.tenancies.models import TenancyStatus
 
 
 def _render_pdf(template_name, context):
@@ -71,12 +72,7 @@ def generate_rent_card(tenancy, generated_by=None):
 
 def generate_tenancy_agreement(agreement, generated_by=None):
     """
-    agreement fields (.tenancy, .special_conditions,
-    .landlord_confirmed_at, .tenant_confirmed_at, .fully_executed_at)
-    confirmed per handoff v8 §2.2. Tenancy fields (.rental_property,
-    .landlord, .tenant, .monthly_rent, .advance_months, .start_date,
-    .end_date) now confirmed against the real create_tenancy() in
-    apps/tenancies/services.py.
+    Renders documents/tenancy_agreement_template.html into a PDF
     """
     context = {"agreement": agreement, "tenancy": agreement.tenancy, **_financial_display_context(agreement.tenancy)}
     pdf_bytes = _render_pdf("documents/tenancy_agreement_template.html", context)
@@ -93,16 +89,7 @@ def generate_tenancy_agreement(agreement, generated_by=None):
 
 def generate_instalment_addendum(agreement, generated_by=None):
     """
-    Generates the instalment addendum PDF
-
-
-    Deliberately NOT called unconditionally for every Agreement — see
-    the caller in tenancies._execute_agreement(), which only calls this
-    when the accepted Proposal isn't the opening one (i.e. terms were
-    actually negotiated away from the tenancy's original frozen values).
-    If accept_proposal() ran with zero counters, the "negotiated" terms
-    are identical to the tenancy's own terms and there's nothing for an
-    addendum to add.
+    Generates the instalment addendum PDF for an Agreement, which is a formal
     """
     proposal = _get_accepted_proposal(agreement.tenancy)
     context = {"agreement": agreement, "tenancy": agreement.tenancy, "proposal": proposal, **_financial_display_context(agreement.tenancy)}
@@ -162,35 +149,16 @@ def generate_dispute_packet(tenancy, generated_by=None, dispute_summary=""):
     evidence packet covering the WHOLE tenancy (every maintenance
     request on it, plus the full negotiation history), suitable for
     submission to rent control or a court.
- 
-    Scoped to the tenancy, not a single MaintenanceRequest — a dispute
-    is rarely about one isolated incident in isolation from the
-    relationship's history, and a packet that silently omitted other
-    requests on the same tenancy would look like selective evidence.
- 
-    Read-only: pulls straight from the existing append-only trail
-    (MaintenanceUpdate) and stage-tagged media (MaintenanceRequestMedia)
-    for every request on the tenancy, plus the tenancy's negotiation
-    history (Proposal chain, oldest first). Nothing here creates or
-    mutates maintenance/negotiation records.
- 
-    generated_by is whoever requested the packet (landlord or tenant) —
-    stored on Document like every other generated document here.
- 
-    dispute_summary is free text supplied by whoever is generating the
-    packet — what's actually being disputed and what resolution is
-    being sought. Nothing in the data model captures this, so it's a
-    parameter, not stored anywhere else. Optional.
- 
-    NOTE: MaintenanceRequestMedia's primary key field is named `d`, not
-    `id` (confirmed against the real model). Nothing here or in the
-    template references `.id` on a media instance; use `.pk`.
     """
     from apps.maintenance.models import MediaStage
     from apps.negotiations.services import get_proposal_chain
- 
-    # MaintenanceRequest.Meta.ordering = ["-created_at"] (newest first) —
-    # override for the packet, which reads better oldest first.
+    
+    try:
+        if tenancy.status != TenancyStatus.ACTIVE:
+            raise ValueError("This tenancy is not in active yet — a Dispute Packet is only available for active tenancies.")
+    except ValueError as exc:
+        raise ValueError(str(exc))
+
     maintenance_requests = tenancy.maintenance_requests.order_by("created_at")
  
     issues = []
@@ -198,19 +166,13 @@ def generate_dispute_packet(tenancy, generated_by=None, dispute_summary=""):
         issues.append({
             "index": index,
             "request": maintenance_request,
-            # MaintenanceUpdate.Meta.ordering = ["created_at"] — already oldest first.
             "updates": maintenance_request.updates.all(),
-            # MaintenanceRequestMedia.Meta.ordering = ["created_at"] — already oldest first.
             "reported_media": maintenance_request.media.filter(stage=MediaStage.REPORTED),
             "resolution_media": maintenance_request.media.filter(stage=MediaStage.RESOLUTION),
         })
  
     # Full negotiation history for the tenancy, oldest first.
     proposal_chain = get_proposal_chain(tenancy)
- 
-    # Human-readable reference for citing this packet in correspondence —
-    # generated here since the Document row (and its own pk) doesn't
-    # exist yet at render time.
     packet_reference = f"DP-{str(tenancy.pk)[:8].upper()}-{timezone.now():%Y%m%d}"
  
     context = {
@@ -233,6 +195,49 @@ def generate_dispute_packet(tenancy, generated_by=None, dispute_summary=""):
     )
     document.file.save(
         f"dispute_packet_{tenancy.pk}_{timezone.now():%Y-%m-%d_%H-%M-%S}.pdf",
+        ContentFile(pdf_bytes),
+        save=True,
+    )
+    return document
+
+def generate_default_notice(tenancy, generated_by=None, cure_period_months=1):
+    """
+    Renders documents/default_notice_template.html into a PDF — a formal
+    notice to the tenant regarding default on rent payments.
+    """
+    from dateutil.relativedelta import relativedelta
+    from apps.payments.services import get_overdue_instalments, get_default_notice_eligible_instalments
+ 
+    if not get_default_notice_eligible_instalments(tenancy):
+        raise ValueError(
+            "This tenancy has no instalment overdue beyond the reminder "
+            "grace period — a Default Notice isn't available yet."
+        )
+ 
+    overdue_instalments = get_overdue_instalments(tenancy)
+    total_owed = sum(row["amount"] for row in overdue_instalments)
+ 
+    issued_at = timezone.now()
+    cure_deadline = (issued_at + relativedelta(months=cure_period_months)).date()
+ 
+    context = {
+        "tenancy": tenancy,
+        "overdue_instalments": overdue_instalments,
+        "total_owed": total_owed,
+        "issued_at": issued_at,
+        "cure_deadline": cure_deadline,
+        "cure_period_months": cure_period_months,
+    }
+    pdf_bytes = _render_pdf("documents/default_notice_template.html", context)
+ 
+    document = Document.objects.create(
+        document_type=DocumentType.DEFAULT_NOTICE,
+        content_type=ContentType.objects.get_for_model(tenancy),
+        object_id=tenancy.pk,
+        generated_by=generated_by,
+    )
+    document.file.save(
+        f"default_notice_{tenancy.pk}_{timezone.now():%Y-%m-%d_%H-%M-%S}.pdf",
         ContentFile(pdf_bytes),
         save=True,
     )

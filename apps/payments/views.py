@@ -292,3 +292,26 @@ def payment_history_view(request, pk):
          },
 
     )
+
+@login_required
+@require_POST
+def generate_default_notice_view(request, pk):
+    """
+    Landlord-only, manually triggered — per the app's confirmed policy
+    the app never generates or serves this automatically. The landlord
+    chooses to generate it here, then downloads and serves it
+    themselves.
+ 
+    """
+    tenancy = get_object_or_404(Tenancy, pk=pk, landlord=request.user)
+ 
+    from apps.documents.services import generate_default_notice
+ 
+    try:
+        document = generate_default_notice(tenancy, generated_by=request.user)
+    except ValueError as exc:
+        messages.error(request, str(exc))
+        return redirect("payments:payment_history", pk=tenancy.pk)
+ 
+    messages.success(request, "Default Notice generated. Remember: you are responsible for lawfully serving this on your tenant.")
+    return redirect("documents:download", document.pk)
