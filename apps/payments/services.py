@@ -555,7 +555,7 @@ def initiate_payment(tenancy, payer, payment_type, callback_url, instalment_due_
         due_date = None
 
     elif payment_type == PaymentType.INSTALMENT:
-        if tenancy.status != TenancyStatus.ACTIVE:
+        if tenancy.status != TenancyStatus.ACTIVE or tenancy.status != TenancyStatus.EXPIRING:
             raise ValueError(
                 "Instalment payments can only be made once the tenancy is "
                 f"active. This tenancy is '{tenancy.get_status_display()}'."

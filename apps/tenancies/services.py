@@ -10,6 +10,8 @@ ValueError and decide the HTTP semantics.
     confirm_agreement_tenant(), _execute_agreement().
 """
 
+from datetime import date, timedelta
+
 from django.db import transaction
 from django.utils import timezone
 
@@ -340,3 +342,96 @@ def _decline_remaining_applications(rental_property, exclude_application):
     ).exclude(
         pk=exclude_application.pk,
     ).update(status=ApplicationStatus.DECLINED)
+
+
+EXPIRY_NUDGE_DAYS = 60  # how many days before end_date the EXPIRING nudge fires
+
+
+def mark_tenancy_expiring(tenancy):
+    """
+    transitions tenancy from active to expiry
+    """
+    from apps.tenancies.models import TenancyStatus
+    from apps.notifications.services import notify_user
+    from apps.notifications.models import NotificationPurpose
+
+    if tenancy.status != TenancyStatus.ACTIVE:
+        raise ValueError(
+            f"Only active tenancies can move to expiring. "
+            f"This tenancy is '{tenancy.get_status_display()}'."
+        )
+
+    tenancy.status = TenancyStatus.EXPIRING
+    tenancy.save(update_fields=["status", "updated_at"])
+
+    for party in (tenancy.landlord, tenancy.tenant):
+        notify_user(
+            party,
+            f"The tenancy for {tenancy.rental_property.title} is due to end on "
+            f"{tenancy.end_date}. If you'd like to renew or discuss new terms, "
+            f"please get in touch with the other party soon.",
+            purpose=NotificationPurpose.GENERAL,
+        )
+    return tenancy
+
+
+def end_tenancy(tenancy):
+    """
+    transition to lease ended
+    """
+    from apps.tenancies.models import TenancyStatus
+    from apps.listings.models import ListingStatus
+    from apps.notifications.services import notify_user
+    from apps.notifications.models import NotificationPurpose
+
+    if tenancy.status not in (TenancyStatus.ACTIVE, TenancyStatus.EXPIRING):
+        raise ValueError(
+            f"Only active or expiring tenancies can be ended. "
+            f"This tenancy is '{tenancy.get_status_display()}'."
+        )
+
+    tenancy.status = TenancyStatus.ENDED
+    tenancy.save(update_fields=["status", "updated_at"])
+
+    rental_property = tenancy.rental_property
+    rental_property.status = ListingStatus.LEASE_ENDED
+    rental_property.save(update_fields=["status", "updated_at"])
+
+    for party in (tenancy.landlord, tenancy.tenant):
+        notify_user(
+            party,
+            f"The tenancy for {rental_property.title} has ended. If you're "
+            f"still interested, the tenant is welcome to reapply once the "
+            f"landlord relists it, or you can arrange renewal terms directly.",
+            purpose=NotificationPurpose.GENERAL,
+        )
+    return tenancy
+
+
+def check_tenancy_expiry(nudge_days=EXPIRY_NUDGE_DAYS):
+    """
+    Meant to run daily in management/commands/check_tenancy_expiry.py.
+    """
+    from apps.tenancies.models import Tenancy, TenancyStatus
+    today = date.today()
+    expiring_marked = 0
+    ended_marked = 0
+
+    nudge_window = Tenancy.objects.filter(
+        status=TenancyStatus.ACTIVE,
+        end_date__gt=today,
+        end_date__lte=today + timedelta(days=nudge_days),
+    )
+    for tenancy in nudge_window:
+        mark_tenancy_expiring(tenancy)
+        expiring_marked += 1
+
+    ending_now = Tenancy.objects.filter(
+        status__in=[TenancyStatus.ACTIVE, TenancyStatus.EXPIRING],
+        end_date__lte=today,
+    )
+    for tenancy in ending_now:
+        end_tenancy(tenancy)
+        ended_marked += 1
+
+    return {"expiring_marked": expiring_marked, "ended_marked": ended_marked}

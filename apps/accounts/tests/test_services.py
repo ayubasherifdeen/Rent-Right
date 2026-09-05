@@ -60,7 +60,7 @@ class OTPServiceTests(TestCase):
     def test_verify_otp_returns_true_on_valid_code(self):
         otp = create_otp(self.user, 'phone_verify')
         result = verify_otp(self.user, otp.code, 'phone_verify')
-        self.assertTrue(result)
+        self.assertEqual(result, str(otp.id))
 
     def test_verify_otp_consumes_the_otp(self):
         otp = create_otp(self.user, 'phone_verify')

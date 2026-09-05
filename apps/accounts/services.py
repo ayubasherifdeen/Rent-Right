@@ -47,9 +47,9 @@ def create_otp(user: User, purpose: str) -> OTP:
     )
 
 
-def verify_otp(user: User, code: str, purpose: str) -> bool:
+def verify_otp(user: User, code: str, purpose: str) -> str | bool:
     """
-    Validate OTP. Returns True and consumes the OTP on success.
+    Validate OTP. Returns the consumed OTP ID on success.
     Returns False if code is wrong, expired, or already used.
     """
     try:
@@ -68,7 +68,7 @@ def verify_otp(user: User, code: str, purpose: str) -> bool:
     with transaction.atomic():
         otp.consume()
 
-    return True
+    return str(otp.id)
 
 def _unique_username(base: str) -> str:
     """Append a number suffix until the username is unique."""

@@ -191,3 +191,19 @@ def upload_property_video(video_file, property_id):
         raise ValueError('Cloudinary did not return a valid video URL for this upload.')
 
     return secure_url
+
+
+def relist_after_lease_end(property_obj):
+    """
+    Landlord confirms the unit is actually vacant and puts it back on
+    the market after a tenancy ended.
+    """
+    if property_obj.status != ListingStatus.LEASE_ENDED:
+        raise ValueError(
+            f"Cannot relist a listing with status '{property_obj.status}'. "
+            f"Only listings whose lease has ended can be relisted this way."
+        )
+    property_obj.status = ListingStatus.LIVE
+    property_obj.save(update_fields=['status', 'updated_at'])
+    logger.debug(f"[LISTINGS] Relisted '{property_obj.title}' after lease end")
+    return property_obj
