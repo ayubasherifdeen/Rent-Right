@@ -168,6 +168,10 @@ def tenant_dashboard_data(user):
             if entry["status"] == "overdue"
         ]
 
+    pending_agreement_tenancy = tenancies.filter(
+        status=TenancyStatus.PENDING_AGREEMENT,
+    ).first()
+
     action_items = {
         "overdue_payment_count": len(own_overdue),
         "next_due_entry": next(
@@ -190,9 +194,8 @@ def tenant_dashboard_data(user):
             status=MaintenanceStatus.SUBMITTED,
             created_at__lt=stale_cutoff,
         ).count(),
-        "pending_agreement_step": tenancies.filter(
-            status=TenancyStatus.PENDING_AGREEMENT,
-        ).exists(),
+        "pending_agreement_step": pending_agreement_tenancy is not None,
+        "pending_agreement_tenancy": pending_agreement_tenancy,
     }
 
     trends = {
