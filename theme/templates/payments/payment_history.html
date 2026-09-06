@@ -69,7 +69,7 @@
             </span>
           </td>
           <td class="py-2 text-right">
-            {% if row.status != 'paid' and request.user == tenancy.tenant and tenancy.is_active %}
+            {% if row.status != 'paid' and request.user == tenancy.tenant and tenancy.is_payment_eligible %}
             <a href="{% url 'payments:pay_instalment' pk=tenancy.pk due_date=row.due_date|date:'Y-m-d' %}"
               class="text-sm font-medium text-blue-700 hover:underline">Pay now</a>
             {% endif %}

@@ -237,7 +237,8 @@ def landlord_dashboard(request):
 @tenant_required
 def tenant_dashboard(request):
     active_tenancy = Tenancy.objects.filter(
-            tenant=request.user, status=TenancyStatus.ACTIVE
+        tenant=request.user,
+        status__in=(TenancyStatus.ACTIVE, TenancyStatus.EXPIRING),
     ).exists()
     data = tenant_dashboard_data(request.user)
     return render(request, "accounts/dashboards/tenant.html", {

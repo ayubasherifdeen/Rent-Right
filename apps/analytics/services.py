@@ -123,7 +123,9 @@ def landlord_dashboard_data(user):
     """
     properties = Property.objects.filter(landlord=user)
     tenancies = Tenancy.objects.filter(rental_property__in=properties)
-    active_tenancies = tenancies.filter(status=TenancyStatus.ACTIVE)
+    active_tenancies = tenancies.filter(
+        status__in=(TenancyStatus.ACTIVE, TenancyStatus.EXPIRING)
+    )
     return _property_scope_summary(properties, tenancies, active_tenancies)
 
 
@@ -141,7 +143,9 @@ def manager_dashboard_data(user):
 
     properties = Property.objects.filter(id__in=managed_property_ids)
     tenancies = Tenancy.objects.filter(rental_property__in=properties)
-    active_tenancies = tenancies.filter(status=TenancyStatus.ACTIVE)
+    active_tenancies = tenancies.filter(
+        status__in=(TenancyStatus.ACTIVE, TenancyStatus.EXPIRING)
+    )
 
     summary = _property_scope_summary(properties, tenancies, active_tenancies)
     summary["trends"]["landlord_count"] = (
@@ -156,7 +160,9 @@ def tenant_dashboard_data(user):
     Everything tenant is involved in (Tenancy.tenant=user). Shaped differently
     """
     tenancies = Tenancy.objects.filter(tenant=user)
-    active_tenancy = tenancies.filter(status=TenancyStatus.ACTIVE).first()
+    active_tenancy = tenancies.filter(
+        status__in=(TenancyStatus.ACTIVE, TenancyStatus.EXPIRING)
+    ).first()
 
     stale_cutoff = timezone.now() - timedelta(days=MAINTENANCE_STALE_DAYS)
 

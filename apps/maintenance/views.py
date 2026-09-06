@@ -87,7 +87,8 @@ def tenant_maintenance_list(request):
         .select_related("tenancy", "tenancy__rental_property")
     )
     active_tenancies = Tenancy.objects.filter(
-        tenant=request.user, status=TenancyStatus.ACTIVE
+        tenant=request.user,
+        status__in=(TenancyStatus.ACTIVE, TenancyStatus.EXPIRING),
     ).select_related("rental_property")
     return render(
         request,

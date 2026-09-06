@@ -388,7 +388,9 @@ def check_overdue_instalments():
     from apps.tenancies.models import Tenancy, TenancyStatus
 
     results = []
-    for tenancy in Tenancy.objects.filter(status=TenancyStatus.ACTIVE):
+    for tenancy in Tenancy.objects.filter(
+        status__in=(TenancyStatus.ACTIVE, TenancyStatus.EXPIRING)
+    ):
         overdue = get_overdue_instalments(tenancy)
         if overdue:
             results.append({"tenancy": tenancy, "overdue": overdue})
@@ -477,7 +479,9 @@ def send_instalment_reminders(days_ahead=3, grace_days=3):
     overdue_sent = 0
     handoff_sent = 0
  
-    for tenancy in Tenancy.objects.filter(status=TenancyStatus.ACTIVE):
+    for tenancy in Tenancy.objects.filter(
+        status__in=(TenancyStatus.ACTIVE, TenancyStatus.EXPIRING)
+    ):
         for row in get_instalments_due_soon(tenancy, days_ahead=days_ahead):
             days_left = (row["due_date"] - today).days
             when_text = (
@@ -555,7 +559,7 @@ def initiate_payment(tenancy, payer, payment_type, callback_url, instalment_due_
         due_date = None
 
     elif payment_type == PaymentType.INSTALMENT:
-        if tenancy.status != TenancyStatus.ACTIVE or tenancy.status != TenancyStatus.EXPIRING:
+        if tenancy.status not in (TenancyStatus.ACTIVE, TenancyStatus.EXPIRING):
             raise ValueError(
                 "Instalment payments can only be made once the tenancy is "
                 f"active. This tenancy is '{tenancy.get_status_display()}'."
