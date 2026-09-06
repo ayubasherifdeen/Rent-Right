@@ -100,7 +100,7 @@ def tenancy_detail(request, pk):
 
     move_in_payment = tenancy.payments.filter(payment_type=PaymentType.MOVE_IN).order_by("-created_at").first()
     next_due_instalment = None
-    if tenancy.status == "active":
+    if tenancy.is_payment_eligible:
         schedule = get_instalment_schedule_with_status(tenancy)
         next_due_instalment = next((row for row in schedule if row["status"] != "paid"), None)
 
@@ -149,7 +149,11 @@ def landlord_tenancies(request):
     tenancies = tenancies.select_related("rental_property", "tenant").distinct().order_by("-created_at")
     counts = tenancies.aggregate(
         total=Count("id"),
-        active=Count("id", filter=Q(status=TenancyStatus.ACTIVE)),
+        active=Count(
+            "id",
+            filter=Q(status__in=(TenancyStatus.ACTIVE, TenancyStatus.EXPIRING)),
+        ),
+        expiring=Count("id", filter=Q(status=TenancyStatus.EXPIRING)),
         pending_payment=Count("id", filter=Q(status=TenancyStatus.PENDING_PAYMENT)),
     )
     return render(

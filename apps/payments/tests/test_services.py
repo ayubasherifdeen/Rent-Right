@@ -123,6 +123,31 @@ class InstalmentPaymentTests(TestCase):
                 instalment_due_date="1999-01-01",
             )
 
+    @patch("apps.payments.services.requests.post")
+    def test_instalment_payment_allowed_during_expiry(self, mock_post):
+        mock_post.return_value = MagicMock(
+            ok=True,
+            json=lambda: {
+                "status": True,
+                "data": {
+                    "authorization_url": "https://paystack.test/pay/expiry",
+                    "reference": "expiry-ref",
+                },
+            },
+        )
+        self.tenancy.status = "expiring"
+        self.tenancy.save(update_fields=["status"])
+
+        payment, _ = services.initiate_payment(
+            self.tenancy,
+            self.tenancy.tenant,
+            PaymentType.INSTALMENT,
+            "https://app.test/callback/",
+            instalment_due_date=self.schedule[0]["due_date"],
+        )
+
+        self.assertEqual(payment.status, PaymentStatus.PENDING)
+
     def test_instalment_blocked_before_tenancy_active(self):
         self.tenancy.status = "pending_payment"
         self.tenancy.save(update_fields=["status"])

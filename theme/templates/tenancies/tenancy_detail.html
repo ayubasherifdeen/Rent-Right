@@ -16,7 +16,7 @@
         {{ tenancy.rental_property.title }}
       </h1>
       {# Maintenance card #}
-      {% if tenancy.status == 'active' %}
+      {% if tenancy.is_payment_eligible %}
       <div class="rounded-2xl p-5" style="background:white; border:0.5px solid #E5E0D8; width:200px;">
         <p class="text-xs font-semibold uppercase tracking-widest mb-3" style="color:#9CA3AF;">Maintenance</p>
         {% if not is_landlord %}
@@ -272,7 +272,7 @@
         {% endif %}
       </div>
 
-      {% if tenancy.status == 'pending_payment' or tenancy.status == 'active' %}
+      {% if tenancy.status == 'pending_payment' or tenancy.is_payment_eligible %}
       <div class="rounded-2xl p-5" style="background:white; border:0.5px solid #E5E0D8;">
         <p class="text-xs font-semibold uppercase tracking-widest mb-3" style="color:#9CA3AF;">Payments</p>
 
@@ -296,7 +296,7 @@
         {% endif %}
         {% endif %}
 
-        {% elif tenancy.status == 'active' %}
+        {% elif tenancy.is_payment_eligible %}
         {% if next_due_instalment %}
         <p class="text-sm mb-1" style="color:#1C3829;">
           Next instalment: GH₵ {{ next_due_instalment.amount|floatformat:2 }}

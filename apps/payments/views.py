@@ -156,7 +156,11 @@ def payments_dashboard_view(request):
         status=TenancyStatus.CANCELLED
     ).select_related("rental_property")
     for tenancy in as_tenant:
-        if tenancy.status not in (TenancyStatus.PENDING_PAYMENT, TenancyStatus.ACTIVE):
+        if tenancy.status not in (
+            TenancyStatus.PENDING_PAYMENT,
+            TenancyStatus.ACTIVE,
+            TenancyStatus.EXPIRING,
+        ):
             continue  # nothing payment-related to show pre-agreement or post-tenancy
         move_in_payment = (
             tenancy.payments.filter(payment_type=PaymentType.MOVE_IN)
@@ -164,7 +168,7 @@ def payments_dashboard_view(request):
             .first()
         )
         next_due = None
-        if tenancy.status == TenancyStatus.ACTIVE:
+        if tenancy.is_payment_eligible:
             schedule = services.get_instalment_schedule_with_status(tenancy)
             next_due = next((row for row in schedule if row["status"] != "paid"), None)
         tenant_rows.append(
@@ -176,9 +180,13 @@ def payments_dashboard_view(request):
         status=TenancyStatus.CANCELLED
     ).select_related("rental_property")
     for tenancy in as_landlord:
-        if tenancy.status not in (TenancyStatus.PENDING_PAYMENT, TenancyStatus.ACTIVE):
+        if tenancy.status not in (
+            TenancyStatus.PENDING_PAYMENT,
+            TenancyStatus.ACTIVE,
+            TenancyStatus.EXPIRING,
+        ):
             continue
-        overdue = services.get_overdue_instalments(tenancy) if tenancy.status == TenancyStatus.ACTIVE else []
+        overdue = services.get_overdue_instalments(tenancy) if tenancy.is_payment_eligible else []
         move_in_paid = tenancy.payments.filter(
             payment_type=PaymentType.MOVE_IN, status=PaymentStatus.SUCCESS
         ).exists()

@@ -10,7 +10,6 @@ from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 
-from apps.tenancies.models import TenancyStatus
 
 from .models import (
     MaintenanceRequest,
@@ -71,8 +70,8 @@ def create_maintenance_request(
     to a tenancy that never activated, or that already ended, has no
     landlord workflow to land in.
     """
-    if tenancy.status != TenancyStatus.ACTIVE:
-        raise ValueError("Maintenance requests can only be filed on an active tenancy.")
+    if not tenancy.is_payment_eligible:
+        raise ValueError("Maintenance requests can only be filed on an active or expiring tenancy.")
 
     with transaction.atomic():
         maintenance_request = MaintenanceRequest.objects.create(

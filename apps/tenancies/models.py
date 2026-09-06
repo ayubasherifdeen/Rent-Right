@@ -94,6 +94,10 @@ class Tenancy(models.Model):
         return self.status == TenancyStatus.ACTIVE
 
     @property
+    def is_payment_eligible(self):
+        return self.status in (TenancyStatus.ACTIVE, TenancyStatus.EXPIRING)
+
+    @property
     def is_expiring(self):
         return self.status == TenancyStatus.EXPIRING
 
