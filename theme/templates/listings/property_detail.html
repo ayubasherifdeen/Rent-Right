@@ -370,7 +370,7 @@
           style="width:40px; height:40px; border-radius:50%; background:#1C3829; display:flex; align-items:center; justify-content:center; flex-shrink:0; overflow:hidden;">
           {% if property.landlord.userprofile.profile_photo %}
           <img src="{{ property.landlord.userprofile.profile_photo.url }}" alt="{{ property.landlord.full_name }}"
-            style="width:100%; height:100%; object-fit:cover; display:block;">
+            target="_blank" style="width:100%; height:100%; object-fit:cover; display:block;">
           {% else %}
           <span style="color:white; font-weight:700; font-size:1rem;">
             {{ property.landlord.first_name|first|upper }}{{ property.landlord.last_name|first|upper }}
