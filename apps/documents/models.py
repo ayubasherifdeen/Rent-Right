@@ -28,7 +28,7 @@ class Document(models.Model):
     object_id = models.UUIDField()
     content_object = GenericForeignKey("content_type", "object_id")
 
-    file = models.FileField(upload_to="documents/%Y/%m/")
+    file = models.FileField(upload_to="documents/%Y/%m/", max_length=255)
 
     generated_at = models.DateTimeField(auto_now_add=True)
     generated_by = models.ForeignKey(

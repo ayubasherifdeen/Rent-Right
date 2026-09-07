@@ -245,6 +245,16 @@ class ConfirmAgreementViewTest(TestCase):
         self.agreement.refresh_from_db()
         self.assertIsNone(self.agreement.landlord_confirmed_at)
 
+    @patch(
+        "apps.tenancies.views.confirm_agreement_landlord",
+        side_effect=RuntimeError("document generation failed"),
+    )
+    def test_unexpected_confirmation_failure_redirects_instead_of_500(self, mock_confirm):
+        self.client.force_login(self.landlord)
+        response = self.client.post(self.url, {"otp_code": "123456"})
+        self.assertEqual(response.status_code, 302)
+        mock_confirm.assert_called_once()
+
 
 class SpecialConditionsViewTest(TestCase):
     def setUp(self):

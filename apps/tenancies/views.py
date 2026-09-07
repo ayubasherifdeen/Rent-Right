@@ -10,6 +10,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
+import logging
 
 from django.http import HttpResponseForbidden, HttpResponseNotAllowed
 
@@ -30,6 +31,8 @@ from apps.tenancies.services import (
     formalise_special_conditions,
     save_special_conditions,
 )
+
+logger = logging.getLogger(__name__)
 
 
 # Landlord: create a tenancy from an approved application
@@ -241,6 +244,18 @@ def confirm_agreement_view(request, pk):
             confirm_agreement_tenant(agreement, request.user, otp_code)
     except ValueError as exc:
         messages.error(request, str(exc))
+        return redirect("tenancies:agreement_detail", pk=pk)
+    except Exception:
+        logger.exception(
+            "Agreement OTP confirmation failed for tenancy %s and user %s",
+            tenancy.pk,
+            request.user.pk,
+        )
+        messages.error(
+            request,
+            "We couldn't complete the agreement confirmation. "
+            "Please request a new code and try again.",
+        )
         return redirect("tenancies:agreement_detail", pk=pk)
 
     agreement.refresh_from_db()
