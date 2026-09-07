@@ -10,7 +10,11 @@ from decouple import Csv, config
 #Core
 
 DEBUG = False
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='rentright-gh-staging.up.railway.app', cast=Csv())
+railway_domain = config('RAILWAY_PUBLIC_DOMAIN', default='')
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='', cast=Csv())
+if railway_domain and railway_domain not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(railway_domain)
+
 
 
 #Database — PostgreSQL 
@@ -42,6 +46,8 @@ X_FRAME_OPTIONS                 = 'DENY'
 SESSION_COOKIE_SECURE           = True
 CSRF_COOKIE_SECURE              = True
 CSRF_TRUSTED_ORIGINS = ['https://rentright-gh-staging.up.railway.app']
+if railway_domain:
+    CSRF_TRUSTED_ORIGINS.append(f"https://{railway_domain}")
 
 # ─── Static files — WhiteNoise (already in base MIDDLEWARE) ───────────────────
 # collectstatic → staticfiles/ → served by WhiteNoise with compression + caching
