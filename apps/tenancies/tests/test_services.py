@@ -20,6 +20,7 @@ from unittest.mock import MagicMock, patch
 
 from django.test import TestCase, override_settings
 
+from apps.accounts.services import create_otp
 from apps.applications.models import Application, ApplicationStatus
 from apps.tenancies.models import AgreementStatus, Tenancy, TenancyStatus
 from apps.tenancies.services import (
@@ -257,6 +258,27 @@ class ConfirmAgreementLandlordTest(TestCase):
             confirm_agreement_landlord(self.agreement, self.landlord, "333333")
         self.assertIn("already been fully executed", str(ctx.exception))
 
+    @patch(
+        "apps.documents.services.generate_tenancy_agreement",
+        side_effect=RuntimeError("PDF generation failed"),
+    )
+    def test_pdf_failure_rolls_back_second_confirmation_and_otp(self, mock_generate):
+        tenant_otp = create_otp(self.tenant, "tenancy_confirm")
+        confirm_agreement_tenant(self.agreement, self.tenant, tenant_otp.code)
+        landlord_otp = create_otp(self.landlord, "tenancy_confirm")
+
+        with self.assertRaises(RuntimeError):
+            confirm_agreement_landlord(self.agreement, self.landlord, landlord_otp.code)
+
+        self.agreement.refresh_from_db()
+        self.tenancy.refresh_from_db()
+        landlord_otp.refresh_from_db()
+        self.assertEqual(self.agreement.status, AgreementStatus.PENDING_LANDLORD)
+        self.assertIsNone(self.agreement.landlord_confirmed_at)
+        self.assertIsNotNone(self.agreement.tenant_confirmed_at)
+        self.assertEqual(self.tenancy.status, TenancyStatus.PENDING_AGREEMENT)
+        self.assertFalse(landlord_otp.is_used)
+
 
 class ConfirmAgreementTenantTest(TestCase):
     def setUp(self):
@@ -296,3 +318,21 @@ class ExecuteAgreementTest(TestCase):
         self.assertEqual(agreement.status, AgreementStatus.FULLY_EXECUTED)
         self.assertIsNotNone(agreement.fully_executed_at)
         self.assertEqual(tenancy.status, TenancyStatus.PENDING_PAYMENT)
+
+    @patch("apps.documents.services.generate_rent_card")
+    @patch("apps.documents.services.generate_instalment_addendum")
+    @patch("apps.documents.services.generate_tenancy_agreement")
+    def test_execution_requests_all_required_documents(
+        self,
+        mock_agreement_pdf,
+        mock_addendum_pdf,
+        mock_rent_card,
+    ):
+        tenancy = make_tenancy()
+        agreement = make_agreement(tenancy)
+
+        _execute_agreement(agreement)
+
+        mock_agreement_pdf.assert_called_once_with(agreement)
+        mock_addendum_pdf.assert_called_once_with(agreement)
+        mock_rent_card.assert_called_once_with(tenancy)

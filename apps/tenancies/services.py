@@ -211,28 +211,29 @@ def confirm_agreement_landlord(agreement, landlord, otp_code):
     if agreement.status == AgreementStatus.FULLY_EXECUTED:
         raise ValueError("This agreement has already been fully executed.")
 
-    otp_ref = verify_otp(landlord, otp_code, purpose="tenancy_confirm")
-    if not otp_ref:
-        raise ValueError("Invalid or expired OTP.")
+    with transaction.atomic():
+        otp_ref = verify_otp(landlord, otp_code, purpose="tenancy_confirm")
+        if not otp_ref:
+            raise ValueError("Invalid or expired OTP.")
 
-    agreement.landlord_confirmed_at = timezone.now()
-    agreement.landlord_otp_ref = otp_ref
+        agreement.landlord_confirmed_at = timezone.now()
+        agreement.landlord_otp_ref = otp_ref
 
-    if agreement.tenant_confirmed_at:
-        agreement.save(
-            update_fields=["landlord_confirmed_at", "landlord_otp_ref", "updated_at"]
-        )
-        _execute_agreement(agreement)
-    else:
-        agreement.status = AgreementStatus.PENDING_TENANT
-        agreement.save(
-            update_fields=[
-                "landlord_confirmed_at",
-                "landlord_otp_ref",
-                "status",
-                "updated_at",
-            ]
-        )
+        if agreement.tenant_confirmed_at:
+            agreement.save(
+                update_fields=["landlord_confirmed_at", "landlord_otp_ref", "updated_at"]
+            )
+            _execute_agreement(agreement)
+        else:
+            agreement.status = AgreementStatus.PENDING_TENANT
+            agreement.save(
+                update_fields=[
+                    "landlord_confirmed_at",
+                    "landlord_otp_ref",
+                    "status",
+                    "updated_at",
+                ]
+            )
 
     return agreement
 
@@ -255,28 +256,29 @@ def confirm_agreement_tenant(agreement, tenant, otp_code):
     if agreement.status == AgreementStatus.FULLY_EXECUTED:
         raise ValueError("This agreement has already been fully executed.")
 
-    otp_ref = verify_otp(tenant, otp_code, purpose="tenancy_confirm")
-    if not otp_ref:
-        raise ValueError("Invalid or expired OTP")
+    with transaction.atomic():
+        otp_ref = verify_otp(tenant, otp_code, purpose="tenancy_confirm")
+        if not otp_ref:
+            raise ValueError("Invalid or expired OTP")
 
-    agreement.tenant_confirmed_at = timezone.now()
-    agreement.tenant_otp_ref = otp_ref
+        agreement.tenant_confirmed_at = timezone.now()
+        agreement.tenant_otp_ref = otp_ref
 
-    if agreement.landlord_confirmed_at:
-        agreement.save(
-            update_fields=["tenant_confirmed_at", "tenant_otp_ref", "updated_at"]
-        )
-        _execute_agreement(agreement)
-    else:
-        agreement.status = AgreementStatus.PENDING_LANDLORD
-        agreement.save(
-            update_fields=[
-                "tenant_confirmed_at",
-                "tenant_otp_ref",
-                "status",
-                "updated_at",
-            ]
-        )
+        if agreement.landlord_confirmed_at:
+            agreement.save(
+                update_fields=["tenant_confirmed_at", "tenant_otp_ref", "updated_at"]
+            )
+            _execute_agreement(agreement)
+        else:
+            agreement.status = AgreementStatus.PENDING_LANDLORD
+            agreement.save(
+                update_fields=[
+                    "tenant_confirmed_at",
+                    "tenant_otp_ref",
+                    "status",
+                    "updated_at",
+                ]
+            )
 
     return agreement
 
@@ -286,19 +288,6 @@ def _execute_agreement(agreement):
     Called once BOTH parties have confirmed via OTP. Fully executes the
     agreement, advances the tenancy to PENDING_PAYMENT, and generates
     the Tenancy Agreement + Rent Card PDFs.
-
-    apps.documents.services.generate_tenancy_agreement() and
-    generate_rent_card() are called here, inside the same atomic block,
-    so a failure generating either PDF rolls back the FULLY_EXECUTED /
-    PENDING_PAYMENT transition rather than leaving the agreement
-    executed with no documents. If PDF generation needs to be
-    best-effort instead (i.e. execution should succeed even if
-    WeasyPrint errors), move the generate_* calls outside the
-    transaction.atomic() block — that's a product decision, not
-    something to silently assume either way.
-
-    TODO (notifications app, Month 3): SMS both parties — currently a
-    stub, per handoff §19 (`_notify(user, message)`).
     """
     from apps.documents.services import generate_rent_card, generate_tenancy_agreement, generate_instalment_addendum
     from apps.tenancies.models import AgreementStatus, TenancyStatus

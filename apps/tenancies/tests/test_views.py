@@ -17,8 +17,10 @@ from unittest.mock import MagicMock, patch
 from django.test import Client, TestCase
 from django.urls import reverse
 
+from apps.accounts.services import create_otp
 from apps.accounts.models import ManagedProperty, User
 from apps.tenancies.models import AgreementStatus
+from apps.tenancies.services import confirm_agreement_tenant
 from apps.tenancies.tests.helpers import (
     make_agreement,
     make_approved_application,
@@ -254,6 +256,30 @@ class ConfirmAgreementViewTest(TestCase):
         response = self.client.post(self.url, {"otp_code": "123456"})
         self.assertEqual(response.status_code, 302)
         mock_confirm.assert_called_once()
+
+    @patch(
+        "apps.documents.services.generate_tenancy_agreement",
+        side_effect=RuntimeError("PDF generation failed"),
+    )
+    def test_pdf_failure_keeps_second_party_confirmation_form_visible(self, mock_generate):
+        tenant_otp = create_otp(self.tenant, "tenancy_confirm")
+        confirm_agreement_tenant(self.agreement, self.tenant, tenant_otp.code)
+        landlord_otp = create_otp(self.landlord, "tenancy_confirm")
+
+        self.client.force_login(self.landlord)
+        response = self.client.post(
+            self.url,
+            {"otp_code": landlord_otp.code},
+            follow=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Confirm via OTP")
+        self.agreement.refresh_from_db()
+        landlord_otp.refresh_from_db()
+        self.assertEqual(self.agreement.status, AgreementStatus.PENDING_LANDLORD)
+        self.assertIsNone(self.agreement.landlord_confirmed_at)
+        self.assertFalse(landlord_otp.is_used)
 
 
 class SpecialConditionsViewTest(TestCase):

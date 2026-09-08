@@ -11,12 +11,6 @@
     · reported {{ maintenance_request.created_at|date:"M j, Y" }}
   </p>
 
-  {% if messages %}
-    {% for message in messages %}
-      <div class="mb-4 px-4 py-3 rounded-lg bg-[#FEE2E2] text-[#B91C1C] text-sm">{{ message }}</div>
-    {% endfor %}
-  {% endif %}
-
   <div class="page-card p-6 mb-6">
     <h2 class="font-semibold text-[#1C3829] mb-2">Description</h2>
     <p class="text-[#374151] whitespace-pre-line">{{ maintenance_request.description }}</p>
