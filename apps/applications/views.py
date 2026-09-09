@@ -162,6 +162,7 @@ def received_applications(request):
 
 
 @login_required
+@phone_verified_required
 @landlord_or_manager_required
 @require_POST
 def approve_application(request, pk):
@@ -183,6 +184,7 @@ def approve_application(request, pk):
 
 
 @login_required
+@phone_verified_required
 @landlord_or_manager_required
 @require_POST
 def decline_application(request, pk):
@@ -204,6 +206,7 @@ def decline_application(request, pk):
 
 
 @login_required
+@phone_verified_required
 @require_POST
 def withdraw_application(request, pk):
     """

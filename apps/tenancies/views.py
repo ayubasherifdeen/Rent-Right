@@ -14,7 +14,7 @@ import logging
 
 from django.http import HttpResponseForbidden, HttpResponseNotAllowed
 
-from apps.accounts.decorators import landlord_or_manager_required, landlord_required, tenant_required
+from apps.accounts.decorators import landlord_or_manager_required, landlord_required, phone_verified_required, tenant_required
 from apps.accounts.services import can_act_on_property, send_tenancy_confirmation_otp
 from apps.applications.models import Application
 from apps.documents.models import DocumentType
@@ -37,6 +37,8 @@ logger = logging.getLogger(__name__)
 
 # Landlord: create a tenancy from an approved application
 
+@login_required
+@phone_verified_required
 @landlord_required
 def create_tenancy_view(request, application_pk):
     """
@@ -62,6 +64,8 @@ def create_tenancy_view(request, application_pk):
 
 
 # Landlord: activate a tenancy (PENDING_PAYMENT -> ACTIVE)
+@login_required
+@phone_verified_required
 @landlord_required
 def activate_tenancy_view(request, pk):
     """
@@ -168,6 +172,8 @@ def landlord_tenancies(request):
 
 # Landlord: enter + review special conditions for an agreement
 
+@login_required
+@phone_verified_required
 @landlord_required
 def special_conditions_view(request, pk):
     """
@@ -207,6 +213,7 @@ def special_conditions_view(request, pk):
 
 
 @login_required
+@phone_verified_required
 @require_POST
 def request_agreement_otp_view(request, pk):
     tenancy = get_object_or_404(Tenancy, pk=pk)
@@ -224,6 +231,7 @@ def request_agreement_otp_view(request, pk):
 # Shared: OTP confirmation for either party
 
 @login_required
+@phone_verified_required
 def confirm_agreement_view(request, pk):
     """POST only. OTP entry for either party on this tenancy's agreement."""
     tenancy = get_object_or_404(Tenancy, pk=pk)

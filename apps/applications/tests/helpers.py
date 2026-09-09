@@ -12,7 +12,7 @@ from apps.listings.models import Property
 from apps.applications.models import Application, ApplicationStatus
 
 
-def make_landlord(email='landlord@test.com', phone='0244100001'):
+def make_landlord(email='landlord@test.com', phone='0244100001', verified=True):
     user = User.objects.create_user(
         email=email, password='testpass123',
         first_name='Kwame', last_name='Mensah', phone_number=phone, username=email
@@ -20,6 +20,8 @@ def make_landlord(email='landlord@test.com', phone='0244100001'):
     profile = user.userprofile
     profile.role = 'landlord'
     profile.save()
+    user.is_verified = verified
+    user.save(update_fields=['is_verified'])
     return user
 
 
@@ -71,11 +73,11 @@ def make_application(tenant, property_obj, status=ApplicationStatus.PENDING, **k
         'move_in_date': future_date(),
         'message':      '',
         'status':       status,
+        'rental_property': property_obj,
     }
     defaults.update(kwargs)
     return Application.objects.create(
         tenant=tenant,
-        property=property_obj,
         **defaults,
     )
 

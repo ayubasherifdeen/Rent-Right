@@ -153,11 +153,8 @@ def generate_dispute_packet(tenancy, generated_by=None, dispute_summary=""):
     from apps.maintenance.models import MediaStage
     from apps.negotiations.services import get_proposal_chain
     
-    try:
-        if tenancy.status != TenancyStatus.ACTIVE:
-            raise ValueError("This tenancy is not in active yet — a Dispute Packet is only available for active tenancies.")
-    except ValueError as exc:
-        raise ValueError(str(exc))
+    if tenancy.status != TenancyStatus.ACTIVE:
+        raise ValueError("This tenancy is not in active yet — a Dispute Packet is only available for active tenancies.")
 
     maintenance_requests = tenancy.maintenance_requests.order_by("created_at")
  

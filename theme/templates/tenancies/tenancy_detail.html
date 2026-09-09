@@ -192,8 +192,7 @@
           style="font-family:'Playfair Display',Georgia,serif; color:#C4622D;">
           GH₵ {{ tenancy.advance_amount|floatformat:2 }}
         </p>
-        <p class="text-xs mt-1" style="color:#9CA3AF;">{{ tenancy.advance_months }} month{{
-          tenancy.advance_months|pluralize }} upfront</p>
+        <p class="text-xs mt-1" style="color:#9CA3AF;">{{ tenancy.advance_months }} month{{ tenancy.advance_months|pluralize }} upfront</p>
       </div>
 
       {# Total commitment stat #}
@@ -309,7 +308,7 @@
       </div>
       {% endif %}
 
-      {% if agreement %}
+      {% if tenancy.status == 'active' or tenancy.status == 'expiring' or tenancy.status == 'ended' %}
       {# Dispute Packet card #}
       <div class="rounded-2xl p-5" style="background:white; border:0.5px solid #E5E0D8;">
         <p class="text-xs font-semibold uppercase tracking-widest mb-2" style="color:#9CA3AF;">Dispute Packet</p>
