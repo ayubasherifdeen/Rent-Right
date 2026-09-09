@@ -139,6 +139,7 @@ def resend_verification_otp(request):
 
 
 @login_required
+@phone_verified_required
 def invite_manager_view(request, property_pk):
     """POST from edit_property.html or a. Only
     the property's own landlord may invite for it — enforced inside
@@ -171,6 +172,8 @@ def manager_invites_view(request):
     return render(request, "accounts/manager_invites.html", {"invites": invites})
  
  
+@login_required
+@phone_verified_required
 @property_manager_required
 def accept_management_invite_view(request, link_pk):
     link = get_object_or_404(ManagedProperty, pk=link_pk)
@@ -181,6 +184,7 @@ def accept_management_invite_view(request, link_pk):
  
  
 @login_required
+@phone_verified_required
 def revoke_management_view(request, link_pk):
     """Either the landlord or the manager on the link may revoke."""
     link = get_object_or_404(ManagedProperty, pk=link_pk)

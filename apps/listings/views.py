@@ -26,6 +26,7 @@ from .services import (create_listing,
                        relist_after_lease_end
 )
 from apps.accounts.models import ManagedProperty
+from apps.accounts.decorators import phone_verified_required
 from apps.accounts.services import (
     can_act_on_property,
     can_create_for_landlord,
@@ -108,6 +109,7 @@ class PropertyDetailView(DetailView):
 
 
 @login_required
+@phone_verified_required
 def create_property(request):
     """
     Landlords create for themselves. Property managers may also create
@@ -215,6 +217,7 @@ def create_property(request):
 
 
 @login_required
+@phone_verified_required
 def edit_property(request, pk):
     """
     Edit an existing listing — draft or otherwise.
@@ -280,6 +283,7 @@ def edit_property(request, pk):
 
 
 @login_required
+@phone_verified_required
 def update_listing_status(request, pk):
     """
     Single endpoint for pause / resume / archive. Fixed: was
@@ -319,6 +323,7 @@ def update_listing_status(request, pk):
 
 
 @login_required
+@phone_verified_required
 def publish_prompt(request, pk):
     """
     After creation, lands here. Changed from `landlord=request.user` to

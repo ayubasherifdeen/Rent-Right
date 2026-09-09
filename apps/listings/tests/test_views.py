@@ -22,6 +22,18 @@ class PropertyCreatePublishViewTests(TestCase):
         )
         self.landlord.userprofile.role = Role.LANDLORD
         self.landlord.userprofile.save(update_fields=['role'])
+        self.landlord.is_verified = True
+        self.landlord.save(update_fields=['is_verified'])
+        self.unverified_landlord = User.objects.create_user(
+            email='unverified-landlord@test.com',
+            username='unverified-landlord',
+            password='testpass123',
+            first_name='Unverified',
+            last_name='Landlord',
+            phone_number='0244000001',
+        )
+        self.unverified_landlord.userprofile.role = Role.LANDLORD
+        self.unverified_landlord.userprofile.save(update_fields=['role'])
         self.create_url = reverse('listings:create_property')
 
     def test_create_property_redirects_to_publish_prompt(self):
@@ -83,6 +95,38 @@ class PropertyCreatePublishViewTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response, reverse('listings:property_detail', kwargs={'pk': property_obj.pk}))
         self.assertEqual(property_obj.status, ListingStatus.LIVE)
+
+    def test_create_property_requires_phone_verification(self):
+        form_data = {
+            'title': 'Draft Property',
+            'property_type': PropertyType.APARTMENT,
+            'furnishing_status': 'unfurnished',
+            'bedrooms': 2,
+            'bathrooms': 1,
+            'address': '123 Main St',
+            'city': 'Accra',
+            'region': 'Greater Accra',
+            'monthly_rent': '1200.00',
+            'payment_cycle': 'annual',
+            'advance_months': 6,
+            'security_deposit': '0',
+            'lease_term_preset': '12',
+            'lease_term_months': '12',
+            'lease_term_months_custom': '',
+            'available_from': '',
+            'latitude': '',
+            'longitude': '',
+            'amenities': [],
+            'photos-TOTAL_FORMS': '3',
+            'photos-INITIAL_FORMS': '0',
+            'photos-MIN_NUM_FORMS': '0',
+            'photos-MAX_NUM_FORMS': '10',
+        }
+
+        self.client.force_login(self.unverified_landlord)
+        response = self.client.post(self.create_url, data=form_data)
+
+        self.assertRedirects(response, reverse('accounts:verify_phone'))
 
     def test_create_property_requires_login(self):
         response = self.client.get(self.create_url)

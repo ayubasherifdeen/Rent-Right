@@ -240,19 +240,19 @@
 <div class="signatures">
     <div class="sig-row">
         <div class="sig-block">
-            Otp reference: {{ tenancy.landlord_otp_ref }}
+            Otp reference: {{ agreement.landlord_otp_ref }}
             <div class="sig-line">
                 <div class="role-label">Landlord</div>
-                {{ tenancy.landlord.get_full_name|default:tenancy.landlord }} · 
+                {{ tenancy.landlord.get_full_name|default:tenancy.landlord }}  
                 Date: ………………………………
             </div>
         </div>
         <div class="sig-block">
-            Otp reference: {{ tenancy.tenant_otp_ref }}
+            Otp reference: {{ agreement.tenant_otp_ref }}
             <div class="sig-line">
                 <div class="role-label">Tenant</div>
-                {{ tenancy.tenant.get_full_name|default:tenancy.tenant }} · 
-                Date: ………………………………
+                <p>{{ tenancy.tenant.get_full_name|default:tenancy.tenant }}</p>
+               <p>Date: ………………………………</p>
             </div>
         </div>
     </div>
@@ -260,17 +260,17 @@
         <div class="sig-block">
             <div class="sig-line">
                 <div class="role-label">Witness</div>
-                Name: …………………………………………………………………… · 
+                <p>Name: …………………………………………………………………… </p> 
 
-                Date: ………………………………
+                <p>Date: ………………………………</p>
             </div>
         </div>
         <div class="sig-block">
             <div class="sig-line">
                 <div class="role-label">Witness</div>
-                Name: …………………………………………………………………… · 
-                
-                Date: ………………………………
+                <p>Name: …………………………………………………………………… </p> 
+
+                <p>Date: ………………………………</p>
             </div>
         </div>
     </div>

@@ -162,12 +162,18 @@ class ApproveApplicationViewTests(TestCase):
     def setUp(self):
         self.client      = Client()
         self.landlord    = make_landlord()
+        self.unverified_landlord = make_landlord(email='unverified-landlord@test.com', phone='0244555555', verified=False)
         self.tenant      = make_verified_tenant()
         self.property    = make_property(self.landlord)
         self.application = make_application(self.tenant, self.property)
 
     def _url(self):
         return reverse('applications:approve_application', kwargs={'pk': self.application.pk})
+
+    def test_approve_requires_phone_verification(self):
+        self.client.force_login(self.unverified_landlord)
+        response = self.client.post(self._url())
+        self.assertRedirects(response, reverse('accounts:verify_phone'))
 
     def test_approve_success_redirects(self):
         self.client.force_login(self.landlord)
